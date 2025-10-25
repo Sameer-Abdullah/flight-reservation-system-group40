@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="mx-auto mt-4 p-4 bg-white rounded-4 shadow-sm" style="max-width:720px; border:1px solid #eef2f7;">
+    <h3 class="mb-3">Review your flight</h3>
+    <p class="mb-1"><strong>{{ flight.origin }}</strong> → <strong>{{ flight.destination }}</strong></p>
+    <p class="text-muted mb-3">Departs: {{ flight.depart_time.strftime('%Y-%m-%d %H:%M') }}</p>
+    <p class="fs-5">Price: ${{ '%.2f' % (flight.price_cents/100) }}</p>
+
+    <div class="d-flex gap-2 mt-4">
+      <a class="btn btn-primary" href="#">Confirm Booking</a>
+      <a class="btn btn-outline-secondary" href="/search">Back to Search</a>
+    </div>
+  </div>
+{% endblock %}

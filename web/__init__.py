@@ -8,7 +8,7 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 
 def create_app():
-    load_dotenv()  # reads .env if present
+    load_dotenv()
 
     app = Flask(
         __name__,
@@ -16,7 +16,7 @@ def create_app():
         static_folder="../static",
     )
 
-    # secrets + DB (SQLite file in project folder by default)
+    # secrets + DB
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.sqlite3")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -25,17 +25,26 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
-    # blueprints
-    from .auth import auth_bp
-    app.register_blueprint(auth_bp)
-
     @app.route("/")
     def home():
         return render_template("index.html")
 
-    # create tables once
+    # register blueprints
+    from .auth import auth_bp
+    app.register_blueprint(auth_bp)
+
+    from .booking import booking_bp
+    app.register_blueprint(booking_bp)
+
+    from .search import search_bp
+    app.register_blueprint(search_bp)
+
+
+    from .search import search_bp   
+
+    # create tables
     with app.app_context():
-        from . import models  # register models
+        from . import models
         db.create_all()
 
     return app
