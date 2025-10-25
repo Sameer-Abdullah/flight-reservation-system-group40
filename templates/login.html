@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<body class="auth-bg">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="text-center mb-3">
+        <div class="d-inline-flex align-items-center gap-2">
+          <i class="bi bi-airplane-fill text-primary"></i>
+          <h3 class="brand m-0">SkyWings</h3>
+        </div>
+        <div class="text-muted mt-1">Welcome back to your journey</div>
+      </div>
+
+      <form method="post" action="/auth/login" autocomplete="off">
+        <div class="mb-3">
+          <label class="form-label">Email or Username</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+            <input name="email" type="email" class="form-control" placeholder="Enter your email" required>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input name="password" type="password" class="form-control" placeholder="Enter your password" required>
+          </div>
+        </div>
+
+        <div class="d-grid mt-3">
+          <button class="btn btn-primary btn-auth">Sign In</button>
+        </div>
+      </form>
+
+      <div class="text-center mt-2">
+        <a href="#" class="small text-decoration-none">Forgot your password?</a>
+      </div>
+
+      <div class="hr-text"><span>Or</span></div>
+
+      <div class="d-grid">
+        <a class="btn btn-outline-secondary btn-auth" href="/auth/register">Create New Account</a>
+      </div>
+
+      <p class="text-center mt-3 mb-0 legal">
+        By signing in, you agree to our <a href="#" class="text-decoration-none">Terms and Conditions</a>
+        and <a href="#" class="text-decoration-none">Privacy Policy</a>.
+      </p>
+    </div>
+  </div>
+</body>
+{% endblock %}
+
+

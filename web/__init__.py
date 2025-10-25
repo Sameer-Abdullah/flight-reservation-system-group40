@@ -1,10 +1,15 @@
-from flask import Flask
+from flask import Flask, render_template
+
 
 def create_app():
-    app = Flask(__name__)
+    # point Flask to emplates/ and static/
+    app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
     @app.route("/")
     def home():
-        return "It works! 🚀"
+        return render_template("index.html")
+
+    from .auth import auth_bp
+    app.register_blueprint(auth_bp)
 
     return app
