@@ -29,20 +29,23 @@ def create_app():
     def home():
         return render_template("index.html")
 
-    # register blueprints from both features
+    # register blueprints
     from .auth import auth_bp
     app.register_blueprint(auth_bp)
 
-    try:
-        from .search import search_bp
-        app.register_blueprint(search_bp)
-    except Exception:
-        # If search blueprint not created yet, ignore
-        pass
+    from .booking import booking_bp
+    app.register_blueprint(booking_bp)
+
+    from .search import search_bp
+    app.register_blueprint(search_bp)
+
+
+    from .search import search_bp   
 
     # create tables
     with app.app_context():
-        from . import models  # register models
+        from . import models
         db.create_all()
 
     return app
+
