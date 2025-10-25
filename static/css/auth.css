@@ -1,0 +1,81 @@
+/* Light blue gradient background like the mock */
+body.auth-bg {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #eef6ff 0%, #f6fbff 60%, #ffffff 100%);
+}
+
+/* Center the auth card and give it soft elevation */
+.auth-wrap {
+  min-height: calc(100vh - 64px); /* minus navbar height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border: 1px solid #eef2f7;
+  border-radius: 18px;
+  padding: 28px 28px 20px;
+  box-shadow: 0 12px 30px rgba(22, 34, 51, 0.08);
+}
+
+/* Title */
+.brand {
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+/* Inputs */
+.form-control {
+  height: 46px;
+  border-radius: 12px;
+}
+
+/* Primary button */
+.btn-auth {
+  height: 46px;
+  border-radius: 12px;
+}
+
+/* Subtle divider with “Or” */
+.hr-text {
+  position: relative;
+  text-align: center;
+  margin: 18px 0;
+}
+.hr-text::before {
+  content: "";
+  display: block;
+  border-top: 1px solid #e7edf5;
+}
+.hr-text span {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 0 10px;
+  color: #7a8899;
+  font-size: .9rem;
+}
+
+/* Tiny legal text */
+.legal {
+  color: #8a97a8;
+  font-size: .8rem;
+}
+
+/* Decorative airplanes (optional) */
+.auth-bg::before,
+.auth-bg::after {
+  content: "\F1D7"; /* bi-airplane */
+  font-family: "bootstrap-icons";
+  color: #99b8ff33; /* transparent blue */
+  position: fixed;
+  z-index: 0;
+}
+.auth-bg::before { font-size: 56px; left: 2rem; top: 35%; transform: rotate(-25deg); }
+.auth-bg::after  { font-size: 84px; right: 2rem; bottom: 12%; transform: rotate(15deg); }
