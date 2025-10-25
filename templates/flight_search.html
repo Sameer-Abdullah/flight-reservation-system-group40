@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% set body_class = 'auth-bg' %}
+{% block content %}
+
+<div class="py-4 text-center">
+  <div class="d-inline-flex align-items-center gap-2 mb-2">
+    <i class="bi bi-airplane-fill text-primary"></i>
+    <span class="h4 m-0 fw-bold">SkyWings</span>
+  </div>
+  <h2 class="fw-bold">Find Your Perfect Flight</h2>
+  <p class="text-muted">Search and book flights to destinations around the world</p>
+</div>
+
+<div class="container">
+  <div class="mx-auto p-3 p-md-4 bg-white shadow-sm rounded-4" style="max-width: 980px; border:1px solid #eef2f7;">
+    <form class="row g-3 align-items-end" method="get" action="/search">
+      <div class="col-md-3">
+        <label class="form-label">From</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+          <input type="text" name="origin" class="form-control" placeholder="e.g., YYZ" value="{{ request.args.get('origin','') }}">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">To</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-geo"></i></span>
+          <input type="text" name="destination" class="form-control" placeholder="e.g., JFK" value="{{ request.args.get('destination','') }}">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Departure</label>
+        <input type="date" name="depart" class="form-control" value="{{ request.args.get('depart','') }}">
+      </div>
+      <div class="col-md-3 d-grid">
+        <button class="btn btn-warning fw-semibold">
+          <i class="bi bi-search me-1"></i> Search Flights
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if flights is defined %}
+  <div class="container my-4">
+    {% if flights %}
+      <div class="list-group">
+        {% for f in flights %}
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold">{{ f.origin }} → {{ f.destination }}</div>
+              <div class="small text-muted">
+                Departs: {{ f.depart_time.strftime('%Y-%m-%d %H:%M') }} · Price: ${{ '%.2f' % (f.price_cents/100) }}
+              </div>
+            </div>
+            <a class="btn btn-primary" href="/booking/new?flight_id={{ f.id }}">Book</a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-center text-muted">No flights found. Try different cities or dates.</p>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% endblock %}
