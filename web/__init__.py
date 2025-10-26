@@ -39,6 +39,10 @@ def create_app():
     from .search import search_bp
     app.register_blueprint(search_bp)
 
+    from .payments import payments_bp
+    app.register_blueprint(payments_bp)
+
+
 
     from .search import search_bp   
 

@@ -7,7 +7,7 @@
     <p class="fs-5">Price: ${{ '%.2f' % (flight.price_cents/100) }}</p>
 
     <div class="d-flex gap-2 mt-4">
-      <a class="btn btn-primary" href="#">Confirm Booking</a>
+      <a class="btn btn-primary" href="{{ url_for('payments.payments_page', flight_id=flight.id) }}">Confirm Booking</a>
       <a class="btn btn-outline-secondary" href="/search">Back to Search</a>
     </div>
   </div>
