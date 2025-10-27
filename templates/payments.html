@@ -1,45 +1,324 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="mx-auto mt-4 p-4 bg-white rounded-4 shadow-sm" style="max-width:720px; border:1px solid #eef2f7;">
-    <h3 class="mb-3">Payment Details</h3>
+<div class="container my-4">
+  <div class="row g-4">
 
-    <p class="text-muted">Please review your booking and enter your payment information to complete the reservation.</p>
+    <!-- LEFT: Payment Information -->
+    <div class="col-lg-8">
+      <div class="bg-white rounded-4 shadow-sm border p-4">
+        <h4 class="mb-3">Payment Information</h4>
 
-    <!-- Flight Summary Section -->
-    <div class="mb-4">
-      <h5>Flight Summary</h5>
-      <p><strong>{{ flight.origin }}</strong> → <strong>{{ flight.destination }}</strong></p>
-      <p class="text-muted mb-1">Departure: {{ flight.depart_time.strftime('%Y-%m-%d %H:%M') }}</p>
-      <p class="fs-5">Total: ${{ '%.2f' % (flight.price_cents/100) }}</p>
+        <!-- Tabs -->
+        <ul class="nav nav-pills mb-3" id="payTabs" role="tablist" style="gap:.5rem;">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active d-flex align-items-center gap-2" id="tab-card" data-bs-toggle="pill" data-bs-target="#pane-card" type="button" role="tab">
+              <i class="bi bi-credit-card-2-front"></i> Credit/Debit Card
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link d-flex align-items-center gap-2" id="tab-paypal" data-bs-toggle="pill" data-bs-target="#pane-paypal" type="button" role="tab">
+              <i class="bi bi-paypal"></i> PayPal
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="payTabsContent">
+
+          <!-- CARD PANE -->
+          <div class="tab-pane fade show active" id="pane-card" role="tabpanel">
+            <form id="card-form" novalidate>
+              <div class="mb-3">
+                <label class="form-label">Card Number</label>
+                <div id="card-element" class="form-control" style="height:auto;padding:.65rem .75rem;"></div>
+                <div class="form-text">We accept Visa, Mastercard, AmEx.</div>
+              </div>
+
+              <h6 class="mt-4 mb-3">Billing Address</h6>
+              <div class="mb-3">
+                <label class="form-label">Street Address</label>
+                <input type="text" class="form-control" id="addrLine1" placeholder="123 Main Street" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Address line 2 (optional)</label>
+                <input type="text" class="form-control" id="addrLine2" placeholder="Apt, unit, suite">
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">City</label>
+                  <input type="text" class="form-control" id="addrCity" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Country</label>
+                  <select class="form-select" id="addrCountry" required aria-label="Country">
+                    <option value="" disabled selected>Choose...</option>
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="AU">Australia</option>
+                    <option value="NZ">New Zealand</option>
+                    <option value="IE">Ireland</option>
+                    <option value="FR">France</option>
+                    <option value="DE">Germany</option>
+                    <option value="ES">Spain</option>
+                    <option value="IT">Italy</option>
+                    <option value="NL">Netherlands</option>
+                    <option value="BE">Belgium</option>
+                    <option value="SE">Sweden</option>
+                    <option value="NO">Norway</option>
+                    <option value="DK">Denmark</option>
+                    <option value="FI">Finland</option>
+                    <option value="CH">Switzerland</option>
+                    <option value="AT">Austria</option>
+                    <option value="PT">Portugal</option>
+                    <option value="GR">Greece</option>
+                    <option value="PL">Poland</option>
+                    <option value="CZ">Czechia</option>
+                    <option value="HU">Hungary</option>
+                    <option value="RO">Romania</option>
+                    <option value="BG">Bulgaria</option>
+                    <option value="HR">Croatia</option>
+                    <option value="TR">Türkiye</option>
+                    <option value="IL">Israel</option>
+                    <option value="AE">United Arab Emirates</option>
+                    <option value="SA">Saudi Arabia</option>
+                    <option value="EG">Egypt</option>
+                    <option value="ZA">South Africa</option>
+                    <option value="KE">Kenya</option>
+                    <option value="NG">Nigeria</option>
+                    <option value="IN">India</option>
+                    <option value="SG">Singapore</option>
+                    <option value="MY">Malaysia</option>
+                    <option value="TH">Thailand</option>
+                    <option value="VN">Vietnam</option>
+                    <option value="PH">Philippines</option>
+                    <option value="ID">Indonesia</option>
+                    <option value="JP">Japan</option>
+                    <option value="KR">Korea, Republic of</option>
+                    <option value="MX">Mexico</option>
+                    <option value="BR">Brazil</option>
+                    <option value="AR">Argentina</option>
+                    <option value="CL">Chile</option>
+                    <option value="CO">Colombia</option>
+                    <option value="PE">Peru</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">State/Province/Region</label>
+                  <input type="text" class="form-control" id="addrState" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Postal / ZIP</label>
+                  <input type="text" class="form-control" id="addrPostal" required>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Name on Card</label>
+                <input type="text" class="form-control" id="cardName" placeholder="John Doe" required>
+              </div>
+            </form>
+          </div>
+
+          <!-- PAYPAL PANE -->
+          <div class="tab-pane fade" id="pane-paypal" role="tabpanel">
+            <div id="paypal-button-container" class="my-2"></div>
+            <div id="paypal-error" class="alert alert-danger d-none mt-3"></div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
-    <!-- Payment Form Section -->
-    <form action="/process_payment" method="POST">
-      <div class="mb-3">
-        <label for="cardName" class="form-label">Name on Card</label>
-        <input type="text" class="form-control" id="cardName" name="cardName" placeholder="John Doe" required>
-      </div>
-
-      <div class="mb-3">
-        <label for="cardNumber" class="form-label">Card Number</label>
-        <input type="text" class="form-control" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" required>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="expiry" class="form-label">Expiry Date</label>
-          <input type="text" class="form-control" id="expiry" name="expiry" placeholder="MM/YY" required>
+    <!-- RIGHT: Order Summary -->
+    <div class="col-lg-4">
+      <div class="bg-white rounded-4 shadow-sm border p-4 position-sticky" style="top:1rem;">
+        <div class="d-flex align-items-center gap-2 text-primary fw-semibold mb-2">
+          <i class="bi bi-airplane"></i> Order Summary
         </div>
-        <div class="col-md-6 mb-3">
-          <label for="cvv" class="form-label">CVV</label>
-          <input type="text" class="form-control" id="cvv" name="cvv" placeholder="123" required>
+        <div class="mb-2">
+          <div class="fw-semibold">{{ flight.origin }} → {{ flight.destination }}</div>
+          <div class="text-muted small">
+            {{ flight.depart_time.strftime('%B %d, %Y') }} · {{ flight.depart_time.strftime('%I:%M %p') }}
+          </div>
+        </div>
+        <hr class="my-3">
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Base Fare</span>
+          <span>${{ '%.2f' % (flight.price_cents/100) }}</span>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <span class="text-muted">Taxes &amp; Fees</span>
+          <span>$0.00</span>
+        </div>
+        <hr class="my-3">
+        <div class="d-flex justify-content-between fs-5 fw-bold">
+          <span>Total</span>
+          <span id="summary-total">${{ '%.2f' % (flight.price_cents/100) }}</span>
+        </div>
+
+        <!-- Back now goes to the SAME flight's booking page (no 404) -->
+        <div class="d-grid mt-3">
+          <button id="confirmPayBtn" class="btn btn-primary">
+            <i class="bi bi-lock-fill me-1"></i>
+            Confirm &amp; Pay {{ '$' + ('%.2f' % (flight.price_cents/100)) }}
+          </button>
+          <a class="btn btn-link mt-2" href="{{ url_for('booking.new_booking', flight_id=flight.id) }}">&larr; Back</a>
         </div>
       </div>
+    </div>
 
-      <div class="d-flex gap-2 mt-4">
-        <button type="submit" class="btn btn-primary w-50">Pay Now</button>
-        <a class="btn btn-outline-secondary w-50" href="/booking">Back</a>
-      </div>
-    </form>
   </div>
+</div>
+
+<!-- Constants -->
+<script>
+  // @ts-nocheck
+  /* eslint-disable */
+    const FLIGHT_ID = {{ flight_id | tojson }};
+    const PAYPAL_CLIENT_ID = {{ paypal_client_id | tojson }};
+    const STRIPE_ENABLED   = {{ (stripe_publishable_key | default('', true) | length > 0) | tojson }};
+    const CURRENCY         = {{ currency_code | tojson }};
+  </script>
+
+<!-- PayPal -->
+<script>
+(function initPayPal(){
+  const errBox = document.getElementById('paypal-error');
+  function showErr(msg){
+    if(!errBox) return;
+    errBox.textContent = msg;
+    errBox.classList.remove('d-none');
+    console.error('[PayPal]', msg);
+  }
+
+  if (!PAYPAL_CLIENT_ID) {
+    showErr('PayPal client ID is not configured. Add PAYPAL_CLIENT_ID to your .env and restart the server.');
+    return;
+  }
+
+  const url = 'https://www.paypal.com/sdk/js?client-id=' +
+              encodeURIComponent(PAYPAL_CLIENT_ID) +
+              '&currency=' + encodeURIComponent(CURRENCY) + '&intent=CAPTURE';
+
+  const s = document.createElement('script');
+  s.src = url;
+  s.async = true;
+  s.onload = function(){
+    if (!(window.paypal && paypal.Buttons)) {
+      showErr('PayPal SDK loaded but did not initialize. Disable script/cookie blockers and reload.');
+      return;
+    }
+    paypal.Buttons({
+      createOrder: function () {
+        const createUrl = "{{ url_for('payments.create_order') }}" + "?flight_id=" + encodeURIComponent(FLIGHT_ID);
+        return fetch(createUrl, { method: "POST" })
+          .then(r => r.ok ? r.json() : r.text().then(t => Promise.reject(t)))
+          .then(d => d.id);
+      },
+      onApprove: function (data) {
+        return fetch("{{ url_for('payments.capture_order') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderID: data.orderID, flight_id: FLIGHT_ID })
+        })
+        .then(r => r.json())
+        .then(res => {
+          if (res.status === "COMPLETED") {
+            window.location.href = "/search?paid=1";
+          } else {
+            showErr('Payment not completed: ' + (res.message || 'Unknown error'));
+          }
+        });
+      }
+    }).render('#paypal-button-container');
+  };
+  s.onerror = function(){
+    showErr('PayPal SDK failed to load. Check network / disable blockers (uBlock, Ghostery, Brave shields, Safari ITP).');
+  };
+  document.head.appendChild(s);
+})();
+</script>
+
+<!-- Stripe Elements + SCA + Billing address -->
+{% if stripe_publishable_key %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  const stripe = Stripe("{{ stripe_publishable_key }}");
+  const elements = stripe.elements();
+  const card = elements.create('card', { hidePostalCode: true });
+  card.mount('#card-element');
+
+  async function submitCard() {
+    const requiredFields = ['cardName', 'addrLine1', 'addrCity', 'addrState', 'addrPostal', 'addrCountry'];
+    const missingFields = requiredFields.filter(id => !document.getElementById(id).value.trim());
+    if (missingFields.length > 0) {
+      alert('Please fill out all required billing address fields.');
+      missingFields.forEach(id => document.getElementById(id).classList.add('is-invalid'));
+      return;
+    }
+
+    const nameVal = document.getElementById('cardName').value.trim();
+    const line1   = document.getElementById('addrLine1').value.trim();
+    const line2   = document.getElementById('addrLine2').value.trim();
+    const city    = document.getElementById('addrCity').value.trim();
+    const state   = document.getElementById('addrState').value.trim();
+    const postal  = document.getElementById('addrPostal').value.trim();
+    const country = document.getElementById('addrCountry').value;
+
+    const pm = await stripe.createPaymentMethod({
+      type: 'card',
+      card: card,
+      billing_details: {
+        name: nameVal,
+        address: { line1, line2: line2 || undefined, city, state, postal_code: postal, country }
+      }
+    });
+    if (pm.error) { alert(pm.error.message); return; }
+
+    const resp = await fetch("{{ url_for('payments.charge_card', flight_id=flight.id) }}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payment_method: pm.paymentMethod.id })
+    });
+    const out = await resp.json();
+
+    if (out.ok) { window.location.href = "/search?paid=1"; return; }
+
+    if (out.requires_action && out.client_secret) {
+      const res = await stripe.confirmCardPayment(out.client_secret);
+      if (res.error) { alert(res.error.message || "Authentication failed"); return; }
+      if (res.paymentIntent && res.paymentIntent.status === "succeeded") {
+        window.location.href = "/search?paid=1"; return;
+      }
+      alert("Payment could not be completed."); return;
+    }
+
+    alert(out.message || "Card charge failed");
+  }
+
+  document.getElementById('confirmPayBtn').addEventListener('click', async () => {
+    const isCardPaneActive =
+      document.getElementById('pane-card').classList.contains('active') ||
+      document.getElementById('tab-card').classList.contains('active');
+
+    if (isCardPaneActive) {
+      await submitCard();
+    } else {
+      const target = document.getElementById('paypal-button-container');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+</script>
+{% else %}
+<script>
+  document.getElementById('confirmPayBtn').addEventListener('click', () => {
+    const isCardTab = document.getElementById('tab-card').classList.contains('active');
+    if (isCardTab) alert('Credit/Debit Card is not configured on this environment.');
+  });
+</script>
+{% endif %}
 {% endblock %}
