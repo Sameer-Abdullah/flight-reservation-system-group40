@@ -1,14 +1,76 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="mx-auto mt-4 p-4 bg-white rounded-4 shadow-sm" style="max-width:720px; border:1px solid #eef2f7;">
-    <h3 class="mb-3">Review your flight</h3>
-    <p class="mb-1"><strong>{{ flight.origin }}</strong> → <strong>{{ flight.destination }}</strong></p>
-    <p class="text-muted mb-3">Departs: {{ flight.depart_time.strftime('%Y-%m-%d %H:%M') }}</p>
-    <p class="fs-5">Price: ${{ '%.2f' % (flight.price_cents/100) }}</p>
+<body class="auth-bg">
+  <div class="auth-wrap">
+    <div class="auth-card" style="max-width: 720px;">
+      <h3 class="mb-3 text-center">Review Your Flight</h3>
 
-    <div class="d-flex gap-2 mt-4">
-      <a class="btn btn-primary" href="{{ url_for('payments.payments_page', flight_id=flight.id) }}">Confirm Booking</a>
-      <a class="btn btn-outline-secondary" href="/search">Back to Search</a>
+      <!-- Flight Summary -->
+      <div class="mb-3 p-3 bg-light rounded-3 border">
+        <p class="mb-1 fs-5">
+          <strong>{{ flight.origin }}</strong> → <strong>{{ flight.destination }}</strong>
+        </p>
+        <p class="text-muted mb-1">Departs: {{ flight.depart_time.strftime('%Y-%m-%d %H:%M') }}</p>
+        <p class="fs-5 mb-0">Price: <strong>${{ '%.2f' % (flight.price_cents/100) }}</strong></p>
+      </div>
+
+      <!-- Passenger Info Form -->
+      <form method="POST" action="{{ url_for('payments.payments_page', flight_id=flight.id) }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="fullname" class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="fullname" name="fullname" placeholder="John Doe" required>
+          </div>
+
+          <div class="col-md-6">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" required>
+          </div>
+
+          <div class="col-md-6">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" id="phone" name="phone" placeholder="+1 555 123 4567" required>
+          </div>
+
+          <div class="col-md-6">
+            <label for="seat" class="form-label">Seat Preference</label>
+            <select class="form-select" id="seat" name="seat">
+              <option value="Window">Window</option>
+              <option value="Aisle">Aisle</option>
+              <option value="Middle">Middle</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label for="class" class="form-label">Class</label>
+            <select class="form-select" id="class" name="class">
+              <option value="Economy">Economy</option>
+              <option value="Business">Business</option>
+              <option value="First">First</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label for="bags" class="form-label">Baggage</label>
+            <select class="form-select" id="bags" name="bags">
+              <option value="1">1 Bag</option>
+              <option value="2">2 Bags</option>
+              <option value="3">3+ Bags</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex gap-2 mt-4">
+          <a class="btn btn-primary" href="{{ url_for('payments.payments_page', flight_id=flight.id) }}">Confirm Booking</a>
+          <a class="btn btn-outline-secondary" href="/search">Back to Search</a>
+        </div>
+      </form>
+
+      <p class="text-center mt-3 legal">
+        Need help? <a href="#">Contact support</a>
+      </p>
     </div>
   </div>
+</body>
 {% endblock %}
