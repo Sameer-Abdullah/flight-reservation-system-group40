@@ -1,5 +1,762 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>Welcome</h1>
-<p>Go to <a href="/auth/login">Login</a> or <a href="/auth/register">Register</a>.</p>
+{% extends "base.html" %} {% block content %}
+<style>
+  /* ===== Base ===== */
+  :root {
+    --ink: #0b2545;
+    --brand: #0ea5e9;
+    --brand-deep: #0369a1;
+    --accent: #ffd60a;
+    --soft: #eef6ff;
+    --card: #ffffff;
+    --muted: #6b7280;
+    --ring: rgba(14, 165, 233, 0.25);
+  }
+  * {
+    scroll-margin-top: 96px;
+  }
+  body.bg-light {
+    background: radial-gradient(
+        1200px 600px at 80% -10%,
+        rgba(255, 255, 255, 0.45),
+        transparent 60%
+      ),
+      linear-gradient(180deg, #dff6ff 0%, #f8fdff 28%, #ffffff 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  /* ===== Floating Navbar===== */
+  nav.navbar {
+    background: rgba(255, 255, 255, 0.12) !important;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    transition: background 0.35s ease, box-shadow 0.35s ease;
+  }
+  nav.navbar.scrolled {
+    background: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 8px 30px rgba(2, 6, 23, 0.06);
+  }
+  .navbar-brand {
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: #003566 !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .navbar-brand i {
+    color: var(--brand);
+    font-size: 1.5rem;
+    animation: takeoff 3s ease-in-out infinite;
+  }
+  @keyframes takeoff {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(-4px) translateX(2px);
+      opacity: 0.95;
+    }
+  }
+
+  /* ===== Hero ===== */
+  .hero {
+    position: relative;
+    color: #fff;
+    padding: 120px 20px 110px;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    background: radial-gradient(
+        900px 420px at 10% -10%,
+        rgba(255, 255, 255, 0.15),
+        transparent 60%
+      ),
+      linear-gradient(135deg, var(--brand-deep) 0%, #0891b2 48%, #38bdf8 100%);
+  }
+  .hero h1 {
+    font-weight: 800;
+    line-height: 1.05;
+  }
+  .hero .lead {
+    color: #e6f6ff;
+  }
+  .plane-icon {
+    font-size: 4rem;
+    color: var(--accent);
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  /* Clouds + contrail */
+  .cloud {
+    position: absolute;
+    width: 120px;
+    opacity: 0.22;
+    animation: drift 55s linear infinite;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.08));
+  }
+  .cloud.c1 {
+    top: 18%;
+    left: -160px;
+    animation-delay: 0s;
+  }
+  .cloud.c2 {
+    top: 46%;
+    left: -320px;
+    animation-delay: 12s;
+  }
+  @keyframes drift {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(130vw);
+    }
+  }
+
+  .contrail {
+    position: absolute;
+    height: 2px;
+    width: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.9) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    top: 72px;
+    left: 10%;
+    animation: trail 6s ease-in-out infinite;
+    opacity: 0.8;
+  }
+  @keyframes trail {
+    0% {
+      width: 0;
+      opacity: 0;
+    }
+    20% {
+      width: 45vw;
+      opacity: 0.9;
+    }
+    60% {
+      width: 45vw;
+      opacity: 0.9;
+    }
+    100% {
+      width: 0;
+      opacity: 0;
+    }
+  }
+
+  .wave {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 80px;
+    pointer-events: none;
+  }
+
+  /* ===== Utility chips & badges ===== */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  /* ===== Stat strip ===== */
+  .stats {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .stat i {
+    font-size: 1.3rem;
+    color: var(--brand-deep);
+  }
+  .stat strong {
+    font-size: 1.05rem;
+  }
+
+  /* ===== Feature cards ===== */
+  .feature-card {
+    border: none;
+    border-radius: 18px;
+    background: var(--card);
+    transition: transform 0.25s ease, box-shadow 0.25s ease,
+      border-color 0.25s ease;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.05);
+    border: 1px solid rgba(2, 6, 23, 0.06);
+  }
+  .feature-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 36px rgba(2, 6, 23, 0.1);
+    border-color: var(--ring);
+  }
+  .feature-card i {
+    font-size: 2.3rem;
+    color: var(--brand);
+    transition: color 0.2s;
+  }
+  .feature-card:hover i {
+    color: var(--brand-deep);
+  }
+
+  /* ===== Destination cards ===== */
+  .destination-card {
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.05);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .destination-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 36px rgba(2, 6, 23, 0.1);
+  }
+  .destination-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+  .price-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(2, 6, 23, 0.75);
+    color: #fff;
+    padding: 0.35rem 0.6rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    backdrop-filter: blur(4px);
+  }
+
+  /* ===== Reviews ===== */
+  .review-card {
+    border: none;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.05);
+    transition: transform 0.25s ease;
+  }
+  .review-card:hover {
+    transform: translateY(-6px);
+  }
+  .review-stars {
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  /* ===== Trust bar ===== */
+  .trust {
+    background: linear-gradient(180deg, var(--soft), #ffffff);
+    border: 1px solid rgba(2, 6, 23, 0.06);
+    border-radius: 16px;
+  }
+  .trust i {
+    color: var(--brand-deep);
+  }
+
+  .cta {
+    background: linear-gradient(135deg, var(--brand-deep) 0%, #0ea5e9 100%);
+    color: #fff;
+    border-radius: 22px;
+    overflow: hidden;
+    position: relative;
+  }
+  .cta::after {
+    content: "";
+    position: absolute;
+    inset: -30% -10% auto -10%;
+    height: 200%;
+    background: radial-gradient(
+      600px 300px at 20% 20%,
+      rgba(255, 255, 255, 0.18),
+      transparent 40%
+    );
+  }
+
+  .cta::after {
+    pointer-events: none;
+  }
+
+  .cta {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .cloud,
+  .contrail,
+  .wave {
+    pointer-events: none;
+  }
+
+  /* ===== Footer ===== */
+  footer {
+    background: #f8fafc;
+    border-top: 1px solid #eaeaea;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .plane-icon,
+    .cloud,
+    .contrail,
+    .feature-card:hover,
+    .destination-card:hover,
+    .review-card:hover {
+      animation: none !important;
+      transform: none !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .destination-img {
+      height: 160px;
+    }
+    .hero {
+      padding: 96px 16px 90px;
+    }
+  }
+</style>
+
+<script>
+  // Navbar scroll effect
+  document.addEventListener("scroll", () => {
+    const nav = document.querySelector("nav.navbar");
+    if (window.scrollY > 50) nav.classList.add("scrolled");
+    else nav.classList.remove("scrolled");
+  });
+</script>
+
+<!-- ===== Hero ===== -->
+<section class="hero container shadow-sm mb-5">
+  <span class="contrail" aria-hidden="true"></span>
+  <img
+    src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cloud_icon.svg"
+    class="cloud c1"
+    alt=""
+  />
+  <img
+    src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cloud_icon.svg"
+    class="cloud c2"
+    alt=""
+  />
+  <svg
+    class="wave"
+    viewBox="0 0 1440 120"
+    preserveAspectRatio="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M0,64L80,58.7C160,53,320,43,480,48C640,53,800,75,960,85.3C1120,96,1280,96,1360,96L1440,96L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
+      fill="rgba(255,255,255,.85)"
+    ></path>
+  </svg>
+
+  <div class="container position-relative" style="z-index: 2">
+    <div class="d-flex justify-content-center mb-3">
+      <span class="chip">
+        <i class="bi bi-shield-check"></i> Secure booking • Best fares • No
+        hassle
+      </span>
+    </div>
+
+    <div class="text-center">
+      <i
+        class="bi bi-airplane-engines-fill plane-icon mb-3"
+        aria-hidden="true"
+      ></i>
+      <h1 class="display-5 mb-3">Fly smarter. Travel farther.</h1>
+      <p class="lead mb-4">
+        Book and manage flights in minutes — clean UX, transparent pricing, and
+        support that actually helps.
+      </p>
+      <div class="d-flex justify-content-center gap-3">
+        <a
+          href="/auth/login"
+          class="btn btn-light btn-lg px-4 fw-semibold shadow-sm"
+        >
+          <i class="bi bi-box-arrow-in-right me-1"></i> Login
+        </a>
+        <a
+          href="/auth/register"
+          class="btn btn-outline-light btn-lg px-4 fw-semibold shadow-sm"
+        >
+          <i class="bi bi-person-plus me-1"></i> Register
+        </a>
+      </div>
+
+      <!-- Stats strip -->
+      <div class="stats mt-4">
+        <div class="row g-3 text-start text-md-center">
+          <div class="col-6 col-md-3">
+            <div class="stat">
+              <i class="bi bi-globe2"></i>
+              <div>
+                <strong>200+</strong>
+                <div class="text-muted small">Destinations</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat">
+              <i class="bi bi-credit-card"></i>
+              <div>
+                <strong>Secure</strong>
+                <div class="text-muted small">PCI-DSS payments</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat">
+              <i class="bi bi-clock-history"></i>
+              <div>
+                <strong>24/7</strong>
+                <div class="text-muted small">Live support</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat">
+              <i class="bi bi-emoji-smile"></i>
+              <div>
+                <strong>4.8/5</strong>
+                <div class="text-muted small">Avg. rating</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Why Us ===== -->
+<section class="container my-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold">Why Fly With Us?</h2>
+    <p class="text-muted">
+      Discover a smarter, safer, and more enjoyable way to travel.
+    </p>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="feature-card p-4 text-center h-100">
+        <i class="bi bi-globe-americas mb-3" aria-hidden="true"></i>
+        <h5 class="fw-semibold mb-2">Global Destinations</h5>
+        <p class="text-muted small mb-0">
+          Fly to 200+ cities with our trusted partners, from weekend getaways to
+          long-haul trips.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card p-4 text-center h-100">
+        <i class="bi bi-shield-lock mb-3" aria-hidden="true"></i>
+        <h5 class="fw-semibold mb-2">Safe & Secure</h5>
+        <p class="text-muted small mb-0">
+          Enterprise-grade encryption and tokenized payments keep your data
+          protected.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card p-4 text-center h-100">
+        <i class="bi bi-headset mb-3" aria-hidden="true"></i>
+        <h5 class="fw-semibold mb-2">24/7 Support</h5>
+        <p class="text-muted small mb-0">
+          Real humans, real help — anytime, anywhere in the world.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Trending Deals ===== -->
+<section class="container my-5">
+  <div class="d-flex align-items-end justify-content-between mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Trending Deals</h2>
+      <p class="text-muted mb-0">
+        Hand-picked fares people are booking right now.
+      </p>
+    </div>
+    <a href="#destinations" class="text-decoration-none fw-semibold"
+      ><i class="bi bi-arrow-right-circle"></i> Explore all</a
+    >
+  </div>
+
+  <div class="row g-4">
+    <!-- Card 1 -->
+    <div class="col-md-4">
+      <div class="destination-card position-relative">
+        <span class="price-badge">From $499 CAD</span>
+        <img
+          src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80"
+          class="destination-img"
+          alt="Paris skyline at dusk"
+        />
+        <div class="p-3">
+          <h6 class="fw-bold mb-1">🇫🇷 Paris, France</h6>
+          <p class="text-muted small mb-2">
+            Direct & 1-stop options • Spring & Summer
+          </p>
+          <div class="d-flex gap-2">
+            <span class="badge text-bg-light border"
+              ><i class="bi bi-wifi"></i> Wi-Fi</span
+            >
+            <span class="badge text-bg-light border"
+              ><i class="bi bi-bag-check"></i> Bags</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Card 2 -->
+    <div class="col-md-4">
+      <div class="destination-card position-relative">
+        <span class="price-badge">From $299 CAD</span>
+        <img
+          src="https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=1600&q=80"
+          class="destination-img"
+          alt="New York skyline"
+        />
+        <div class="p-3">
+          <h6 class="fw-bold mb-1">🇺🇸 New York, USA</h6>
+          <p class="text-muted small mb-2">Multiple flights daily</p>
+          <div class="d-flex gap-2">
+            <span class="badge text-bg-light border"
+              ><i class="bi bi-lightning-charge"></i> Fast-track</span
+            >
+            <span class="badge text-bg-light border"
+              ><i class="bi bi-cup-hot"></i> Meals</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Card 3 -->
+    <div class="col-md-4">
+      <div class="destination-card position-relative">
+        <span class="price-badge">From $199 CAD</span>
+        <img
+          src="https://images.unsplash.com/photo-1569982615761-66697da68502?auto=format&fit=crop&w=1600&q=80"
+          class="destination-img"
+          alt="Toronto skyline at sunset"
+        />
+        <div class="p-3">
+          <h6 class="fw-bold mb-1">🇨🇦 Toronto, Canada</h6>
+          <p class="text-muted small mb-2">Best for quick weekend trips</p>
+          <div class="d-flex gap-2">
+            <span class="badge text-bg-light border"
+              ><i class="bi bi-luggage"></i> Carry-on</span
+            >
+            <span class="badge text-bg-light border"
+              ><i class="bi bi-clock"></i> Flex fares</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Popular Destinations ===== -->
+<section id="destinations" class="container my-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold text-dark">Popular Destinations</h2>
+    <p class="text-muted">Where will your next adventure take you?</p>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-3 col-sm-6">
+      <div class="destination-card shadow-sm">
+        <img
+          src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80"
+          class="destination-img"
+          alt="Paris"
+        />
+        <div class="card-body">
+          <h6 class="fw-bold mb-1">🇫🇷 Paris, France</h6>
+          <p class="text-muted small mb-0">From $499 CAD</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="destination-card shadow-sm">
+        <img
+          src="https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=1200&q=80"
+          class="destination-img"
+          alt="New York"
+        />
+        <div class="card-body">
+          <h6 class="fw-bold mb-1">🇺🇸 New York, USA</h6>
+          <p class="text-muted small mb-0">From $299 CAD</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="destination-card shadow-sm">
+        <img
+          src="https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=1200&q=80"
+          class="destination-img"
+          alt="Tokyo"
+        />
+        <div class="card-body">
+          <h6 class="fw-bold mb-1">🇯🇵 Tokyo, Japan</h6>
+          <p class="text-muted small mb-0">From $699 CAD</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="destination-card shadow-sm">
+        <img
+          src="https://images.unsplash.com/photo-1569982615761-66697da68502?auto=format&fit=crop&w=1200&q=80"
+          class="destination-img"
+          alt="Toronto"
+        />
+        <div class="card-body">
+          <h6 class="fw-bold mb-1">🇨🇦 Toronto, Canada</h6>
+          <p class="text-muted small mb-0">From $199 CAD</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Customer Reviews ===== -->
+<section class="container my-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold text-dark">What Our Travelers Say</h2>
+    <p class="text-muted">Trusted by thousands of happy flyers worldwide.</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="review-card p-4 text-center h-100">
+        <div class="review-stars mb-2" aria-label="5 star rating">★★★★★</div>
+        <p class="text-muted small">
+          “Super easy to book! I found a great deal to Paris and everything went
+          smoothly.”
+        </p>
+        <h6 class="fw-semibold mb-0 mt-3">— George B.</h6>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="review-card p-4 text-center h-100">
+        <div class="review-stars mb-2" aria-label="5 star rating">★★★★★</div>
+        <p class="text-muted small">
+          “Best interface I’ve seen in a long time. Fast, clean, and beautiful!”
+        </p>
+        <h6 class="fw-semibold mb-0 mt-3">— Bisma K.</h6>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="review-card p-4 text-center h-100">
+        <div class="review-stars mb-2" aria-label="4 star rating">★★★★☆</div>
+        <p class="text-muted small">
+          “Great customer service. Helped me fix my booking within minutes.”
+        </p>
+        <h6 class="fw-semibold mb-0 mt-3">— Sameer A.</h6>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container my-5">
+  <div class="trust p-4 p-md-5">
+    <div class="row g-4 align-items-center">
+      <div class="col-md-4">
+        <h5 class="fw-bold mb-2">
+          <i class="bi bi-shield-lock me-2"></i> Payments You Can Trust
+        </h5>
+        <p class="text-muted small mb-0">
+          We use tokenization and bank-level encryption to keep your information
+          safe.
+        </p>
+      </div>
+      <div class="col-md-8">
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+          <span class="badge text-bg-light border"
+            ><i class="bi bi-credit-card"></i> Visa</span
+          >
+          <span class="badge text-bg-light border"
+            ><i class="bi bi-credit-card-2-front"></i> MasterCard</span
+          >
+          <span class="badge text-bg-light border"
+            ><i class="bi bi-credit-card"></i> AmEx</span
+          >
+          <span class="badge text-bg-light border"
+            ><i class="bi bi-shield-lock"></i> 3-D Secure</span
+          >
+          <span class="badge text-bg-light border"
+            ><i class="bi bi-fingerprint"></i> MFA</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container my-5">
+  <div class="cta p-4 p-md-5">
+    <div class="row align-items-center g-4">
+      <div class="col-md-8">
+        <h3 class="fw-bold mb-2">Ready to book your next trip?</h3>
+        <p class="mb-0">
+          Sign in to unlock saved travelers, stored preferences, and faster
+          checkout.
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <a href="/auth/login" class="btn btn-light btn-lg fw-semibold me-2"
+          ><i class="bi bi-box-arrow-in-right me-1"></i> Login</a
+        >
+        <a
+          href="/auth/register"
+          class="btn btn-outline-light btn-lg fw-semibold"
+          ><i class="bi bi-person-plus me-1"></i> Register</a
+        >
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer class="text-center py-4 text-muted small mt-5">
+  <p class="mb-0">
+    &copy; {% set year = 2025 %}{{ year }} Airline Reservation Group 40. All
+    rights reserved.
+  </p>
+</footer>
 {% endblock %}
