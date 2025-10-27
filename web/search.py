@@ -1,38 +1,30 @@
-# web/search.py
-from datetime import datetime
 from flask import Blueprint, render_template, request
+from datetime import datetime
 from .models import Flight
 
 search_bp = Blueprint("search", __name__)
 
-@search_bp.route("/")
-def index():
-    return render_template("index.html")
+@search_bp.route("/search", methods=["GET"])
+def search():
+    q_origin = (request.args.get("origin") or "").upper().strip()
+    q_dest   = (request.args.get("destination") or "").upper().strip()
+    q_depart = request.args.get("depart")
 
-# 👇 add endpoint="search" so url_for('search.search') is valid
-@search_bp.route("/search", methods=["GET"], endpoint="search")
-def search_page():
-    origin = (request.args.get("origin") or "").strip().upper()
-    destination = (request.args.get("destination") or "").strip().upper()
-    depart_str = request.args.get("depart")
-
-    q = Flight.query
-    if origin:
-        q = q.filter(Flight.origin.ilike(f"%{origin}%"))
-    if destination:
-        q = q.filter(Flight.destination.ilike(f"%{destination}%"))
-    if depart_str:
+    query = Flight.query
+    if q_origin:
+        query = query.filter(Flight.origin == q_origin)
+    if q_dest:
+        query = query.filter(Flight.destination == q_dest)
+    if q_depart:
         try:
-            d = datetime.fromisoformat(depart_str)
-            q = q.filter(Flight.depart_time.between(
-                d.replace(hour=0, minute=0, second=0),
-                d.replace(hour=23, minute=59, second=59)
-            ))
+            d = datetime.fromisoformat(q_depart)
+            end = d.replace(hour=23, minute=59, second=59)
+            query = query.filter(Flight.depart_time >= d, Flight.depart_time <= end)
         except Exception:
             pass
 
     flights = None
-    if origin or destination or depart_str:
-        flights = q.order_by(Flight.depart_time.asc()).all()
+    if q_origin or q_dest or q_depart:
+        flights = query.order_by(Flight.depart_time.asc()).all()
 
     return render_template("flight_search.html", flights=flights)

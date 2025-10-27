@@ -1,0 +1,512 @@
+{% extends "base.html" %} {% set body_class = 'bg-light' %} {% block content %}
+
+<style>
+  :root {
+    --ink: #0b2447;
+    --ink-2: #1d3358;
+    --brand: #0ea5e9;
+    --brand-deep: #0b63a3;
+    --accent: #ffc857;
+    --soft: #eaf6ff;
+    --ring: rgba(14, 165, 233, 0.28);
+    --card: #ffffff;
+    --muted: #667085;
+    --success: #12b981;
+    --danger: #ef4444;
+    --border: rgba(2, 6, 23, 0.1);
+    --shadow: 0 10px 28px rgba(2, 6, 23, 0.06);
+    --shadow-lg: 0 14px 40px rgba(2, 6, 23, 0.12);
+  }
+
+  /* small resets so text matches palette */
+  body.bg-light {
+    color: var(--ink);
+  }
+  .text-muted,
+  .muted {
+    color: var(--muted) !important;
+  }
+
+  /* ===== Page header ===== */
+  .acct-head {
+    position: relative;
+    border-radius: 20px;
+    padding: 20px;
+    background: radial-gradient(
+        900px 420px at -10% -40%,
+        rgba(255, 255, 255, 0.4),
+        transparent 60%
+      ),
+      linear-gradient(
+        135deg,
+        var(--brand-deep) 0%,
+        #0f87c4 55%,
+        var(--brand) 100%
+      );
+    color: #fff;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .acct-head::after {
+    content: "";
+    position: absolute;
+    inset: -30% -10% auto -10%;
+    height: 220%;
+    background: radial-gradient(
+      700px 340px at 25% 20%,
+      rgba(255, 255, 255, 0.18),
+      transparent 45%
+    );
+    pointer-events: none;
+  }
+
+  .acct-name {
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: 0.2px;
+  }
+  .acct-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.42rem 0.72rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    font-weight: 700;
+    color: #fff;
+  }
+  .avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    box-shadow: var(--shadow);
+  }
+
+  /* ===== Cards ===== */
+  .card-lite {
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+
+  .card-lite .card-body {
+    padding: 1.75rem 2rem;
+  }
+  .card-lite .card-header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    padding: 1.25rem 2rem;
+  }
+
+  .list-group-item {
+    padding: 1rem 1.5rem;
+  }
+
+  /* ===== Pills===== */
+  .stat-pill {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-radius: 14px;
+    border: 1px solid #dbe4ee;
+    background: linear-gradient(180deg, #f8fbff, #f3f8ff);
+    font-weight: 700;
+  }
+  .stat-pill i {
+    color: #0f87c4;
+  }
+
+  .badge-soft {
+    background: #fff7e1;
+    border: 1px solid #ffe29c;
+    color: #5c4200;
+    font-weight: 700;
+  }
+
+  .list-clean .list-group-item {
+    border: 1px solid var(--border);
+  }
+
+  /* ===== Forms ===== */
+  .form-control,
+  .form-select {
+    border-color: #e6eaf0;
+  }
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 0.24rem var(--ring);
+  }
+
+  /* ===== Buttons ===== */
+  .btn-primary {
+    background: linear-gradient(180deg, #1199d6, var(--brand-deep));
+    border-color: #0f7bb6;
+  }
+  .btn-primary:hover {
+    background: linear-gradient(180deg, #10a8ee, #0f87c4);
+    border-color: #0f87c4;
+  }
+  .btn-outline-primary {
+    color: #0f87c4;
+    border-color: #0f87c4;
+  }
+  .btn-outline-primary:hover {
+    background: #e9f6ff;
+  }
+  .btn-outline-danger {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .btn-outline-danger:hover {
+    background: #fff1f1;
+  }
+  .btn-outline-secondary:hover {
+    background: #f7fafc;
+  }
+
+  /* ===== Utilities ===== */
+  .divider-soft {
+    height: 1px;
+    background: var(--border);
+  }
+  .text-ink-2 {
+    color: var(--ink-2);
+  }
+
+  /* Motion respect */
+  @media (prefers-reduced-motion: reduce) {
+    .acct-head::after {
+      animation: none !important;
+    }
+  }
+</style>
+
+<!-- ===== Header ===== -->
+<section class="acct-head mb-4">
+  <div
+    class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3"
+  >
+    <div class="d-flex align-items-center gap-3">
+      <div class="avatar">
+        {% if user and user.initials %} {{ user.initials }} {% else %}
+        <i class="bi bi-person-fill fs-3"></i>
+        {% endif %}
+      </div>
+      <div>
+        <div class="acct-name h3 m-0">
+          {% if user and user.full_name %} {{ user.full_name }} {% elif
+          current_user.is_authenticated %} {{ current_user.username }} {% else
+          %} Your Account {% endif %}
+        </div>
+        <div class="muted small">
+          {% if user and user.email %}{{ user.email }} • {% endif %} Member
+          since {{ (user.member_since.strftime('%b %Y') if user and
+          user.member_since else '2025') }}
+        </div>
+        <div class="mt-2 d-flex flex-wrap gap-2">
+          <span class="acct-chip"
+            ><i class="bi bi-shield-check"></i> Verified email</span
+          >
+          <span class="acct-chip"
+            ><i class="bi bi-stars"></i> SkyWings Basic</span
+          >
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="#" class="btn btn-light fw-semibold"
+        ><i class="bi bi-pencil me-1"></i> Edit profile</a
+      >
+      <a href="/auth/login" class="btn btn-outline-light fw-semibold"
+        ><i class="bi bi-box-arrow-right me-1"></i> Logout</a
+      >
+    </div>
+  </div>
+
+  <div class="row g-3 mt-3">
+    <div class="col-6 col-md-3">
+      <div class="stat-pill">
+        <i class="bi bi-airplane"></i>
+        <div>
+          <div class="small muted">Trips</div>
+          <div class="text-ink-2">12</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-pill">
+        <i class="bi bi-currency-dollar"></i>
+        <div>
+          <div class="small muted">Saved this year</div>
+          <div class="text-ink-2">$3102</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-pill">
+        <i class="bi bi-bell"></i>
+        <div>
+          <div class="small muted">Price alerts</div>
+          <div class="text-ink-2">0 active</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-pill">
+        <i class="bi bi-patch-check"></i>
+        <div>
+          <div class="small muted">Status</div>
+          <div class="text-ink-2">On time ✈️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Grid ===== -->
+<div class="row g-3">
+  <!-- Main column -->
+  <div class="col-lg-8">
+    <!-- Profile details -->
+    <div class="card-lite mb-4">
+      <div
+        class="card-header d-flex justify-content-between align-items-center"
+      >
+        <h5 class="m-0 fw-bold">
+          <i class="bi bi-person-gear me-2"></i> Profile
+        </h5>
+        <a href="#" class="btn btn-sm btn-outline-primary"
+          ><i class="bi bi-pencil-square me-1"></i> Edit</a
+        >
+      </div>
+      <div class="card-body">
+        <form class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">First name</label>
+            <input
+              type="text"
+              class="form-control"
+              value="{{ (user.first_name if user else '') or '' }}"
+              placeholder="First name"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Last name</label>
+            <input
+              type="text"
+              class="form-control"
+              value="{{ (user.last_name if user else '') or '' }}"
+              placeholder="Last name"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              class="form-control"
+              value="{{ (user.email if user else '') or '' }}"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input
+              type="tel"
+              class="form-control"
+              value="{{ (user.phone if user else '') or '' }}"
+              placeholder="+1 (555) 555-5555"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Date of birth</label>
+            <input
+              type="date"
+              class="form-control"
+              value="{{ (user.dob.strftime('%Y-%m-%d') if user and user.dob else '') }}"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Nationality</label>
+            <select class="form-select">
+              <option selected>Canada</option>
+              <option>United States</option>
+              <option>United Kingdom</option>
+              <option>India</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="col-12 d-flex justify-content-end">
+            <button type="button" class="btn btn-primary fw-semibold">
+              <i class="bi bi-save me-1"></i> Save changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Recent bookings -->
+    <div class="card-lite mb-4">
+      <div
+        class="card-header d-flex justify-content-between align-items-center"
+      >
+        <h5 class="m-0 fw-bold">
+          <i class="bi bi-ticket-perforated me-2"></i> Recent bookings
+        </h5>
+        <a href="/bookings" class="btn btn-sm btn-outline-primary">View all</a>
+      </div>
+      <div class="list-group list-clean list-group-flush">
+        <div
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <div class="fw-semibold">
+              YYZ → LAX <span class="badge badge-soft ms-2">Economy</span>
+            </div>
+            <div class="small text-muted">Departs Apr 12, 2025 • 10:05</div>
+          </div>
+          <a href="#" class="btn btn-sm btn-outline-secondary"
+            ><i class="bi bi-eye me-1"></i> Details</a
+          >
+        </div>
+        <div
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <div class="fw-semibold">
+              JFK → CDG <span class="badge badge-soft ms-2">Business</span>
+            </div>
+            <div class="small text-muted">Departs May 3, 2025 • 19:40</div>
+          </div>
+          <a href="#" class="btn btn-sm btn-outline-secondary"
+            ><i class="bi bi-eye me-1"></i> Details</a
+          >
+        </div>
+        <div
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <div class="fw-semibold">
+              YYZ → YVR <span class="badge badge-soft ms-2">Economy</span>
+            </div>
+            <div class="small text-muted">Departs Jun 1, 2025 • 08:15</div>
+          </div>
+          <a href="#" class="btn btn-sm btn-outline-secondary"
+            ><i class="bi bi-eye me-1"></i> Details</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <!-- Quick actions -->
+    <div class="card-lite mb-4">
+      <div class="card-header">
+        <h6 class="m-0 fw-bold">
+          <i class="bi bi-lightning-charge me-2"></i> Quick actions
+        </h6>
+      </div>
+      <div class="list-group list-group-flush">
+        <a class="list-group-item list-group-item-action" href="/search"
+          ><i class="bi bi-search me-2"></i> Find a flight</a
+        >
+        <a class="list-group-item list-group-item-action" href="#"
+          ><i class="bi bi-bell me-2"></i> Set price alert</a
+        >
+        <a class="list-group-item list-group-item-action" href="#"
+          ><i class="bi bi-people me-2"></i> Add traveler</a
+        >
+        <a class="list-group-item list-group-item-action" href="#"
+          ><i class="bi bi-credit-card me-2"></i> Add payment method</a
+        >
+      </div>
+    </div>
+
+    <!-- Payment methods -->
+    <div class="card-lite mb-4">
+      <div
+        class="card-header d-flex justify-content-between align-items-center"
+      >
+        <h6 class="m-0 fw-bold">
+          <i class="bi bi-wallet2 me-2"></i> Payment methods
+        </h6>
+        <a href="#" class="btn btn-sm btn-outline-primary"
+          ><i class="bi bi-plus-lg"></i
+        ></a>
+      </div>
+      <div class="list-group list-clean list-group-flush">
+        <div
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <div class="fw-semibold">
+              <i class="bi bi-credit-card-2-front me-1"></i> Visa •••• 1234
+            </div>
+            <div class="small text-muted">Exp 08/27 • Default</div>
+          </div>
+          <div class="btn-group">
+            <a href="#" class="btn btn-sm btn-outline-secondary"
+              ><i class="bi bi-pencil"></i
+            ></a>
+            <a href="#" class="btn btn-sm btn-outline-danger"
+              ><i class="bi bi-trash"></i
+            ></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="card-lite">
+      <div class="card-header">
+        <h6 class="m-0 fw-bold">
+          <i class="bi bi-shield-lock me-2"></i> Security
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="mfa" checked />
+          <label class="form-check-label" for="mfa"
+            >Two-factor authentication (recommended)</label
+          >
+        </div>
+        <div class="d-grid gap-2">
+          <a href="#" class="btn btn-outline-secondary"
+            ><i class="bi bi-key me-1"></i> Change password</a
+          >
+          <a href="#" class="btn btn-outline-danger"
+            ><i class="bi bi-trash3 me-1"></i> Delete account</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Max DOB
+  (() => {
+    const dob = document.querySelector('input[type="date"]');
+    if (!dob) return;
+    const t = new Date();
+    const y = t.getFullYear(),
+      m = String(t.getMonth() + 1).padStart(2, "0"),
+      d = String(t.getDate()).padStart(2, "0");
+    dob.max = `${y}-${m}-${d}`;
+  })();
+</script>
+
+{% endblock %}

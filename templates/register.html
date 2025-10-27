@@ -1,57 +1,524 @@
-{% extends "base.html" %}
-{% set body_class = 'auth-bg' %}
-{% block content %}
-  <div class="auth-wrap">
-    <div class="auth-card">
-      <div class="text-center mb-3">
-        <div class="d-inline-flex align-items-center gap-2">
-          <i class="bi bi-airplane-fill text-primary"></i>
-          <h3 class="brand m-0">SkyWings</h3>
-        </div>
-        <div class="text-muted mt-1">Create your account</div>
+{% extends "base.html" %} {% set body_class = 'auth-bg' %} {% block content %}
+<style>
+  :root {
+    --ink: #0b2545;
+    --brand: #0ea5e9;
+    --brand-deep: #0369a1;
+    --accent: #ffd60a;
+    --ring: rgba(14, 165, 233, 0.25);
+    --card: #ffffff;
+  }
+
+  /* ===== SKY BACKGROUND ===== */
+  body.auth-bg {
+    min-height: 100vh;
+    color: var(--ink);
+    overflow-x: hidden;
+    background: radial-gradient(
+        1200px 600px at 85% -10%,
+        rgba(255, 255, 255, 0.45),
+        transparent 60%
+      ),
+      linear-gradient(180deg, #dff6ff 0%, #f8fdff 28%, #ffffff 100%);
+    background-attachment: fixed;
+  }
+
+  .sky-anim {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .sky-anim::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(
+        40% 30% at 20% 15%,
+        rgba(56, 189, 248, 0.35),
+        transparent 55%
+      ),
+      radial-gradient(
+        50% 40% at 80% 0%,
+        rgba(2, 132, 199, 0.25),
+        transparent 60%
+      ),
+      radial-gradient(
+        60% 50% at 40% 100%,
+        rgba(14, 165, 233, 0.25),
+        transparent 60%
+      );
+    filter: blur(20px);
+    animation: skyPulse 18s ease-in-out infinite alternate;
+  }
+  @keyframes skyPulse {
+    0% {
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      transform: translateY(-3%) scale(1.06);
+    }
+  }
+
+  .bokeh {
+    position: absolute;
+    inset: 0;
+    opacity: 0.22;
+    pointer-events: none;
+    background: radial-gradient(
+        60px 60px at 20% 30%,
+        rgba(255, 255, 255, 0.6),
+        transparent 60%
+      ),
+      radial-gradient(
+        40px 40px at 80% 20%,
+        rgba(255, 255, 255, 0.5),
+        transparent 60%
+      ),
+      radial-gradient(
+        50px 50px at 60% 75%,
+        rgba(255, 255, 255, 0.4),
+        transparent 60%
+      );
+    animation: bokehFloat 22s ease-in-out infinite alternate;
+  }
+  @keyframes bokehFloat {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-10px);
+    }
+  }
+
+  /* Clouds */
+  .auth-cloud {
+    position: fixed;
+    width: 180px;
+    opacity: 0.22;
+    z-index: 0;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.08));
+    animation: drift 60s linear infinite;
+  }
+  .auth-cloud.c1 {
+    top: 14%;
+    left: -200px;
+    animation-delay: 0s;
+  }
+  .auth-cloud.c2 {
+    top: 48%;
+    left: -340px;
+    animation-delay: 10s;
+  }
+  @keyframes drift {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(130vw);
+    }
+  }
+
+  /* Runway */
+  .runway {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 38vh;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(
+        180deg,
+        rgba(2, 6, 23, 0) 0%,
+        rgba(2, 6, 23, 0.06) 35%,
+        rgba(2, 6, 23, 0.14) 100%
+      ),
+      repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.08) 0 1px,
+        transparent 1px 24px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.07) 0 1px,
+        transparent 1px 28px
+      );
+    transform-origin: center bottom;
+    transform: perspective(900px) rotateX(55deg);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  .flightpaths {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .plane-dot {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35),
+      0 0 22px rgba(56, 189, 248, 0.8);
+  }
+  .plane-icon {
+    position: absolute;
+    font-size: 50px; 
+    transform: translate(-50%, -50%) rotate(0deg);
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
+  }
+  .contrail {
+    position: absolute;
+    height: 3px;
+    width: 16vw;
+    opacity: 0.85;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.9) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: translate(-50%, -50%) rotate(0deg);
+    filter: blur(0.4px);
+  }
+
+  /* Define 3 curvy paths for more action */
+  .path1 {
+    offset-path: path("M -10,220 C 180,120 360,60 540,170 S 920,360 1200,220");
+  }
+  .path2 {
+    offset-path: path(
+      "M -10,420 C 200,340 420,440 640,360 S 1040,240 1240,360"
+    );
+  }
+  .path3 {
+    offset-path: path("M -10,120 C 250,60 520,130 760,80 S 1160,100 1400,60");
+  }
+
+  .move-slow {
+    animation: fly 24s linear infinite;
+  }
+  .move-mid {
+    animation: fly 19s linear infinite reverse;
+  }
+  .move-fast {
+    animation: fly 15s linear infinite;
+  }
+
+  @keyframes fly {
+    0% {
+      offset-distance: 0%;
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    49% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    50% {
+      transform: translate(-50%, -50%) rotate(180deg);
+    }
+    100% {
+      offset-distance: 100%;
+      transform: translate(-50%, -50%) rotate(180deg);
+    }
+  }
+
+  /*  contrail aligned with plane direction */
+  .trail-rot {
+    animation: turn 24s linear infinite;
+  }
+  @keyframes turn {
+    0% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    49% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    50% {
+      transform: translate(-50%, -50%) rotate(180deg);
+    }
+    100% {
+      transform: translate(-50%, -50%) rotate(180deg);
+    }
+  }
+
+  /* ===== Card + Form ===== */
+  .auth-wrap {
+    position: relative;
+    z-index: 1;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 560px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(2, 6, 23, 0.08);
+    border-radius: 22px;
+    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.12);
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-card::after {
+    content: "";
+    position: absolute;
+    inset: auto -20% -20% -20%;
+    height: 200px;
+    background: radial-gradient(
+      600px 300px at 20% 20%,
+      rgba(14, 165, 233, 0.18),
+      transparent 40%
+    );
+    pointer-events: none;
+  }
+
+  .brand {
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: #003566;
+  }
+  .brand i {
+    color: var(--brand);
+    font-size: 1.4rem;
+    animation: bob 3.5s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #1f2937;
+  }
+  .input-group-text {
+    background: #f8fafc;
+    border-color: #e5e7eb;
+    color: #6b7280;
+  }
+  .form-control {
+    border-color: #e5e7eb;
+  }
+  .form-control:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 0.25rem var(--ring);
+  }
+
+  .btn-auth {
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
+  }
+  .btn-primary.btn-auth {
+    background: linear-gradient(135deg, var(--brand-deep), var(--brand));
+    border: none;
+  }
+  .btn-outline-secondary.btn-auth {
+    border-color: #e5e7eb;
+    background: #fff;
+  }
+  .btn-outline-secondary.btn-auth:hover {
+    border-color: var(--brand);
+    color: var(--brand-deep);
+  }
+
+  .legal {
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+
+  /* Motion accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .auth-cloud,
+    .sky-anim::before,
+    .bokeh,
+    .plane-icon,
+    .plane-dot,
+    .contrail {
+      animation: none !important;
+    }
+    .runway {
+      transform: none;
+    }
+  }
+</style>
+
+<!-- ===== Background stack ===== -->
+<div class="sky-anim" aria-hidden="true">
+  <div class="bokeh"></div>
+</div>
+<img
+  src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cloud_icon.svg"
+  class="auth-cloud c1"
+  alt=""
+  aria-hidden="true"
+/>
+<img
+  src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cloud_icon.svg"
+  class="auth-cloud c2"
+  alt=""
+  aria-hidden="true"
+/>
+<div class="runway" aria-hidden="true"></div>
+
+<!-- planes with contrails -->
+<div class="flightpaths" aria-hidden="true">
+  <!-- Path 1 -->
+  <div class="plane-dot path1 move-slow"></div>
+  <div
+    class="contrail path1 trail-rot move-slow"
+    style="offset-distance: 0%"
+  ></div>
+  <div class="plane-icon path1 move-slow">🛫</div>
+
+  <!-- Path 2 -->
+  <div class="plane-dot path2 move-mid" style="animation-delay: 2s"></div>
+  <div
+    class="contrail path2 trail-rot move-mid"
+    style="animation-delay: 2s"
+  ></div>
+  <div class="plane-icon path2 move-mid" style="animation-delay: 2s">✈️</div>
+
+  <!-- Path 3 -->
+  <div class="plane-dot path3 move-fast" style="animation-delay: 4s"></div>
+  <div
+    class="contrail path3 trail-rot move-fast"
+    style="animation-delay: 4s"
+  ></div>
+  <div class="plane-icon path3 move-fast" style="animation-delay: 4s">🛩️</div>
+</div>
+
+<!-- ===== Auth Card ===== -->
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="text-center mb-3">
+      <div class="d-inline-flex align-items-center gap-2">
+        <i class="bi bi-airplane-fill"></i>
+        <h3 class="brand m-0">SkyWings</h3>
       </div>
-
-      <form method="post" action="/auth/register" autocomplete="off">
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-            <input name="email" type="email" class="form-control" placeholder="Enter your email" required>
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-            <input name="password" type="password" class="form-control" placeholder="Create a password" required>
-          </div>
-        </div>
-
-        <div class="mb-2">
-          <label class="form-label">Confirm Password</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-            <input name="confirm" type="password" class="form-control" placeholder="Re-enter password" required>
-          </div>
-        </div>
-
-        <div class="d-grid mt-3">
-          <button class="btn btn-success btn-auth">Create Account</button>
-        </div>
-      </form>
-
-      <div class="text-center mt-3">
-        <span class="small">Already have an account?</span>
-        <a href="/auth/login" class="small text-decoration-none">Sign In</a>
-      </div>
-
-      <p class="text-center mt-3 mb-0 legal">
-        By signing up, you agree to our <a href="#" class="text-decoration-none">Terms and Conditions</a>
-        and <a href="#" class="text-decoration-none">Privacy Policy</a>.
-      </p>
+      <div class="text-muted mt-1">Create your account</div>
     </div>
+
+    <form method="post" action="/auth/register" autocomplete="on" novalidate>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            class="form-control"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            class="form-control"
+            placeholder="Create a password"
+            required
+            minlength="6"
+          />
+          <span class="input-group-text toggle-pass" id="togglePass"
+            ><i class="bi bi-eye"></i
+          ></span>
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <label for="confirm" class="form-label">Confirm Password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+          <input
+            id="confirm"
+            name="confirm"
+            type="password"
+            class="form-control"
+            placeholder="Re-enter password"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="d-grid mt-3">
+        <button class="btn btn-primary btn-auth" id="signupBtn" type="submit">
+          <span class="me-1" aria-hidden="true">🛫</span> Create Account
+        </button>
+      </div>
+    </form>
+
+    <div class="text-center mt-3">
+      <span class="small">Already have an account?</span>
+      <a href="/auth/login" class="small text-decoration-none">Sign In</a>
+    </div>
+
+    <p class="text-center mt-3 mb-0 legal">
+      By signing up, you agree to our
+      <a href="/legal/terms" class="text-decoration-none">Terms</a> and
+      <a href="/legal/privacy" class="text-decoration-none">Privacy Policy</a>.
+    </p>
   </div>
+</div>
+
+<script>
+
+  document.addEventListener("scroll", () => {
+    const nav = document.querySelector("nav.navbar");
+    if (!nav) return;
+    if (window.scrollY > 50) nav.classList.add("scrolled");
+    else nav.classList.remove("scrolled");
+  });
+
+  // Toggle password
+  (function () {
+    const toggle = document.getElementById("togglePass");
+    const input = document.getElementById("password");
+    if (toggle && input) {
+      toggle.addEventListener("click", () => {
+        const isPw = input.type === "password";
+        input.type = isPw ? "text" : "password";
+        toggle.querySelector("i").className = isPw
+          ? "bi bi-eye-slash"
+          : "bi bi-eye";
+      });
+    }
+  })();
+
+  // Submit loader
+  (function () {
+    const btn = document.getElementById("signupBtn");
+    const form = btn?.closest("form");
+    if (form) {
+      form.addEventListener("submit", () => {
+        btn.disabled = true;
+        btn.innerHTML =
+          '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creating...';
+      });
+    }
+  })();
+</script>
 {% endblock %}
-
-
