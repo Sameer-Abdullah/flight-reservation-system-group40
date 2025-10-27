@@ -1,17 +1,16 @@
 {% extends "base.html" %} {% set body_class = 'bg-light' %} {% block content %}
 
 <style>
-  /* ===== Harmonized palette (accessible contrast) ===== */
   :root {
-    --ink: #0b2447; /* headings / strong */
-    --ink-2: #1d3358; /* sub-head / borders */
-    --brand: #0ea5e9; /* primary accent (sky) */
-    --brand-deep: #0b63a3; /* deep primary for gradients */
-    --accent: #ffc857; /* warm accent (badges/highlights) */
-    --soft: #eaf6ff; /* soft background tint */
+    --ink: #0b2447;
+    --ink-2: #1d3358;
+    --brand: #0ea5e9;
+    --brand-deep: #0b63a3;
+    --accent: #ffc857;
+    --soft: #eaf6ff;
     --ring: rgba(14, 165, 233, 0.28);
     --card: #ffffff;
-    --muted: #667085; /* improved legibility on white */
+    --muted: #667085;
     --success: #12b981;
     --danger: #ef4444;
     --border: rgba(2, 6, 23, 0.1);
@@ -28,7 +27,7 @@
     color: var(--muted) !important;
   }
 
-  /* ===== Page header (gradient hero) ===== */
+  /* ===== Page header ===== */
   .acct-head {
     position: relative;
     border-radius: 20px;
@@ -47,7 +46,7 @@
     color: #fff;
     box-shadow: var(--shadow-lg);
     overflow: hidden;
-    isolation: isolate; /* ensure overlay never covers content clicks */
+    isolation: isolate;
   }
   .acct-head::after {
     content: "";
@@ -92,19 +91,28 @@
 
   /* ===== Cards ===== */
   .card-lite {
-    border: 1px solid var(--border);
-    border-radius: 16px;
+    border: 2px solid var(--border);
+    border-radius: 20px;
     background: var(--card);
     box-shadow: var(--shadow);
+  }
+
+  .card-lite .card-body {
+    padding: 1.75rem 2rem;
   }
   .card-lite .card-header {
     background: var(--card);
     border-bottom: 1px solid var(--border);
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    padding: 1.25rem 2rem;
   }
 
-  /* ===== Pills / badges / list ===== */
+  .list-group-item {
+    padding: 1rem 1.5rem;
+  }
+
+  /* ===== Pills===== */
   .stat-pill {
     display: flex;
     gap: 0.75rem;
@@ -120,7 +128,7 @@
   }
 
   .badge-soft {
-    background: #fff7e1; /* paired to --accent */
+    background: #fff7e1;
     border: 1px solid #ffe29c;
     color: #5c4200;
     font-weight: 700;
@@ -130,7 +138,7 @@
     border: 1px solid var(--border);
   }
 
-  /* ===== Forms / focus states ===== */
+  /* ===== Forms ===== */
   .form-control,
   .form-select {
     border-color: #e6eaf0;
@@ -141,7 +149,7 @@
     box-shadow: 0 0 0 0.24rem var(--ring);
   }
 
-  /* ===== Buttons: subtle polish to match palette ===== */
+  /* ===== Buttons ===== */
   .btn-primary {
     background: linear-gradient(180deg, #1199d6, var(--brand-deep));
     border-color: #0f7bb6;
@@ -221,7 +229,7 @@
       <a href="#" class="btn btn-light fw-semibold"
         ><i class="bi bi-pencil me-1"></i> Edit profile</a
       >
-      <a href="/auth/logout" class="btn btn-outline-light fw-semibold"
+      <a href="/auth/login" class="btn btn-outline-light fw-semibold"
         ><i class="bi bi-box-arrow-right me-1"></i> Logout</a
       >
     </div>
@@ -242,7 +250,7 @@
         <i class="bi bi-currency-dollar"></i>
         <div>
           <div class="small muted">Saved this year</div>
-          <div class="text-ink-2">$312</div>
+          <div class="text-ink-2">$3102</div>
         </div>
       </div>
     </div>
@@ -251,7 +259,7 @@
         <i class="bi bi-bell"></i>
         <div>
           <div class="small muted">Price alerts</div>
-          <div class="text-ink-2">3 active</div>
+          <div class="text-ink-2">0 active</div>
         </div>
       </div>
     </div>
@@ -268,7 +276,7 @@
 </section>
 
 <!-- ===== Grid ===== -->
-<div class="row g-4">
+<div class="row g-3">
   <!-- Main column -->
   <div class="col-lg-8">
     <!-- Profile details -->
@@ -489,7 +497,7 @@
 </div>
 
 <script>
-  // Max DOB = today (small UX polish)
+  // Max DOB
   (() => {
     const dob = document.querySelector('input[type="date"]');
     if (!dob) return;
