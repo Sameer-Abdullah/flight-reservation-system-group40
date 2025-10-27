@@ -8,7 +8,7 @@
       <div class="bg-white rounded-4 shadow-sm border p-4">
         <h4 class="mb-3">Payment Information</h4>
 
-        <!-- Tabs (Apple Pay removed) -->
+        <!-- Tabs -->
         <ul class="nav nav-pills mb-3" id="payTabs" role="tablist" style="gap:.5rem;">
           <li class="nav-item" role="presentation">
             <button class="nav-link active d-flex align-items-center gap-2" id="tab-card" data-bs-toggle="pill" data-bs-target="#pane-card" type="button" role="tab">
@@ -184,7 +184,7 @@
     const CURRENCY         = {{ currency_code | tojson }};
   </script>
 
-<!-- PayPal: dynamic loader & popup (with clearer diagnostics) -->
+<!-- PayPal -->
 <script>
 (function initPayPal(){
   const errBox = document.getElementById('paypal-error');
