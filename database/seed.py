@@ -1,25 +1,149 @@
-from datetime import datetime, timedelta
-import math, hashlib, random
+from datetime import datetime, timedelta, UTC
+import hashlib
+from sqlalchemy import text
 from web import create_app, db
-from web.models import Flight
+from web.models import Flight, AircraftType, Seat
 
 app = create_app()
 
+# ---------- schema guard (no Alembic needed) ----------
+def ensure_schema():
+    # create new tables if missing
+    AircraftType.__table__.create(bind=db.engine, checkfirst=True)
+    Seat.__table__.create(bind=db.engine, checkfirst=True)
+
+    # add aircraft_type_id to flight if missing (SQLite-friendly)
+    cols = db.session.execute(text("PRAGMA table_info('flight')")).fetchall()
+    colnames = {row[1] for row in cols}
+    if "aircraft_type_id" not in colnames:
+        db.session.execute(text("ALTER TABLE flight ADD COLUMN aircraft_type_id INTEGER"))
+        db.session.commit()
+
+
 def cents(n: float) -> int:
-    """CAD dollars -> integer cents."""
     return int(round(n * 100))
 
+
 def stable_noise(key: str, low=-0.03, high=0.03) -> float:
-    """
-    Deterministic tiny noise per flight using a hash.
-    Keeps prices stable across re-seeds for same (route, time).
-    """
     h = hashlib.sha256(key.encode()).hexdigest()
-    rnd = int(h[:8], 16) / 0xFFFFFFFF 
+    rnd = int(h[:8], 16) / 0xFFFFFFFF
     return low + (high - low) * rnd
 
+
+# ---------- aircraft helpers ----------
+def ensure_aircraft_types():
+    presets = [
+        dict(
+            code="A320", name="Airbus A320", total_rows=30, layout="ABC DEF",
+            class_map=[{"from": 1, "to": 4, "class": "Business"},
+                       {"from": 5, "to": 30, "class": "Economy"}],
+        ),
+        dict(
+            code="B747", name="Boeing 747", total_rows=60, layout="ABC DEFG HJK",
+            class_map=[{"from": 1, "to": 4, "class": "First"},
+                       {"from": 5, "to": 18, "class": "Business"},
+                       {"from": 19, "to": 60, "class": "Economy"}],
+        ),
+        dict(
+            code="A380", name="Airbus A380", total_rows=65, layout="ABC DEFG HJK",
+            class_map=[{"from": 1, "to": 5, "class": "First"},
+                       {"from": 6, "to": 20, "class": "Business"},
+                       {"from": 21, "to": 65, "class": "Economy"}],
+        ),
+    ]
+    existing = {a.code: a for a in AircraftType.query.all()}
+    changed = False
+    for p in presets:
+        if p["code"] in existing:
+            a = existing[p["code"]]
+            a.name, a.total_rows, a.layout, a.class_map = (
+                p["name"], p["total_rows"], p["layout"], p["class_map"]
+            )
+            changed = True
+        else:
+            db.session.add(AircraftType(**p))
+            changed = True
+    if changed:
+        db.session.commit()
+
+
+def pick_aircraft_code(price_cents: int) -> str:
+    p = (price_cents or 0) / 100.0
+    if p >= 600:
+        return "A380"   # long-haul
+    if p >= 300:
+        return "B747"   # medium/long
+    return "A320"       # short/medium
+
+
+def letters_from_layout(layout_str: str):
+    letters = []
+    for group in layout_str.split():   # 'ABC DEFG HJK' -> ['A','B','C','D','E','F','G','H','J','K']
+        letters.extend(list(group))
+    return letters
+
+
+def cabin_for_row(row: int, class_map):
+    for block in class_map:
+        if block["from"] <= row <= block["to"]:
+            return block["class"]
+    return "Economy"
+
+
+def attach_aircraft_to_flights_and_seed_seats():
+    # 1) link flights → aircraft types
+    atypes = {a.code: a for a in AircraftType.query.all()}
+    flights = Flight.query.all()
+    touched = 0
+    for f in flights:
+        if f.aircraft_type_id is None:
+            f.aircraft_type_id = atypes[pick_aircraft_code(f.price_cents)].id
+            touched += 1
+    if touched:
+        db.session.commit()
+
+    # 2) generate seats only for flights that don't have any yet
+    atypes_by_id = {a.id: a for a in AircraftType.query.all()}
+    total_new = 0
+
+    for f in flights:
+        if not f.aircraft_type_id:
+            continue
+
+        # ---- idempotency guard: if seats exist for this flight, skip
+        exists = db.session.query(Seat.id).filter_by(flight_id=f.id).limit(1).first()
+        if exists:
+            continue
+        # If you ever want to re-generate instead of skip:
+        # db.session.execute(text("DELETE FROM seats WHERE flight_id = :fid"), {"fid": f.id})
+
+        atype = atypes_by_id[f.aircraft_type_id]
+        letters = letters_from_layout(atype.layout)
+
+        batch = []
+        for r in range(1, atype.total_rows + 1):
+            cab = cabin_for_row(r, atype.class_map)
+            for ch in letters:
+                s = Seat(
+                    flight_id=f.id, row_num=r, seat_letter=ch,
+                    cabin_class=cab, is_blocked=False
+                )
+                if r == 1 and ch in ("E", "F"):  # example crew seats
+                    s.is_blocked = True
+                batch.append(s)
+
+        db.session.bulk_save_objects(batch)
+        db.session.commit()
+        total_new += len(batch)
+
+    print(f"Seeded seats: {total_new}")
+
+
 with app.app_context():
-    now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    # ensure schema BEFORE touching data
+    ensure_schema()
+
+    now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
 
     routes = [
         # Canada <-> USA
@@ -82,32 +206,26 @@ with app.app_context():
     # 21 days out, 5 departures/day per route
     day_offsets = list(range(1, 22))
     time_offsets = [
-        timedelta(hours=6,  minutes=30),  # early AM
-        timedelta(hours=9,  minutes=45),  # mid-morning
-        timedelta(hours=13, minutes=15),  # early afternoon
-        timedelta(hours=18, minutes=30),  # evening
-        timedelta(hours=21, minutes=0),   # late
+        timedelta(hours=6,  minutes=30),
+        timedelta(hours=9,  minutes=45),
+        timedelta(hours=13, minutes=15),
+        timedelta(hours=18, minutes=30),
+        timedelta(hours=21, minutes=0),
     ]
 
-    # Price multipliers by time slot (morning cheaper, evening pricier)
-    slot_mult = {
-        0: -0.06,  # 6:30
-        1: -0.02,  # 9:45
-        2: +0.00,  # 13:15
-        3: +0.07,  # 18:30
-        4: +0.03,  # 21:00
-    }
+    slot_mult = {0: -0.06, 1: -0.02, 2: +0.00, 3: +0.07, 4: +0.03}
 
-    # Weekend bump (Fri/Sat)
     def weekend_bump(dt: datetime) -> float:
+        # dt is timezone-aware; weekday() still works
         return 0.08 if dt.weekday() in (4, 5) else 0.0
 
-    min_dt = now + timedelta(days=min(day_offsets)) + min(time_offsets)
-    max_dt = now + timedelta(days=max(day_offsets)) + max(time_offsets)
+    now_min = now + timedelta(days=min(day_offsets)) + min(time_offsets)
+    now_max = now + timedelta(days=max(day_offsets)) + max(time_offsets)
+
     existing = set(
         (f.origin, f.destination, f.depart_time)
         for f in db.session.query(Flight.origin, Flight.destination, Flight.depart_time)
-        .filter(Flight.depart_time >= min_dt, Flight.depart_time <= max_dt)
+        .filter(Flight.depart_time >= now_min, Flight.depart_time <= now_max)
         .all()
     )
 
@@ -117,21 +235,19 @@ with app.app_context():
             for idx, t_off in enumerate(time_offsets):
                 depart = now + timedelta(days=d) + t_off
                 price = base * (1 + slot_mult[idx] + weekend_bump(depart))
-                noise = stable_noise(f"{origin}-{dest}-{depart.isoformat()}")  # +/- ~3%
-                price = max(60, price * (1 + noise)) 
+                noise = stable_noise(f"{origin}-{dest}-{depart.isoformat()}")
+                price = max(60, price * (1 + noise))
 
                 key = (origin, dest, depart)
                 if key in existing:
                     continue
                 existing.add(key)
-                to_insert.append(
-                    Flight(
-                        origin=origin,
-                        destination=dest,
-                        depart_time=depart,
-                        price_cents=cents(price),
-                    )
-                )
+                to_insert.append(Flight(
+                    origin=origin,
+                    destination=dest,
+                    depart_time=depart,
+                    price_cents=cents(price),
+                ))
 
     if to_insert:
         CHUNK = 1000
@@ -142,7 +258,7 @@ with app.app_context():
     else:
         print("No new flights to seed (all present).")
 
-
+    # Baseline samples if absolutely empty
     if Flight.query.count() == 0:
         samples = [
             Flight(origin="YYZ", destination="JFK", depart_time=now + timedelta(days=1, hours=3), price_cents=cents(220)),
@@ -153,3 +269,7 @@ with app.app_context():
         db.session.add_all(samples)
         db.session.commit()
         print("Added baseline sample flights.")
+
+    # seed aircraft + seats
+    ensure_aircraft_types()
+    attach_aircraft_to_flights_and_seed_seats()
