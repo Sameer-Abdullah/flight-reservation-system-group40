@@ -291,7 +291,6 @@
 
 {% if flights is defined %}
   <div class="container results-wrap my-4">
-    <!-- sticky summary -->
     <div class="summary-bar d-flex align-items-center justify-content-between mb-3">
       <div class="d-flex flex-wrap gap-2">
         {% if request.args.get('origin') %}<span class="tag"><i class="bi bi-geo-alt"></i> {{ request.args.get('origin')|upper }}</span>{% endif %}
@@ -354,9 +353,11 @@
                     <div class="price">${{ '%.2f' % price_num }}</div>
                     <div class="small text-muted">Taxes & fees included</div>
                   </div>
-                  <a class="btn btn-primary book-btn" href="/booking/new?flight_id={{ f.id }}">
-                    <i class="bi bi-ticket-perforated me-1"></i> Book
-                  </a>
+                    <a class="btn btn-primary book-btn" href="/flights/{{ f.id }}/seats">
+                      <i class="bi bi-ticket-perforated me-1"></i> Book
+                    </a>
+
+
                 </div>
               </div>
             </div>

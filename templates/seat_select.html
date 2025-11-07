@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Select Seats</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --ink:#0a1f44; --muted:#64748b; --ring:#bfdbfe; --ok:#0ea5e9;
+    --busy:#94a3b8; --held:#cbd5e1; --blocked:#1e293b;
+    --first:#a855f7; --biz:#06b6d4; --econ:#10b981;
+    --f-bg:#faf5ff; --b-bg:#ecfeff; --e-bg:#f0fdf4;
+    --exit:#ef4444;
+    --metal:#d1d5db; --metal-deep:#9ca3af; --shadow:rgba(10,31,68,.12);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);
+    color:#111; min-height:100svh; display:flex; flex-direction:column;
+    position:relative; overflow-x:hidden;
+  }
+  body::before{
+    content:""; position:fixed; inset:0;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255,255,255,.06) 0%, transparent 50%);
+    animation:float 20s ease-in-out infinite; pointer-events:none;
+  }
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+
+  header{
+    position:sticky; top:0; z-index:10;
+    background:rgba(255,255,255,.95); backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(0,0,0,.06); padding:20px 24px;
+  }
+  header h1{margin:0;font-size:24px;font-weight:700;
+    background:linear-gradient(135deg,#0ea5e9,#06b6d4);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+
+  .wrap{max-width:1100px;margin:30px auto;padding:0 20px;display:flex;flex-direction:column;align-items:center;gap:24px}
+
+  .meta{
+    display:flex; gap:24px; flex-wrap:wrap; align-items:center; color:#1e293b;
+    background:rgba(255,255,255,.95); backdrop-filter:blur(12px);
+    border:1px solid rgba(0,0,0,.08); border-radius:16px; padding:16px 20px; font-size:14px; font-weight:500;
+  }
+  #legend{display:flex; gap:12px; flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(0,0,0,.08);border-radius:999px;padding:6px 12px;font-size:13px;background:rgba(255,255,255,.8)}
+  .sw{width:16px;height:16px;border-radius:4px;border:1.5px solid #e2e8f0}
+  .sw.available{background:#fff}
+  .sw.selected{background:var(--ok);border-color:var(--ok);box-shadow:0 0 0 2px rgba(14,165,233,.2)}
+  .sw.busy{background:var(--busy);border-color:var(--busy)}
+  .sw.held{background:var(--held);border-color:var(--held)}
+  .sw.blocked{background:var(--blocked);border-color:var(--blocked)}
+  .sw.exit{background:var(--exit);border-color:var(--exit)}
+
+  .stage{width:100%;display:flex;justify-content:center;padding:12px 0 30px}
+
+  .plane{
+    position:relative; margin:0 auto;
+    background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);
+    border:4px solid #cbd5e1; border-radius:100px;
+    box-shadow:0 20px 60px rgba(0,0,0,.15),0 10px 30px rgba(0,0,0,.10),
+               inset 0 0 0 3px rgba(255,255,255,.5), inset 0 0 60px rgba(0,0,0,.03);
+    padding:40px 28px; overflow:visible; width:fit-content; min-width:720px;
+  }
+  .plane::before, .plane::after{
+    content:""; position:absolute; left:50%; transform:translateX(-50%);
+    width:65%; height:180px; filter:blur(18px); opacity:.35; pointer-events:none;
+  }
+  .plane::before{ top:-140px; background:radial-gradient(70% 100% at 50% 100%, rgba(0,0,0,.18) 0%, transparent 70%)}
+  .plane::after { bottom:-140px; background:radial-gradient(70% 100% at 50% 0%,   rgba(0,0,0,.18) 0%, transparent 70%)}
+
+  .nose,.tail{
+    position:absolute; left:50%; transform:translateX(-50%);
+    width:45%; height:80px; background:linear-gradient(180deg,#f1f5f9,#e2e8f0);
+    border:3px solid #cbd5e1; z-index:2;
+  }
+  .nose{ top:-42px; border-bottom:0; border-top-left-radius:100px 80px; border-top-right-radius:100px 80px; }
+  .tail{ bottom:-42px; border-top:0; border-bottom-left-radius:100px 80px; border-bottom-right-radius:100px 80px; }
+
+  .wing{
+    position:absolute; top:50%; transform:translateY(-50%);
+    height:140px; width:300px; opacity:.22; pointer-events:none;
+  }
+  .wing.left { left:-240px;  background:conic-gradient(from 180deg at 100% 50%, #475569 0 22deg, transparent 22deg) }
+  .wing.right{ right:-240px; background:conic-gradient(from   0deg at   0% 50%, #475569 0 22deg, transparent 22deg) }
+
+  .windows{
+    position:absolute; left:28px; right:28px; height:12px;
+    display:flex; justify-content:space-between; z-index:3;
+  }
+  .windows.top{ top:28px } .windows.bottom{ bottom:28px }
+  .dot{width:11px;height:11px;border-radius:999px;background:linear-gradient(135deg,#334155,#1e293b);
+       box-shadow:inset 0 0 0 2px #475569, inset 0 -2px 4px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2)}
+
+  .exit-door{
+    position:absolute; left:50%; transform:translateX(-50%);
+    height:14px; width:22px; background:linear-gradient(90deg,#ef4444,#dc2626);
+    border-radius:4px; box-shadow:0 2px 4px rgba(239,68,68,.4), inset 0 1px 0 rgba(255,255,255,.2); z-index:3;
+  }
+
+  #grid{
+    position:relative; display:flex; flex-direction:column; gap:8px; padding:28px 32px;
+    background:
+      radial-gradient(300px 20px at 50% -8px, rgba(6,182,212,.08), transparent 70%),
+      radial-gradient(300px 20px at 50% calc(100% + 8px), rgba(6,182,212,.08), transparent 70%);
+    border-radius:70px;
+  }
+  .row{display:flex; align-items:center; gap:14px; padding:8px 10px}
+  .rownum,.cabin{width:58px; text-align:center; font-weight:700; color:var(--muted); font-size:12px}
+  .group{display:flex; gap:10px; padding:0 12px; border-left:2px dashed rgba(203,213,225,.5); border-right:2px dashed rgba(203,213,225,.5)}
+
+  /* seats */
+  .seat{
+    width:34px;height:40px;border-radius:10px;background:linear-gradient(145deg,#ffffff,#f8fafc);
+    border:2px solid #cbd5e1; cursor:pointer; position:relative; transition:all .15s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 1px 3px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .seat::before{content:"";position:absolute;top:5px;left:6px;right:6px;height:8px;border-radius:5px;background:linear-gradient(180deg,#e2e8f0,#cbd5e1)}
+  .seat::after {content:"";position:absolute;bottom:5px;left:5px;right:5px;height:18px;border-radius:7px;border:1.5px dashed #cbd5e1}
+  .seat:hover:not(:disabled){transform:translateY(-2px) scale(1.05); box-shadow:0 4px 12px rgba(14,165,233,.25),0 0 0 4px rgba(14,165,233,.1); border-color:#0ea5e9}
+  .seat.selected{background:linear-gradient(145deg,#0ea5e9,#0284c7);border-color:#0284c7;transform:scale(1.1);box-shadow:0 4px 12px rgba(14,165,233,.4),0 0 0 4px rgba(14,165,233,.2)}
+  .seat.busy{background:linear-gradient(145deg,#cbd5e1,#94a3b8);border-color:#94a3b8;cursor:not-allowed;opacity:.7}
+  .seat.held{background:linear-gradient(145deg,#e2e8f0,#cbd5e1);border-color:#cbd5e1;cursor:not-allowed;opacity:.8}
+  .seat.blocked{background:linear-gradient(145deg,#334155,#1e293b);border-color:#1e293b;cursor:not-allowed;opacity:.6}
+  .seat.ghost{opacity:0; pointer-events:none}
+
+  /* cabins */
+  .cabinFirst{background:linear-gradient(90deg,rgba(168,85,247,.08),transparent);border-radius:14px}
+  .cabinBusiness{background:linear-gradient(90deg,rgba(6,182,212,.08),transparent);border-radius:12px}
+  .cabinEconomy{background:linear-gradient(90deg,rgba(16,185,129,.08),transparent);border-radius:12px}
+  .badgeFirst{color:var(--first);font-weight:800}
+  .badgeBusiness{color:var(--biz);font-weight:800}
+  .badgeEconomy{color:var(--econ);font-weight:800}
+
+  .cabinFirst .seat{width:46px;height:52px;border-radius:12px}
+  .cabinFirst .group{gap:14px;padding:0 16px}
+  .cabinBusiness .seat{width:40px;height:46px}
+  .cabinBusiness .group{gap:14px;padding:0 16px}
+  .cabinEconomy .seat{width:32px;height:38px}
+  .cabinEconomy .group{gap:8px;padding:0 12px}
+
+  .exitRow{outline:3px solid rgba(239,68,68,.28); outline-offset:-4px; border-radius:10px; position:relative; background:linear-gradient(90deg,rgba(239,68,68,.04),transparent)}
+  .exitRow::after{content:"EXIT ROW"; position:absolute; right:8px; top:-10px; font-size:11px; font-weight:800; color:#dc2626; background:#fff; padding:2px 6px; border-radius:6px; border:2px solid #fca5a5}
+
+  .actions{
+    display:flex; justify-content:space-between; align-items:center; width:100%; max-width:860px; margin-top:10px;
+    background:rgba(255,255,255,.95); backdrop-filter:blur(12px); padding:20px 24px; border-radius:16px;
+  }
+  .total{font-weight:800;font-size:18px;background:linear-gradient(135deg,#0ea5e9,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .btn{background:linear-gradient(135deg,#0ea5e9,#06b6d4); color:#fff; border:0; border-radius:12px; padding:14px 28px; font-weight:700; font-size:15px; cursor:pointer}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .note{color:var(--muted); font-size:13px; margin-top:6px; text-align:right; font-weight:500}
+</style>
+</head>
+<body>
+<header><h1>✈️ Seat Selection</h1></header>
+
+<div class="wrap">
+  <div class="meta">
+    <div>✈️ <strong>Flight:</strong> <span id="flight-label"></span></div>
+    <div>🪑 <strong>Layout:</strong> <span id="layout-label"></span></div>
+    <div id="legend">
+      <span class="pill"><span class="sw available"></span>Available</span>
+      <span class="pill"><span class="sw selected"></span>Selected</span>
+      <span class="pill"><span class="sw busy"></span>Occupied</span>
+      <span class="pill"><span class="sw held"></span>Held</span>
+      <span class="pill"><span class="sw blocked"></span>Blocked</span>
+      <span class="pill"><span class="sw exit"></span>Exit Row</span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="plane" id="plane">
+      <!-- top/bottom caps -->
+      <div class="nose"></div>
+      <div class="tail"></div>
+
+      <!-- wings -->
+      <div class="wing left"></div>
+      <div class="wing right"></div>
+
+      <div class="windows top" id="w-top"></div>
+      <div class="windows bottom" id="w-btm"></div>
+
+      <div class="exit-door" style="top:18%"></div>
+      <div class="exit-door" style="top:82%"></div>
+
+      <!-- seat grid -->
+      <div id="grid" data-flight-id=""></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <div class="total">🎫 Selected: <span id="total">0 seats</span></div>
+    <div>
+      <button id="continue" class="btn" disabled   data-booking-url="{{ url_for('booking.new_booking') }}">Continue to Checkout</button>
+      <div class="note">💳 Seat price shown at checkout</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const path = location.pathname.split('/').filter(Boolean);
+  const flightId = path[path.indexOf('flights') + 1];
+
+  const grid = document.getElementById('grid');
+  const wTop = document.getElementById('w-top');
+  const wBtm = document.getElementById('w-btm');
+  grid.dataset.flightId = flightId;
+
+  const state = {
+    origin:"", destination:"", depart_time:"",
+    layout:"", rows:0, classes:[],
+    occupied:new Set(), held:new Set(), blocked:new Set(),
+    prices:{}, selected:new Set(),
+    exit_rows:[]
+  };
+
+  const totalEl = document.getElementById('total');
+  const continueBtn = document.getElementById('continue');
+
+  const cabinForRow = r => {
+    for(const b of state.classes){ if(r>=b.from && r<=b.to) return b.class; }
+    return "Economy";
+  };
+  const badgeCls  = c => c==="First" ? "badgeFirst" : c==="Business" ? "badgeBusiness" : "badgeEconomy";
+  const cabinWrap = c => c==="First" ? "cabinFirst" : c==="Business" ? "cabinBusiness" : "cabinEconomy";
+
+  function groupsForRow(r){
+    const cabin = cabinForRow(r);
+    if (cabin === "Business") return ["AB","CD"];
+    return state.layout.split(' ');
+  }
+  function isGhostSeat(cabin, ch){
+    return (cabin === "Business" && (ch === "E" || ch === "F"));
+  }
+
+  function buildWindows(count=28){
+    wTop.innerHTML=""; wBtm.innerHTML="";
+    for(let i=0;i<count;i++){
+      const d1=document.createElement('div'); d1.className='dot';
+      const d2=document.createElement('div'); d2.className='dot';
+      wTop.appendChild(d1); wBtm.appendChild(d2);
+    }
+  }
+
+  function inferExitRows(){
+    if(state.exit_rows && state.exit_rows.length) return;
+    let boundary=null;
+    for(const b of state.classes){
+      if(b.class==="Business") boundary=b.to;
+      if(b.class==="Economy" && boundary!==null) break;
+    }
+    const g1 = boundary ? boundary + 1 : Math.max(6, Math.round(state.rows*0.25));
+    const g2 = Math.min(state.rows-2, g1 + 9);
+    state.exit_rows = Array.from(new Set([g1,g2])).filter(n=>n>=2 && n<=state.rows-1);
+  }
+
+  function renderGrid(){
+    grid.innerHTML = '';
+    inferExitRows();
+
+    for(let r=1;r<=state.rows;r++){
+      const cabin = cabinForRow(r);
+      const rowEl = document.createElement('div');
+      rowEl.className = `row ${cabinWrap(cabin)} ${state.exit_rows.includes(r) ? 'exitRow' : ''}`;
+
+      const n = document.createElement('div'); n.className='rownum'; n.textContent = String(r).padStart(2,'0');
+      rowEl.appendChild(n);
+
+      const groups = groupsForRow(r);
+      for(const g of groups){
+        const gEl = document.createElement('div'); gEl.className='group';
+        for(const ch of g){
+          const code = `${r}${ch}`;
+          const btn = document.createElement('button');
+          btn.type='button'; btn.className='seat'; btn.dataset.code=code; btn.title=code;
+
+          if (isGhostSeat(cabin, ch)){
+            btn.classList.add('ghost'); gEl.appendChild(btn); continue;
+          }
+          if(state.blocked.has(code)){ btn.classList.add('blocked'); btn.disabled=true; }
+          else if(state.occupied.has(code)){ btn.classList.add('busy'); btn.disabled=true; }
+          else if(state.held.has(code)){ btn.classList.add('held'); btn.disabled=true; }
+
+          btn.addEventListener('click', ()=>toggleSeat(code, btn));
+          gEl.appendChild(btn);
+        }
+        rowEl.appendChild(gEl);
+      }
+
+      const badge = document.createElement('div');
+      badge.className = `cabin ${badgeCls(cabin)}`;
+      badge.textContent = cabin;
+      rowEl.appendChild(badge);
+
+      grid.appendChild(rowEl);
+    }
+
+    const label = `${state.origin} → ${state.destination} (${new Date(state.depart_time).toLocaleString()})`;
+    document.getElementById('flight-label').textContent = label;
+    document.getElementById('layout-label').textContent = state.layout;
+
+    buildWindows(Math.max(20, Math.min(36, Math.round(state.rows*0.55))));
+  }
+
+  // single selection
+  function toggleSeat(code, btn){
+    for(const c of state.selected){
+      if(c!==code){
+        const el=document.querySelector(`.seat.selected[data-code="${c}"]`);
+        if(el) el.classList.remove('selected');
+      }
+    }
+    state.selected.clear();
+    if(!btn.classList.contains('selected')){
+      state.selected.add(code);
+      btn.classList.add('selected');
+    }else{
+      btn.classList.remove('selected');
+    }
+    updateTotal();
+  }
+
+  function updateTotal(){
+    const count = state.selected.size;
+    totalEl.textContent = `${count} seat${count!==1?'s':''}`;
+    continueBtn.disabled = count === 0;
+  }
+
+  continueBtn.addEventListener('click', ()=>{
+  const seat = Array.from(state.selected)[0] || "";
+  const base = continueBtn.dataset.bookingUrl;  
+  window.location.href = `${base}?flight_id=${encodeURIComponent(flightId)}`;
+});
+
+
+
+  (async function init(){
+    const res = await fetch(`/api/flights/${flightId}/seats`);
+    if(!res.ok){ alert('Failed to load seats'); return; }
+    const data = await res.json();
+    state.origin = data.origin; state.destination = data.destination; state.depart_time = data.depart_time;
+    state.layout = data.layout; state.rows = data.rows; state.classes = data.classes || [];
+    state.prices = data.prices || {};
+    state.occupied = new Set(data.occupied || []);
+    state.held = new Set(data.held || []);
+    state.blocked = new Set(data.blocked || []);
+    state.exit_rows = data.exit_rows || [];
+    renderGrid(); updateTotal();
+  })();
+</script>
+</body>
+</html>
+
+
+

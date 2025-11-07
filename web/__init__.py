@@ -16,7 +16,6 @@ def create_app():
         static_folder="../static",
     )
 
-    # secrets + DB
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.sqlite3")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -45,6 +44,10 @@ def create_app():
 
     from .payments import payments_bp
     app.register_blueprint(payments_bp)
+
+    from .seat_routes import bp as seats_bp
+    app.register_blueprint(seats_bp)
+
 
 
 
