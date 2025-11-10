@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .account-hero {
+    background: linear-gradient(135deg,#0ea5e9,#3b82f6);
+    color: #fff;
+    border-radius: 18px;
+    padding: 22px;
+  }
+  .account-hero .badge {
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    font-weight: 600;
+  }
+  .card-lite {
+    border-radius: 16px;
+    border: 1px solid rgba(2,6,23,.06);
+    box-shadow: 0 10px 24px rgba(2,6,23,.06);
+  }
+  .value {
+    font-weight: 700;
+    color: #0b2545;
+  }
+  .muted {
+    color: #6b7280;
+  }
+  .btn-cta {
+    border-radius: 12px;
+    font-weight: 700;
+  }
+</style>
+
+<div class="container-xxl">
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="account-hero d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-white text-dark rounded-circle d-flex align-items-center justify-content-center" style="width:64px;height:64px;">
+            <i class="bi bi-person-fill fs-2"></i>
+          </div>
+          <div>
+            <h3 class="m-0 fw-bold">Your Account</h3>
+            <div class="d-flex gap-2 mt-2 flex-wrap">
+              <span class="badge rounded-pill"><i class="bi bi-patch-check-fill me-1"></i>Verified email</span>
+              <span class="badge rounded-pill"><i class="bi bi-stars me-1"></i>SkyWings Basic</span>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('booking.my_bookings') }}" class="btn btn-light btn-cta">
+            <i class="bi bi-ticket-perforated me-1"></i> My Bookings
+          </a>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-cta">
+            <i class="bi bi-box-arrow-right me-1"></i> Logout
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card card-lite p-4">
+        <h6 class="mb-3">Profile</h6>
+        <div class="row gy-3">
+          <div class="col-md-6">
+            <div class="muted small">Full name</div>
+            <div class="value">
+              {{ user.full_name or user.name or user.username or '—' }}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="muted small">Email</div>
+            <div class="value">
+              {{ user.email or '—' }}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="muted small">Member since</div>
+            <div class="value">
+              {{ (user.created_at.strftime('%b %d, %Y') if user.created_at else '—') }}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="muted small">Status</div>
+            <div class="value">Active</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card card-lite p-4">
+        <div class="d-grid gap-3">
+          <a class="btn btn-primary btn-cta" href="{{ url_for('booking.my_bookings') }}">
+            <i class="bi bi-ticket-perforated me-1"></i> Go to My Bookings
+          </a>
+          <form action="{{ url_for('search.search') }}" method="get" class="d-flex">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" name="q" placeholder="Search flights" />
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

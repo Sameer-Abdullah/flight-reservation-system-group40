@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% set body_class = 'bg-light' %}
+{% block content %}
+<style>
+  :root{
+    --ink:#0b2545; --brand:#0ea5e9; --brand-deep:#0369a1; --muted:#667085;
+  }
+  .page-head{ border-radius:20px; padding:20px; color:#fff;
+    background:linear-gradient(135deg, var(--brand-deep), var(--brand));
+    box-shadow:0 14px 36px rgba(2,6,23,.12); }
+  .card-lite{ border:1px solid #e6eef6; border-radius:18px; box-shadow:0 10px 28px rgba(2,6,23,.06); }
+  .status-pill{ border-radius:999px; padding:.25rem .6rem; font-weight:700 }
+  .status-upcoming{ background:#ecfeff; border:1px solid #bae6fd; color:#075985 }
+  .status-past{ background:#f0fdf4; border:1px solid #bbf7d0; color:#065f46 }
+  .status-cancel{ background:#fff1f2; border:1px solid #fecdd3; color:#991b1b }
+  .btn-cancel{ border-radius:10px }
+</style>
+
+<section class="page-head mb-4 container">
+  <div class="d-flex justify-content-between align-items-center">
+    <h2 class="m-0 fw-bold">My Bookings</h2>
+    <span class="badge text-bg-light">Manage upcoming & past trips</span>
+  </div>
+</section>
+
+<div class="container">
+  {% if upcoming %}
+  <div class="card card-lite mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="m-0">Upcoming</h5>
+      <span class="status-pill status-upcoming">Confirmed</span>
+    </div>
+    <div class="list-group list-group-flush">
+      {% for b in upcoming %}
+      <div class="list-group-item py-3">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-3 bg-light border px-3 py-2 text-center">
+              <div class="small text-muted">Departs</div>
+              <div class="fw-bold">{{ b.flight.depart_time.strftime('%Y-%m-%d') }}</div>
+              <div class="small">{{ b.flight.depart_time.strftime('%H:%M') }}</div>
+            </div>
+            <div>
+              <div class="fw-bold fs-5">{{ b.flight.origin }} → {{ b.flight.destination }}</div>
+              <div class="text-muted small">{{ b.flight.code if b.flight.code else 'Flight' }} • ${{ '%.2f' % (b.flight.price_cents/100) }}</div>
+            </div>
+          </div>
+          <form method="post" action="{{ url_for('booking.cancel_booking', booking_id=b.id) }}">
+            <button class="btn btn-outline-danger btn-cancel">
+              <i class="bi bi-x-circle me-1"></i> Cancel
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+    <div class="alert alert-info">No upcoming trips yet.</div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card card-lite h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="m-0">Past trips</h5>
+          <span class="status-pill status-past">Completed</span>
+        </div>
+        <div class="list-group list-group-flush">
+          {% if past %}
+            {% for b in past %}
+            <div class="list-group-item">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="fw-semibold">{{ b.flight.origin }} → {{ b.flight.destination }}</div>
+                  <div class="text-muted small">{{ b.flight.depart_time.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                <div class="fw-semibold">${{ '%.2f' % (b.flight.price_cents/100) }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="list-group-item text-muted">No past trips.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card card-lite h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="m-0">Canceled</h5>
+          <span class="status-pill status-cancel">Canceled</span>
+        </div>
+        <div class="list-group list-group-flush">
+          {% if cancelled %}
+            {% for b in cancelled %}
+            <div class="list-group-item">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="fw-semibold">{{ b.flight.origin }} → {{ b.flight.destination }}</div>
+                  <div class="text-muted small">{{ b.flight.depart_time.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                <span class="text-danger fw-semibold">Canceled</span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="list-group-item text-muted">No canceled bookings.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
