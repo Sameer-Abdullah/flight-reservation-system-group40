@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+{% set body_class = 'bg-light' %}
+
+{% block content %}
+<style>
+  :root {
+    --ink: #0b2447;
+    --ink-soft: #1a2c4f;
+    --brand: #0ea5e9;
+    --brand-2: #0b63a3;
+    --mint: #e0f7ff;
+    --soft-bg: #f5f8fc;
+    --border: rgba(11, 36, 71, 0.12);
+    --shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+    --danger: #ef4444;
+    --muted: #6b7a92;
+  }
+
+  .booking-hero {
+    border-radius: 22px;
+    padding: 32px;
+    background: radial-gradient(
+        circle at 10% 20%,
+        rgba(255, 255, 255, 0.35),
+        transparent 45%
+      ),
+      linear-gradient(135deg, var(--brand-2), #118ccf 55%, var(--brand) 100%);
+    color: #fff;
+    box-shadow: var(--shadow);
+  }
+
+  .booking-section {
+    margin-top: 28px;
+    border-radius: 18px;
+    background: #fff;
+    padding: 24px 24px 12px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    border: 1px solid var(--border);
+  }
+  .booking-section + .booking-section {
+    margin-top: 20px;
+  }
+
+  .booking-card {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #fdfefe;
+  }
+  .booking-card + .booking-card {
+    margin-top: 14px;
+  }
+  .booking-route {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .airport-code {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .route-divider {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, var(--brand) 0%, #a5e3ff 100%);
+    position: relative;
+  }
+  .route-divider::after {
+    content: "\f1d7";
+    font-family: "bootstrap-icons";
+    color: var(--brand-2);
+    position: absolute;
+    right: -6px;
+    top: -12px;
+  }
+
+  .booking-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .meta-block {
+    min-width: 140px;
+  }
+  .meta-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.4px;
+  }
+  .meta-value {
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .status-pill.on-time {
+    background: #e3fff3;
+    color: #0f8a4b;
+  }
+  .status-pill.completed {
+    background: #ebfbea;
+    color: #16743b;
+  }
+  .status-pill.canceled {
+    background: #ffecec;
+    color: #b3261e;
+  }
+
+  .empty-state {
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    color: var(--muted);
+    background: var(--soft-bg);
+  }
+
+  .cancellation-alert {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .cancellation-alert.active {
+    display: flex;
+  }
+
+  /* Modal */
+  .cancel-modal .modal-content {
+    border: none;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+  }
+  .cancel-step {
+    display: none;
+  }
+  .cancel-step.active {
+    display: block;
+  }
+  .summary-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    background: var(--soft-bg);
+  }
+  .policy-card {
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: #fff8f8;
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .policy-button {
+    border: none;
+    background: transparent;
+    color: var(--brand-2);
+    font-weight: 600;
+    padding: 4px 0;
+    text-decoration: underline;
+    opacity: 0.75;
+  }
+  .policy-button:hover {
+    opacity: 1;
+  }
+  .btn-cancel-flight {
+    border-radius: 999px;
+  }
+
+  @media (max-width: 768px) {
+    .booking-hero {
+      padding: 24px;
+    }
+    .booking-card {
+      padding: 16px;
+    }
+    .booking-meta {
+      flex-direction: column;
+    }
+    .booking-tabs {
+      width: 100%;
+      flex-direction: column;
+    }
+  }
+</style>
+
+<section class="booking-hero mb-4">
+  <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+    <div>
+      <p class="text-uppercase fw-semibold mb-1 small">Trips</p>
+      <h1 class="h3 fw-bold mb-1">My Bookings</h1>
+      <p class="mb-0 text-white-50">
+        Monitor upcoming flights, review past journeys, and cancel when plans change.
+      </p>
+    </div>
+    <div class="text-lg-end">
+      <a href="{{ url_for('search.search') }}" class="btn btn-light fw-semibold">
+        Book flights
+      </a>
+    </div>
+  </div>
+</section>
+
+<div
+  id="cancellationSuccess"
+  class="alert alert-success cancellation-alert {{ 'active' if show_cancel_banner else '' }}"
+  role="alert"
+>
+  <span class="flex-grow-1">Your flight was canceled.</span>
+  <button type="button" class="btn-close" aria-label="Close"></button>
+</div>
+
+{% macro booking_card(booking, bucket) -%}
+  {% set depart = booking.departure_time.strftime('%b %d, %Y • %I:%M %p') if booking.departure_time else '—' %}
+  {% set arrive = booking.arrival_time.strftime('%b %d, %Y • %I:%M %p') if booking.arrival_time else '—' %}
+  <div
+    class="booking-card"
+    data-booking-card
+    data-status="{{ bucket }}"
+    data-booking-id="{{ booking.id }}"
+    data-booking-ref="{{ booking.booking_reference }}"
+    data-booking-route="{{ booking.origin }} → {{ booking.destination }}"
+    data-booking-airline="{{ booking.airline }}"
+    data-booking-flight="{{ booking.flight_number }}"
+    data-booking-depart="{{ depart }}"
+    data-booking-arrive="{{ arrive }}"
+    data-booking-amount="{{ booking.formatted_total() }}"
+  >
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+      <div class="booking-route">
+        <div class="airport-code">{{ booking.origin }}</div>
+        <div class="route-divider"></div>
+        <div class="airport-code">{{ booking.destination }}</div>
+      </div>
+      <div>
+        {% if bucket == 'upcoming' %}
+          <span class="status-pill on-time">On time</span>
+        {% elif bucket == 'past' %}
+          <span class="status-pill completed">Completed</span>
+        {% else %}
+          <span class="status-pill canceled">Canceled</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="booking-meta">
+      <div class="meta-block">
+        <div class="meta-label">Airline</div>
+        <div class="meta-value">{{ booking.airline }} • {{ booking.flight_number }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Departure</div>
+        <div class="meta-value">{{ depart }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Arrival</div>
+        <div class="meta-value">{{ arrive }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Booking Ref</div>
+        <div class="meta-value">{{ booking.booking_reference }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Ticket</div>
+        <div class="meta-value">{{ booking.ticket_type }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Total paid</div>
+        <div class="meta-value">{{ booking.formatted_total() }}</div>
+      </div>
+    </div>
+
+    {% if bucket == 'upcoming' %}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <small class="text-muted">
+          Free online cancellation up to 2 hours before departure.
+        </small>
+        <button class="btn btn-outline-danger btn-cancel-flight" type="button">
+          Cancel flight
+        </button>
+      </div>
+    {% elif bucket == 'canceled' and booking.cancellation_reason %}
+      <div class="text-muted small">
+        Reason: {{ booking.cancellation_reason }}
+      </div>
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+<section class="booking-section" data-booking-section="upcoming">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="m-0 fw-bold">Upcoming flights</h4>
+    <span class="badge text-bg-info">{{ upcoming|length }} trips</span>
+  </div>
+  <div class="booking-card-grid" data-card-container="upcoming">
+    {% for booking in upcoming %}
+      {{ booking_card(booking, 'upcoming') }}
+    {% endfor %}
+  </div>
+  <div class="empty-state {% if upcoming|length %}d-none{% endif %}" data-empty="upcoming">
+    No upcoming trips yet.
+  </div>
+</section>
+
+<section class="booking-section" data-booking-section="past">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="m-0 fw-bold">Past trips</h4>
+    <span class="badge text-bg-success">{{ past|length }} completed</span>
+  </div>
+  <div class="booking-card-grid" data-card-container="past">
+    {% for booking in past %}
+      {{ booking_card(booking, 'past') }}
+    {% endfor %}
+  </div>
+  <div class="empty-state {% if past|length %}d-none{% endif %}" data-empty="past">
+    No past trips recorded.
+  </div>
+</section>
+
+<section class="booking-section" data-booking-section="canceled">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="m-0 fw-bold">Canceled</h4>
+    <span class="badge text-bg-danger">{{ canceled|length }} canceled</span>
+  </div>
+  <div class="booking-card-grid" data-card-container="canceled">
+    {% for booking in canceled %}
+      {{ booking_card(booking, 'canceled') }}
+    {% endfor %}
+  </div>
+  <div class="empty-state {% if canceled|length %}d-none{% endif %}" data-empty="canceled">
+    No canceled bookings.
+  </div>
+</section>
+
+<!-- Cancel confirmation modal -->
+<div class="modal fade cancel-modal" id="cancelModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <p class="text-uppercase text-muted small mb-1">Manage booking</p>
+          <h5 class="modal-title fw-bold">Cancel flight</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="cancel-step active" data-step="1">
+          <p class="text-muted">
+            Are you sure you want to cancel this flight? You'll see a quick summary below before continuing.
+          </p>
+          <div class="summary-card mb-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+              <div>
+                <div class="text-uppercase small text-muted">Route</div>
+                <div class="fw-bold" id="summaryRoute">—</div>
+                <div class="text-muted" id="summaryAirline">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Departure</div>
+                <div class="fw-semibold" id="summaryDepart">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Arrival</div>
+                <div class="fw-semibold" id="summaryArrive">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Total paid</div>
+                <div class="fw-bold" id="summaryAmount">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Nevermind</button>
+            <button class="btn btn-primary" id="cancelStepNext">Continue</button>
+          </div>
+        </div>
+
+        <div class="cancel-step" data-step="2">
+          <div class="mb-3">
+            <label for="cancelReason" class="form-label">Reason for cancellation <span class="text-muted">(optional)</span></label>
+            <select class="form-select" id="cancelReason">
+              <option value="">Select a reason</option>
+              <option value="Schedule change">Schedule change</option>
+              <option value="Found a better deal">Found a better deal</option>
+              <option value="Health or personal reasons">Health or personal reasons</option>
+              <option value="Weather concerns">Weather concerns</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="mb-3 d-none" id="cancelReasonOtherWrap">
+            <label for="cancelReasonOther" class="form-label">Tell us more</label>
+            <textarea class="form-control" id="cancelReasonOther" rows="2" maxlength="200"></textarea>
+          </div>
+
+          <div class="policy-card mb-3">
+            <div class="d-flex gap-3">
+              <div class="text-danger fs-4">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              </div>
+              <div>
+                <p class="fw-semibold mb-1">Cancellation policy reminder</p>
+                <p class="mb-2 small text-muted">{{ policy_text }}</p>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="cancelAck" />
+                  <label class="form-check-label" for="cancelAck">
+                    I understand and agree to the cancellation terms.
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="policy-button mb-3" type="button">
+            Flight cancellation policy →
+          </button>
+
+          <div class="d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" id="cancelStepBack" type="button">
+              <i class="bi bi-arrow-left"></i> Go back
+            </button>
+            <button class="btn btn-danger" id="confirmCancellation" type="button" disabled>
+              Confirm cancellation
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const successAlert = document.getElementById("cancellationSuccess");
+    const successClose = successAlert?.querySelector(".btn-close");
+    const modalEl = document.getElementById("cancelModal");
+    const cancelStepOne = modalEl?.querySelector('[data-step="1"]');
+    const cancelStepTwo = modalEl?.querySelector('[data-step="2"]');
+    const btnNext = document.getElementById("cancelStepNext");
+    const btnBack = document.getElementById("cancelStepBack");
+    const btnConfirm = document.getElementById("confirmCancellation");
+    const reasonSelect = document.getElementById("cancelReason");
+    const reasonOtherWrap = document.getElementById("cancelReasonOtherWrap");
+    const reasonOtherInput = document.getElementById("cancelReasonOther");
+    const ackCheckbox = document.getElementById("cancelAck");
+    const summaryRoute = document.getElementById("summaryRoute");
+    const summaryAirline = document.getElementById("summaryAirline");
+    const summaryDepart = document.getElementById("summaryDepart");
+    const summaryArrive = document.getElementById("summaryArrive");
+    const summaryAmount = document.getElementById("summaryAmount");
+    const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+    let activeCard = null;
+
+    const refreshEmptyState = (sectionName) => {
+      const section = document.querySelector(`[data-booking-section="${sectionName}"]`);
+      if (!section) return;
+      const cards = section.querySelectorAll("[data-booking-card]");
+      const empty = section.querySelector(`[data-empty="${sectionName}"]`);
+
+      if (!empty) return;
+      if (cards.length === 0) {
+        empty.classList.remove("d-none");
+      } else {
+        empty.classList.add("d-none");
+      }
+    };
+
+    successClose?.addEventListener("click", () => {
+      successAlert?.classList.remove("active");
+    });
+
+    const resetModal = () => {
+      cancelStepOne?.classList.add("active");
+      cancelStepTwo?.classList.remove("active");
+      reasonSelect.value = "";
+      reasonOtherWrap?.classList.add("d-none");
+      reasonOtherInput.value = "";
+      ackCheckbox.checked = false;
+      btnConfirm.disabled = true;
+    };
+
+    const attachHandlers = () => {
+      document.querySelectorAll(".btn-cancel-flight").forEach((btn) => {
+        btn.addEventListener("click", (evt) => {
+          const card = evt.currentTarget.closest("[data-booking-card]");
+          if (!card || !modal) return;
+          activeCard = card;
+          summaryRoute.textContent = card.dataset.bookingRoute || "—";
+          summaryAirline.textContent =
+            `${card.dataset.bookingAirline || ""} • ${card.dataset.bookingFlight || ""}`;
+          summaryDepart.textContent = card.dataset.bookingDepart || "—";
+          summaryArrive.textContent = card.dataset.bookingArrive || "—";
+          summaryAmount.textContent = card.dataset.bookingAmount || "—";
+          resetModal();
+          modal.show();
+        });
+      });
+    };
+
+    attachHandlers();
+
+    btnNext?.addEventListener("click", () => {
+      cancelStepOne?.classList.remove("active");
+      cancelStepTwo?.classList.add("active");
+    });
+
+    btnBack?.addEventListener("click", () => {
+      cancelStepTwo?.classList.remove("active");
+      cancelStepOne?.classList.add("active");
+    });
+
+    reasonSelect?.addEventListener("change", (evt) => {
+      if (evt.target.value === "other") {
+        reasonOtherWrap?.classList.remove("d-none");
+      } else {
+        reasonOtherWrap?.classList.add("d-none");
+        reasonOtherInput.value = "";
+      }
+    });
+
+    ackCheckbox?.addEventListener("change", (evt) => {
+      btnConfirm.disabled = !evt.target.checked;
+    });
+
+    btnConfirm?.addEventListener("click", async () => {
+      if (!activeCard) return;
+      btnConfirm.disabled = true;
+      const bookingId = activeCard.dataset.bookingId;
+      const selectedReason = reasonSelect.value;
+      const reason =
+        selectedReason === "other"
+          ? reasonOtherInput.value.trim()
+          : selectedReason;
+
+      try {
+        const response = await fetch(`/booking/${bookingId}/cancel`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            acknowledged: true,
+            reason,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to cancel booking.");
+        }
+
+        const payload = await response.json();
+        modal?.hide();
+        successAlert?.classList.add("active");
+        const successText = payload?.message || "Your flight was canceled.";
+        if (successAlert) {
+          const span = successAlert.querySelector("span");
+          if (span) span.textContent = successText;
+        }
+        if (activeCard) {
+          activeCard.dataset.status = "canceled";
+          const pill = activeCard.querySelector(".status-pill");
+          if (pill) {
+            pill.classList.remove("on-time");
+            pill.classList.add("canceled");
+            pill.innerHTML = '<i class="bi bi-x-circle"></i> Canceled';
+          }
+          const actionRow = activeCard.querySelector(".btn-cancel-flight")?.parentElement;
+          if (actionRow) {
+            actionRow.remove();
+          }
+        const canceledSectionEl = document.querySelector(`[data-booking-section="canceled"]`);
+          const canceledContainer = canceledSectionEl?.querySelector(
+            "[data-card-container='canceled']"
+          );
+          canceledContainer?.appendChild(activeCard);
+        }
+        refreshEmptyState("upcoming");
+        refreshEmptyState("canceled");
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btnConfirm.disabled = !ackCheckbox.checked;
+      }
+    });
+  })();
+</script>
+
+{% endblock %}

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, UTC
 import hashlib
 from sqlalchemy import text
 from web import create_app, db
-from web.models import Flight, AircraftType, Seat
+from web.models import Flight, AircraftType, Seat, User, Booking, Traveler
 
 app = create_app()
 
@@ -11,12 +11,36 @@ def ensure_schema():
     # create new tables if missing
     AircraftType.__table__.create(bind=db.engine, checkfirst=True)
     Seat.__table__.create(bind=db.engine, checkfirst=True)
+    Booking.__table__.create(bind=db.engine, checkfirst=True)
+    Traveler.__table__.create(bind=db.engine, checkfirst=True)
 
     # add aircraft_type_id to flight if missing (SQLite-friendly)
     cols = db.session.execute(text("PRAGMA table_info('flight')")).fetchall()
     colnames = {row[1] for row in cols}
     if "aircraft_type_id" not in colnames:
         db.session.execute(text("ALTER TABLE flight ADD COLUMN aircraft_type_id INTEGER"))
+        db.session.commit()
+
+    ensure_user_columns()
+
+
+def ensure_user_columns():
+    columns = db.session.execute(text("PRAGMA table_info('user')")).fetchall()
+    existing = {row[1] for row in columns}
+    desired = {
+        "title": "TEXT",
+        "first_name": "TEXT",
+        "last_name": "TEXT",
+        "phone": "TEXT",
+        "dob": "DATE",
+        "nationality": "TEXT",
+    }
+    changed = False
+    for col, ddl in desired.items():
+        if col not in existing:
+            db.session.execute(text(f"ALTER TABLE user ADD COLUMN {col} {ddl}"))
+            changed = True
+    if changed:
         db.session.commit()
 
 
@@ -137,6 +161,134 @@ def attach_aircraft_to_flights_and_seed_seats():
         total_new += len(batch)
 
     print(f"Seeded seats: {total_new}")
+
+
+def ensure_demo_user_with_bookings():
+    """Create a demo traveler plus sample bookings for screenshots/tests."""
+    user = User.query.filter_by(email="demo@skywings.com").first()
+    if not user:
+        user = User(email="demo@skywings.com")
+        user.set_password("flydemo123")
+        user.title = "Mr"
+        user.first_name = "Sky"
+        user.last_name = "Traveler"
+        user.phone = "+1 (555) 123-9876"
+        user.nationality = "Canada"
+        db.session.add(user)
+        db.session.commit()
+
+    base_now = datetime.now(UTC)
+
+    def make_dt(days_offset: int, hour: int, minute: int):
+        dt = base_now + timedelta(days=days_offset)
+        dt = dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        return dt.replace(tzinfo=None)
+
+    samples = [
+        dict(
+            booking_reference="SKY394",
+            airline="SkyWings",
+            flight_number="SW394",
+            origin="YYZ",
+            destination="LAX",
+            depart=make_dt(8, 9, 40),
+            arrive=make_dt(8, 13, 5),
+            ticket_type="Business",
+            status=Booking.STATUS_UPCOMING,
+            total_paid=645.28,
+        ),
+        dict(
+            booking_reference="AC851",
+            airline="Air Canada",
+            flight_number="AC851",
+            origin="YYZ",
+            destination="LHR",
+            depart=make_dt(-28, 18, 15),
+            arrive=make_dt(-28, 23, 35),
+            ticket_type="Premium Economy",
+            status=Booking.STATUS_COMPLETED,
+            total_paid=812.54,
+        ),
+        dict(
+            booking_reference="UA782",
+            airline="United",
+            flight_number="UA782",
+            origin="YYZ",
+            destination="YVR",
+            depart=make_dt(3, 14, 25),
+            arrive=make_dt(3, 17, 58),
+            ticket_type="Economy",
+            status=Booking.STATUS_CANCELED,
+            total_paid=312.17,
+            cancellation_reason="Traveler requested cancellation",
+        ),
+        dict(
+            booking_reference="DL104",
+            airline="Delta",
+            flight_number="DL104",
+            origin="JFK",
+            destination="CDG",
+            depart=make_dt(15, 17, 45),
+            arrive=make_dt(16, 6, 5),
+            ticket_type="Economy",
+            status=Booking.STATUS_UPCOMING,
+            total_paid=540.00,
+        ),
+    ]
+
+    existing = {
+        b.booking_reference: b
+        for b in Booking.query.filter_by(user_id=user.id).all()
+    }
+
+    for sample in samples:
+        ref = sample["booking_reference"]
+        attrs = dict(
+            user_id=user.id,
+            airline=sample["airline"],
+            flight_number=sample["flight_number"],
+            origin=sample["origin"],
+            destination=sample["destination"],
+            departure_time=sample["depart"],
+            arrival_time=sample["arrive"],
+            ticket_type=sample["ticket_type"],
+            booking_reference=ref,
+            status=sample["status"],
+            total_paid_cents=cents(sample["total_paid"]),
+            cancellation_reason=sample.get("cancellation_reason"),
+        )
+        if ref in existing:
+            booking = existing[ref]
+            for key, value in attrs.items():
+                setattr(booking, key, value)
+        else:
+            booking = Booking(**attrs)
+            db.session.add(booking)
+
+        if sample["status"] == Booking.STATUS_CANCELED:
+            booking.canceled_at = datetime.utcnow()
+            booking.cancellation_ack = True
+        else:
+            booking.canceled_at = None
+            booking.cancellation_ack = False
+
+    db.session.commit()
+
+    if Traveler.query.filter_by(user_id=user.id).count() == 0:
+        fam = [
+            dict(title="Ms", full_name="Ava Traveler", relationship="Spouse", gender="Female"),
+            dict(title="Mr", full_name="Owen Traveler", relationship="Child", gender="Male"),
+        ]
+        for entry in fam:
+            traveler = Traveler(
+                user_id=user.id,
+                title=entry["title"],
+                full_name=entry["full_name"],
+                gender=entry["gender"],
+                relationship=entry["relationship"],
+            )
+            db.session.add(traveler)
+        db.session.commit()
 
 
 with app.app_context():
@@ -273,3 +425,4 @@ with app.app_context():
     # seed aircraft + seats
     ensure_aircraft_types()
     attach_aircraft_to_flights_and_seed_seats()
+    ensure_demo_user_with_bookings()

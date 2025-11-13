@@ -27,6 +27,17 @@
     color: var(--muted) !important;
   }
 
+  .profile-field-label {
+    font-size: 0.78rem;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .profile-field-value {
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
   /* ===== Page header ===== */
   .acct-head {
     position: relative;
@@ -92,9 +103,10 @@
   /* ===== Cards ===== */
   .card-lite {
     border: 2px solid var(--border);
-    border-radius: 20px;
+    border-radius: 24px;
     background: var(--card);
     box-shadow: var(--shadow);
+    overflow: hidden;
   }
 
   .card-lite .card-body {
@@ -103,13 +115,30 @@
   .card-lite .card-header {
     background: var(--card);
     border-bottom: 1px solid var(--border);
-    border-top-left-radius: 18px;
-    border-top-right-radius: 18px;
     padding: 1.25rem 2rem;
   }
 
   .list-group-item {
     padding: 1rem 1.5rem;
+  }
+  .cta-card .btn {
+    border-radius: 999px;
+  }
+  .search-pill {
+    border-radius: 999px;
+    border: 2px solid var(--border);
+    padding: 0.1rem 0.5rem;
+    background: #fff;
+    box-shadow: inset 0 1px 2px rgba(2, 6, 23, 0.04);
+  }
+  .search-pill .input-group-text,
+  .search-pill .form-control {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+  .search-pill .form-control:focus {
+    box-shadow: none;
   }
 
   /* ===== Pills===== */
@@ -200,20 +229,18 @@
   >
     <div class="d-flex align-items-center gap-3">
       <div class="avatar">
-        {% if user and user.initials %} {{ user.initials }} {% else %}
+        {% if current_user.is_authenticated %}
+        {{ current_user.initials }}
+        {% else %}
         <i class="bi bi-person-fill fs-3"></i>
         {% endif %}
       </div>
       <div>
-        <div class="acct-name h3 m-0">
-          {% if user and user.full_name %} {{ user.full_name }} {% elif
-          current_user.is_authenticated %} {{ current_user.username }} {% else
-          %} Your Account {% endif %}
+        <div class="acct-name h3 m-0" id="accountDisplayName">
+          {{ current_user.display_name if current_user.is_authenticated else "Your Account" }}
         </div>
         <div class="muted small">
-          {% if user and user.email %}{{ user.email }} • {% endif %} Member
-          since {{ (user.member_since.strftime('%b %Y') if user and
-          user.member_since else '2025') }}
+          {{ current_user.email or 'you@example.com' }} • Member since 2025
         </div>
         <div class="mt-2 d-flex flex-wrap gap-2">
           <span class="acct-chip"
@@ -225,11 +252,15 @@
         </div>
       </div>
     </div>
-    <div class="d-flex gap-2">
-      <a href="#" class="btn btn-light fw-semibold"
-        ><i class="bi bi-pencil me-1"></i> Edit profile</a
+    <div class="d-flex flex-wrap gap-2">
+      <a
+        href="{{ url_for('booking.my_bookings') }}"
+        class="btn btn-light fw-semibold"
+        ><i class="bi bi-ticket-perforated me-1"></i> My Bookings</a
       >
-      <a href="/auth/login" class="btn btn-outline-light fw-semibold"
+      <a
+        href="{{ url_for('auth.logout') }}"
+        class="btn btn-outline-light fw-semibold"
         ><i class="bi bi-box-arrow-right me-1"></i> Logout</a
       >
     </div>
@@ -265,10 +296,9 @@
     </div>
     <div class="col-6 col-md-3">
       <div class="stat-pill">
-        <i class="bi bi-patch-check"></i>
         <div>
           <div class="small muted">Status</div>
-          <div class="text-ink-2">On time ✈️</div>
+          <div class="text-ink-2">On time</div>
         </div>
       </div>
     </div>
@@ -287,27 +317,89 @@
         <h5 class="m-0 fw-bold">
           <i class="bi bi-person-gear me-2"></i> Profile
         </h5>
-        <a href="#" class="btn btn-sm btn-outline-primary"
-          ><i class="bi bi-pencil-square me-1"></i> Edit</a
-        >
+        <button type="button" class="btn btn-sm btn-outline-primary" id="profileEditBtn">
+          <i class="bi bi-pencil-square me-1"></i> Edit
+        </button>
       </div>
       <div class="card-body">
-        <form class="row g-3">
-          <div class="col-md-6">
+        <div id="profileView">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="profile-field-label">Title</div>
+              <div class="profile-field-value" data-profile-field="title">
+                {{ current_user.title or '—' }}
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="profile-field-label">First name</div>
+              <div class="profile-field-value" data-profile-field="first_name">
+                {{ current_user.first_name or '—' }}
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="profile-field-label">Last name</div>
+              <div class="profile-field-value" data-profile-field="last_name">
+                {{ current_user.last_name or '—' }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="profile-field-label">Email</div>
+              <div class="profile-field-value" data-profile-field="email">
+                {{ current_user.email or '—' }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="profile-field-label">Phone</div>
+              <div class="profile-field-value" data-profile-field="phone">
+                {{ current_user.phone or '—' }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="profile-field-label">Date of birth</div>
+              <div class="profile-field-value" data-profile-field="dob">
+                {{ current_user.dob.strftime('%b %d, %Y') if current_user.dob else '—' }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="profile-field-label">Nationality</div>
+              <div class="profile-field-value" data-profile-field="nationality">
+                {{ current_user.nationality or 'Canada' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="profileFormWrap" class="d-none">
+          <form class="row g-3" id="profileForm">
+            <div class="col-md-4">
+              <label class="form-label">Title</label>
+              <select class="form-select" name="title" id="profileTitle">
+                {% set current_title = current_user.title or '' %}
+                {% for option in ['Mr','Ms','Mrs','Mx','Dr','Prof','Capt'] %}
+              <option value="{{ option }}" {% if current_title == option %}selected{% endif %}>
+                {{ option }}
+              </option>
+              {% endfor %}
+              <option value="" {% if not current_title %}selected{% endif %}>Prefer not to say</option>
+            </select>
+          </div>
+          <div class="col-md-4">
             <label class="form-label">First name</label>
             <input
               type="text"
               class="form-control"
-              value="{{ (user.first_name if user else '') or '' }}"
+              name="first_name"
+              value="{{ current_user.first_name or '' }}"
               placeholder="First name"
             />
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label">Last name</label>
             <input
               type="text"
               class="form-control"
-              value="{{ (user.last_name if user else '') or '' }}"
+              name="last_name"
+              value="{{ current_user.last_name or '' }}"
               placeholder="Last name"
             />
           </div>
@@ -316,7 +408,8 @@
             <input
               type="email"
               class="form-control"
-              value="{{ (user.email if user else '') or '' }}"
+              name="email"
+              value="{{ current_user.email or '' }}"
               placeholder="you@example.com"
             />
           </div>
@@ -325,7 +418,8 @@
             <input
               type="tel"
               class="form-control"
-              value="{{ (user.phone if user else '') or '' }}"
+              name="phone"
+              value="{{ current_user.phone or '' }}"
               placeholder="+1 (555) 555-5555"
             />
           </div>
@@ -334,25 +428,33 @@
             <input
               type="date"
               class="form-control"
-              value="{{ (user.dob.strftime('%Y-%m-%d') if user and user.dob else '') }}"
+              name="dob"
+              value="{{ current_user.dob.strftime('%Y-%m-%d') if current_user.dob else '' }}"
             />
           </div>
           <div class="col-md-6">
             <label class="form-label">Nationality</label>
-            <select class="form-select">
-              <option selected>Canada</option>
-              <option>United States</option>
-              <option>United Kingdom</option>
-              <option>India</option>
-              <option>Other</option>
+            <select class="form-select" name="nationality">
+              {% set nationalities = ['Canada','United States','United Kingdom','India','France','Germany','Australia','Other'] %}
+              {% set selected_nat = current_user.nationality or 'Canada' %}
+              {% for country in nationalities %}
+              <option value="{{ country }}" {% if selected_nat == country %}selected{% endif %}>{{ country }}</option>
+              {% endfor %}
             </select>
           </div>
-          <div class="col-12 d-flex justify-content-end">
-            <button type="button" class="btn btn-primary fw-semibold">
+          <div class="col-12 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" id="profileCancelBtn">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary fw-semibold">
               <i class="bi bi-save me-1"></i> Save changes
             </button>
           </div>
         </form>
+        </div>
+        <div class="alert alert-success mt-3 d-none" id="profileSavedAlert">
+          Profile saved.
+        </div>
       </div>
     </div>
 
@@ -364,54 +466,64 @@
         <h5 class="m-0 fw-bold">
           <i class="bi bi-ticket-perforated me-2"></i> Recent bookings
         </h5>
-        <a href="/bookings" class="btn btn-sm btn-outline-primary">View all</a>
       </div>
       <div class="list-group list-clean list-group-flush">
+        {% if recent_bookings %}
+        {% for booking in recent_bookings %}
         <div
           class="list-group-item d-flex justify-content-between align-items-center"
         >
           <div>
             <div class="fw-semibold">
-              YYZ → LAX <span class="badge badge-soft ms-2">Economy</span>
+              {{ booking.origin }} → {{ booking.destination }}
+              <span class="badge badge-soft ms-2">{{ booking.ticket_type }}</span>
             </div>
-            <div class="small text-muted">Departs Apr 12, 2025 • 10:05</div>
-          </div>
-          <a href="#" class="btn btn-sm btn-outline-secondary"
-            ><i class="bi bi-eye me-1"></i> Details</a
-          >
-        </div>
-        <div
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          <div>
-            <div class="fw-semibold">
-              JFK → CDG <span class="badge badge-soft ms-2">Business</span>
+            <div class="small text-muted">
+              Departs {{ booking.departure_time.strftime('%b %d, %Y • %H:%M') if booking.departure_time else '—' }}
             </div>
-            <div class="small text-muted">Departs May 3, 2025 • 19:40</div>
           </div>
-          <a href="#" class="btn btn-sm btn-outline-secondary"
-            ><i class="bi bi-eye me-1"></i> Details</a
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            data-flight-detail="true"
+            data-airline="{{ booking.airline }}"
+            data-flight="{{ booking.flight_number }}"
+            data-route="{{ booking.origin }} → {{ booking.destination }}"
+            data-depart="{{ booking.departure_time.strftime('%b %d, %Y • %I:%M %p') if booking.departure_time else '—' }}"
+            data-arrive="{{ booking.arrival_time.strftime('%b %d, %Y • %I:%M %p') if booking.arrival_time else '—' }}"
+            data-ticket="{{ booking.ticket_type }}"
+            data-ref="{{ booking.booking_reference }}"
           >
+            View detail
+          </button>
         </div>
-        <div
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          <div>
-            <div class="fw-semibold">
-              YYZ → YVR <span class="badge badge-soft ms-2">Economy</span>
-            </div>
-            <div class="small text-muted">Departs Jun 1, 2025 • 08:15</div>
-          </div>
-          <a href="#" class="btn btn-sm btn-outline-secondary"
-            ><i class="bi bi-eye me-1"></i> Details</a
-          >
+        {% endfor %}
+        {% else %}
+        <div class="list-group-item text-center text-muted">
+          No recent bookings yet.
         </div>
+        {% endif %}
       </div>
     </div>
   </div>
 
   <!-- Sidebar -->
   <div class="col-lg-4">
+    <div class="card-lite mb-4 cta-card">
+      <div class="card-body">
+        <p class="text-uppercase text-muted small mb-1">Trips</p>
+        <h5 class="fw-bold mb-2">Go to My Bookings</h5>
+        <p class="text-muted mb-3">
+          Jump back into your itinerary to manage upcoming and past flights.
+        </p>
+        <a
+          href="{{ url_for('booking.my_bookings') }}"
+          class="btn btn-primary w-100 mb-3 fw-semibold"
+        >
+          <i class="bi bi-ticket-perforated me-1"></i> Go to My Bookings
+        </a>
+      </div>
+    </div>
+
     <!-- Quick actions -->
     <div class="card-lite mb-4">
       <div class="card-header">
@@ -420,79 +532,141 @@
         </h6>
       </div>
       <div class="list-group list-group-flush">
-        <a class="list-group-item list-group-item-action" href="/search"
+        <a
+          class="list-group-item list-group-item-action"
+          href="{{ url_for('search.search') }}"
           ><i class="bi bi-search me-2"></i> Find a flight</a
         >
-        <a class="list-group-item list-group-item-action" href="#"
-          ><i class="bi bi-bell me-2"></i> Set price alert</a
+        <button
+          class="list-group-item list-group-item-action text-start"
+          type="button"
+          id="addTravelerShortcut"
         >
-        <a class="list-group-item list-group-item-action" href="#"
-          ><i class="bi bi-people me-2"></i> Add traveler</a
-        >
-        <a class="list-group-item list-group-item-action" href="#"
-          ><i class="bi bi-credit-card me-2"></i> Add payment method</a
-        >
+          <i class="bi bi-people me-2"></i> Add traveler
+        </button>
       </div>
     </div>
 
-    <!-- Payment methods -->
-    <div class="card-lite mb-4">
+    <!-- Travelers -->
+    <div class="card-lite">
       <div
         class="card-header d-flex justify-content-between align-items-center"
       >
         <h6 class="m-0 fw-bold">
-          <i class="bi bi-wallet2 me-2"></i> Payment methods
+          <i class="bi bi-people me-2"></i> Travelers
         </h6>
-        <a href="#" class="btn btn-sm btn-outline-primary"
-          ><i class="bi bi-plus-lg"></i
-        ></a>
-      </div>
-      <div class="list-group list-clean list-group-flush">
-        <div
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          <div>
-            <div class="fw-semibold">
-              <i class="bi bi-credit-card-2-front me-1"></i> Visa •••• 1234
-            </div>
-            <div class="small text-muted">Exp 08/27 • Default</div>
-          </div>
-          <div class="btn-group">
-            <a href="#" class="btn btn-sm btn-outline-secondary"
-              ><i class="bi bi-pencil"></i
-            ></a>
-            <a href="#" class="btn btn-sm btn-outline-danger"
-              ><i class="bi bi-trash"></i
-            ></a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Security -->
-    <div class="card-lite">
-      <div class="card-header">
-        <h6 class="m-0 fw-bold">
-          <i class="bi bi-shield-lock me-2"></i> Security
-        </h6>
+        <button class="btn btn-sm btn-outline-primary" type="button" id="addTravelerButton">
+          Add traveler
+        </button>
       </div>
       <div class="card-body">
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" id="mfa" checked />
-          <label class="form-check-label" for="mfa"
-            >Two-factor authentication (recommended)</label
-          >
-        </div>
-        <div class="d-grid gap-2">
-          <a href="#" class="btn btn-outline-secondary"
-            ><i class="bi bi-key me-1"></i> Change password</a
-          >
-          <a href="#" class="btn btn-outline-danger"
-            ><i class="bi bi-trash3 me-1"></i> Delete account</a
-          >
+        <div class="row g-3" id="travelerCards"></div>
+        <div class="text-muted small" id="noTravelersNotice">No travelers added yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Flight detail modal -->
+<div class="modal fade" id="flightDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Flight summary</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted text-uppercase small mb-1">Route</p>
+        <h5 id="detailRoute">—</h5>
+        <div class="row g-3 mt-2">
+          <div class="col-md-6">
+            <div class="small text-muted">Airline • Flight</div>
+            <div id="detailAirline" class="fw-semibold">—</div>
+          </div>
+          <div class="col-md-6">
+            <div class="small text-muted">Ticket</div>
+            <div id="detailTicket" class="fw-semibold">—</div>
+          </div>
+          <div class="col-md-6">
+            <div class="small text-muted">Departure</div>
+            <div id="detailDepart" class="fw-semibold">—</div>
+          </div>
+          <div class="col-md-6">
+            <div class="small text-muted">Arrival</div>
+            <div id="detailArrive" class="fw-semibold">—</div>
+          </div>
+          <div class="col-12">
+            <div class="small text-muted">Booking reference</div>
+            <div id="detailRef" class="fw-semibold">—</div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Traveler modal -->
+<div class="modal fade" id="travelerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="travelerForm">
+      <div class="modal-header">
+        <h5 class="modal-title">Add traveler</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Title</label>
+            <select class="form-select" name="title">
+              <option value="">—</option>
+              <option>Mr</option>
+              <option>Ms</option>
+              <option>Mrs</option>
+              <option>Mx</option>
+              <option>Dr</option>
+            </select>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label">Full name</label>
+            <input type="text" class="form-control" name="full_name" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Date of birth</label>
+            <input type="date" class="form-control" name="dob" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Gender</label>
+            <select class="form-select" name="gender">
+              <option value="">Prefer not to say</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Non-binary</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Contact info</label>
+            <input type="text" class="form-control" name="contact_info" placeholder="+1 (555) 555-5555" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Relationship</label>
+            <select class="form-select" name="relationship">
+              <option value="">Select</option>
+              <option>Spouse</option>
+              <option>Child</option>
+              <option>Parent</option>
+              <option>Sibling</option>
+              <option>Friend</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="text-danger small mt-3 d-none" id="travelerError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save traveler</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -507,6 +681,196 @@
       d = String(t.getDate()).padStart(2, "0");
     dob.max = `${y}-${m}-${d}`;
   })();
+
+  window.addEventListener("load", () => {
+    const profileForm = document.getElementById("profileForm");
+    const displayName = document.getElementById("accountDisplayName");
+    const bootstrapLib = window.bootstrap || null;
+    const travelerModalEl = document.getElementById("travelerModal");
+    const travelerModal =
+      travelerModalEl && bootstrapLib ? new bootstrapLib.Modal(travelerModalEl) : null;
+    const profileView = document.getElementById("profileView");
+    const profileFormWrap = document.getElementById("profileFormWrap");
+    const profileEditBtn = document.getElementById("profileEditBtn");
+    const profileCancelBtn = document.getElementById("profileCancelBtn");
+    const profileSavedAlert = document.getElementById("profileSavedAlert");
+    const travelerForm = document.getElementById("travelerForm");
+    const travelerCards = document.getElementById("travelerCards");
+    const travelerNotice = document.getElementById("noTravelersNotice");
+    const travelerError = document.getElementById("travelerError");
+    const travelerSeedHolder = document.getElementById("travelerData");
+    let travelerSeed = [];
+    if (travelerSeedHolder) {
+      try {
+        travelerSeed = JSON.parse(travelerSeedHolder.textContent || "[]");
+      } catch (err) {
+        travelerSeed = [];
+      }
+    }
+    const detailModalEl = document.getElementById("flightDetailModal");
+    const detailModal =
+      detailModalEl && bootstrapLib ? new bootstrapLib.Modal(detailModalEl) : null;
+
+    const renderTravelers = (list) => {
+      if (!travelerCards) return;
+      travelerCards.innerHTML = "";
+      if (!list.length) {
+        travelerNotice?.classList.remove("d-none");
+        return;
+      }
+      travelerNotice?.classList.add("d-none");
+      list.forEach((traveler) => {
+        const col = document.createElement("div");
+        col.className = "col-12 col-md-6";
+        col.innerHTML = `
+          <div class="p-3 border rounded-4 h-100">
+            <div class="fw-bold mb-1">${traveler.title ? traveler.title + " " : ""}${traveler.full_name}</div>
+            <div class="text-muted small mb-1">${traveler.relationship || "Traveler"}</div>
+            <div class="small">
+              ${traveler.gender || ""} ${traveler.dob ? "• DOB: " + traveler.dob : ""}<br/>
+              ${traveler.contact_info || ""}
+            </div>
+          </div>
+        `;
+        travelerCards.appendChild(col);
+      });
+    };
+
+    let travelers = travelerSeed || [];
+    renderTravelers(travelers);
+
+    const toggleProfileEdit = (editing) => {
+      if (!profileFormWrap || !profileView) return;
+      if (editing) {
+        profileFormWrap.classList.remove("d-none");
+        profileView.classList.add("d-none");
+        profileSavedAlert?.classList.add("d-none");
+        profileEditBtn?.classList.add("btn-primary");
+        profileEditBtn?.classList.remove("btn-outline-primary");
+        profileEditBtn && (profileEditBtn.textContent = "Close");
+      } else {
+        profileFormWrap.classList.add("d-none");
+        profileView.classList.remove("d-none");
+        profileEditBtn?.classList.remove("btn-primary");
+        profileEditBtn?.classList.add("btn-outline-primary");
+        profileEditBtn && (profileEditBtn.textContent = "Edit");
+      }
+    };
+
+    const updateProfileView = (user) => {
+      if (!user) return;
+      const formatters = {
+        dob: (val) => {
+          if (!val) return "—";
+          const date = new Date(val);
+          return date.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+        },
+        first_name: (val) => val || "—",
+        last_name: (val) => val || "—",
+        title: (val) => val || "—",
+        email: (val) => val || "—",
+        phone: (val) => val || "—",
+        nationality: (val) => val || "—",
+      };
+      document.querySelectorAll("[data-profile-field]").forEach((node) => {
+        const field = node.dataset.profileField;
+        const raw = user[field] ?? null;
+        const formatter = formatters[field];
+        node.textContent = formatter ? formatter(raw) : raw || "—";
+      });
+    };
+
+    profileEditBtn?.addEventListener("click", () => toggleProfileEdit(true));
+    profileCancelBtn?.addEventListener("click", () => toggleProfileEdit(false));
+
+    profileForm?.addEventListener("submit", async (evt) => {
+      evt.preventDefault();
+      const data = Object.fromEntries(new FormData(profileForm).entries());
+      try {
+        const res = await fetch("/account/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          throw new Error("Could not save profile.");
+        }
+        const payload = await res.json();
+        if (payload.user) {
+          if (displayName && payload.user.display_name) {
+            displayName.textContent = payload.user.display_name;
+          }
+          updateProfileView(payload.user);
+          profileSavedAlert?.classList.remove("d-none");
+        }
+        toggleProfileEdit(false);
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+    const travelerButtons = [
+      document.getElementById("addTravelerButton"),
+      document.getElementById("addTravelerShortcut"),
+    ];
+    travelerButtons.forEach((btn) =>
+      btn?.addEventListener("click", () => travelerModal?.show())
+    );
+
+    travelerForm?.addEventListener("submit", async (evt) => {
+      evt.preventDefault();
+      travelerError?.classList.add("d-none");
+      const data = Object.fromEntries(new FormData(travelerForm).entries());
+      try {
+        const res = await fetch("/account/travelers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const payload = await res.json();
+        if (!res.ok) {
+          throw new Error(payload.error || "Unable to add traveler.");
+        }
+        travelers = [payload.traveler, ...travelers];
+        renderTravelers(travelers);
+        travelerForm.reset();
+        travelerModal?.hide();
+      } catch (error) {
+        if (travelerError) {
+          travelerError.textContent = error.message;
+          travelerError.classList.remove("d-none");
+        }
+      }
+    });
+
+    document.querySelectorAll("[data-flight-detail]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        if (!detailModal) return;
+        document.getElementById("detailRoute").textContent =
+          btn.dataset.route || "—";
+        document.getElementById("detailAirline").textContent = `${
+          btn.dataset.airline || ""
+        } • ${btn.dataset.flight || ""}`;
+        document.getElementById("detailTicket").textContent =
+          btn.dataset.ticket || "—";
+        document.getElementById("detailDepart").textContent =
+          btn.dataset.depart || "—";
+        document.getElementById("detailArrive").textContent =
+          btn.dataset.arrive || "—";
+        document.getElementById("detailRef").textContent =
+          btn.dataset.ref || "—";
+        detailModal.show();
+      })
+    );
+  });
+</script>
+
+<script id="travelerData" type="application/json">
+  {{ traveler_payload_json if traveler_payload_json is defined else '[]' }}
 </script>
 
 {% endblock %}
