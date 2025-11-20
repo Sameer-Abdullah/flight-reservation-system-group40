@@ -1,0 +1,779 @@
+{% extends "staff_base.html" %} {% block content %}
+<div class="row mb-4">
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card p-3">
+      <div class="stat-label">Flights Today</div>
+      <div class="stat-value">{{ stats.flights_today if stats else "-" }}</div>
+      <div class="stat-sub">Across all routes</div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card p-3">
+      <div class="stat-label">Passengers (est.)</div>
+      <div class="stat-value">
+        {{ stats.passengers_today if stats else "-" }}
+      </div>
+      <div class="stat-sub">Based on seat capacity</div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card p-3">
+      <div class="stat-label">Completed Flights</div>
+      <div class="stat-value">
+        {{ stats.completed_flights if stats else "-" }}
+      </div>
+      <div class="stat-sub">Departed / arrived</div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card stat-card p-3">
+      <div class="stat-label">Upcoming Flights</div>
+      <div class="stat-value">
+        {{ stats.upcoming_flights if stats else "-" }}
+      </div>
+      <div class="stat-sub">Remaining today</div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body pb-2">
+    <ul class="nav nav-pills staff-tabs mb-3" id="staffTabs">
+      <li class="nav-item">
+        <button class="nav-link active" data-section="overview">
+          Overview
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-section="customers">
+          Customer Lookup
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-section="flights">Today’s Flights</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-section="reports">Reports</button>
+      </li>
+    </ul>
+
+    <!-- OVERVIEW -->
+    <div class="staff-section" id="section-overview">
+      <div class="row">
+        <div class="col-lg-6 mb-3">
+          <div class="section-title">Operations snapshot</div>
+          <p class="section-sub mb-3">
+            Quick view of today’s activity. Use the tabs above to drill down
+            into customers, flights, or export reports.
+          </p>
+          <ul class="small text-muted">
+            <li>
+              Monitor how many flights are completed versus still scheduled.
+            </li>
+            <li>
+              Use Customer Lookup to quickly find bookings by name, email, or
+              ticket number.
+            </li>
+            <li>
+              Export CSV reports for flights and manifests for offline analysis.
+            </li>
+          </ul>
+        </div>
+        <div class="col-lg-6 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="section-title mb-0">Quick actions</div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <a
+              href="{{ url_for('staff_dashboard.dashboard') }}"
+              class="btn btn-primary btn-sm"
+            >
+              Refresh dashboard
+            </a>
+            <a
+              href="{{ url_for('staff_dashboard.download_today_report') }}"
+              class="btn btn-outline-primary btn-sm"
+            >
+              Download flights report
+            </a>
+            <a
+              href="{{ url_for('staff_dashboard.download_today_manifest') }}"
+              class="btn btn-outline-secondary btn-sm"
+            >
+              Download passenger manifest
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="staff-section d-none" id="section-customers">
+      <div class="section-title">Customer lookup</div>
+      <p class="section-sub mb-3">
+        Search for passengers using any combination of name, email, phone, or
+        booking number.
+      </p>
+
+      <form
+        class="row g-3 mb-3"
+        method="get"
+        action="{{ url_for('staff_dashboard.dashboard') }}"
+      >
+        <input type="hidden" name="tab" value="customers" />
+        <div class="col-md-3">
+          <label class="form-label small">First name</label>
+          <input
+            type="text"
+            name="first_name"
+            class="form-control"
+            value="{{ request.args.get('first_name', '') }}"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Last name</label>
+          <input
+            type="text"
+            name="last_name"
+            class="form-control"
+            value="{{ request.args.get('last_name', '') }}"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Email</label>
+          <input
+            type="email"
+            name="email"
+            class="form-control"
+            value="{{ request.args.get('email', '') }}"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Phone</label>
+          <input
+            type="text"
+            name="phone"
+            class="form-control"
+            value="{{ request.args.get('phone', '') }}"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Ticket / Booking #</label>
+          <input
+            type="text"
+            name="booking_ref"
+            class="form-control"
+            value="{{ request.args.get('booking_ref', '') }}"
+          />
+        </div>
+        <div class="col-md-3 align-self-end">
+          <button type="submit" class="btn btn-primary w-100 btn-sm">
+            Search
+          </button>
+        </div>
+      </form>
+
+      {% if customers is not none %}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="small text-muted"> {{ customers|length }} result(s) </span>
+        <input
+          type="text"
+          class="form-control form-control-sm table-filter-input"
+          id="customerFilter"
+          placeholder="Filter results…"
+        />
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="customerTable">
+          <thead>
+            <tr>
+              <th>Passenger</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Booking #</th>
+              <th>Flight</th>
+              <th>Route</th>
+              <th>Departure</th>
+              <th>Seat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if customers %} {% for c in customers %}
+            <tr>
+              <td>{{ c.full_name }}</td>
+              <td>{{ c.email }}</td>
+              <td>{{ c.phone }}</td>
+              <td>{{ c.booking_ref }}</td>
+              <td>{{ c.flight_code }}</td>
+              <td>{{ c.origin }} → {{ c.destination }}</td>
+              <td>{{ c.depart_time }}</td>
+              <td>{{ c.seat_code }}</td>
+            </tr>
+            {% endfor %} {% else %}
+            <tr>
+              <td colspan="8" class="text-muted small">
+                No matching customers found.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- FLIGHTS -->
+    <div class="staff-section d-none" id="section-flights">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <div class="section-title mb-0">Today’s flights</div>
+          <div class="section-sub">
+            Flights with a departure time on the current date.
+          </div>
+        </div>
+        <input
+          type="text"
+          class="form-control form-control-sm table-filter-input"
+          id="flightFilter"
+          placeholder="Filter flights…"
+        />
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="flightTable">
+          <thead>
+            <tr>
+              <th>Flight</th>
+              <th>Route</th>
+              <th>Departure</th>
+              <th>Status</th>
+              <th>Seats</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if flights_today %} {% for f in flights_today %}
+            <tr>
+              <td>{{ f.code if f.code else ("#" ~ f.id) }}</td>
+              <td>{{ f.origin }} → {{ f.destination }}</td>
+              <td>{{ f.depart_time }}</td>
+              <td>{{ f.status or "On time" }}</td>
+              <td>{{ f.seats_booked }}/{{ f.seats_total }}</td>
+            </tr>
+            {% endfor %} {% else %}
+            <tr>
+              <td colspan="5" class="text-muted small">
+                No flights found for today.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="staff-section d-none" id="section-reports">
+      <div class="row">
+        <div class="col-md-7 mb-3">
+          <div class="section-title">Reports & exports</div>
+          <p class="section-sub mb-3">
+            Generate CSV exports for today’s flights and passenger manifests.
+          </p>
+          <p class="small text-muted">
+            These reports can be used for operational reviews, audits, or
+            sharing with other teams.
+          </p>
+        </div>
+        <div class="col-md-5 mb-3">
+          <div class="d-grid gap-2">
+            <a
+              href="{{ url_for('staff_dashboard.download_today_report') }}"
+              class="btn btn-outline-primary btn-sm"
+            >
+              Download today’s flights report
+            </a>
+            <a
+              href="{{ url_for('staff_dashboard.download_today_manifest') }}"
+              class="btn btn-outline-secondary btn-sm"
+            >
+              Download passenger manifest
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row mt-4">
+  <div class="col-lg-6 mb-3">
+    <div class="card emissions-card p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <div class="section-title mb-0">Estimated emissions overview</div>
+          <div class="section-sub">
+            Rough CO₂ estimates for today’s scheduled flights (illustrative
+            only).
+          </div>
+        </div>
+        <span class="badge rounded-pill bg-light text-dark small"
+          >Internal use</span
+        >
+      </div>
+
+      <div
+        id="emissions-data"
+        data-flight-count="{{ flights_today|length }}"
+      ></div>
+
+      <div class="row align-items-center mb-3">
+        <div class="col-sm-6 mb-2">
+          <div class="small text-muted">Total estimated CO₂ today</div>
+          <div class="h4 mb-0" id="emissionsTotal">–</div>
+        </div>
+        <div class="col-sm-6 mb-2">
+          <div class="small text-muted">Per-flight average</div>
+          <div class="h5 mb-0" id="emissionsPerFlight">–</div>
+        </div>
+      </div>
+
+      <div class="small text-muted mb-1">
+        Breakdown by segment type (approximate)
+      </div>
+
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small">
+          <span>Short-haul</span><span id="emShortLabel">–</span>
+        </div>
+        <div class="progress progress-thin">
+          <div
+            class="progress-bar bg-success"
+            id="emShortBar"
+            style="width: 30%"
+          ></div>
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small">
+          <span>Medium-haul</span><span id="emMediumLabel">–</span>
+        </div>
+        <div class="progress progress-thin">
+          <div
+            class="progress-bar bg-info"
+            id="emMediumBar"
+            style="width: 40%"
+          ></div>
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small">
+          <span>Long-haul</span><span id="emLongLabel">–</span>
+        </div>
+        <div class="progress progress-thin">
+          <div
+            class="progress-bar bg-warning"
+            id="emLongBar"
+            style="width: 30%"
+          ></div>
+        </div>
+      </div>
+
+      <p class="small text-muted mt-3 mb-0">
+        These are simple internal estimates based on a fixed factor per flight
+        and do not represent official carbon accounting.
+      </p>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3">
+      <div class="section-title mb-2">System & data snapshot</div>
+      <p class="section-sub mb-3">
+        Quick overview of data freshness and operational checks.
+      </p>
+
+      <ul class="list-unstyled small mb-3">
+        <li class="mb-1">
+          <span class="status-dot status-ok"></span> Flight schedule loaded from
+          seed database.
+        </li>
+        <li class="mb-1">
+          <span class="status-dot status-ok"></span> Customer & booking data
+          available for lookup.
+        </li>
+        <li class="mb-1">
+          <span class="status-dot status-warn"></span> Real-time delays not
+          synced (demo mode).
+        </li>
+      </ul>
+
+      <div class="small text-muted mb-2">Helpful tips</div>
+      <ul class="small text-muted mb-0">
+        <li>Verify passenger details before making changes.</li>
+        <li>Cross-check bookings against Today’s Flights.</li>
+        <li>Export reports at end of shift if required.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<div class="row mt-3">
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3">
+      <div class="section-title mb-1">Recent internal activity (demo)</div>
+      <div class="section-sub mb-3">
+        Example events to show how an internal feed could look.
+      </div>
+
+      <div class="activity-log small">
+        <div class="activity-item">
+          <div class="activity-time">09:12</div>
+          <div class="activity-body">
+            <div class="activity-title">Manifest export</div>
+            <div class="activity-text text-muted">
+              Staff exported passenger manifest.
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="activity-time">10:03</div>
+          <div class="activity-body">
+            <div class="activity-title">Customer lookup</div>
+            <div class="activity-text text-muted">
+              Lookups performed for connections.
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="activity-time">11:27</div>
+          <div class="activity-body">
+            <div class="activity-title">Schedule check</div>
+            <div class="activity-text text-muted">
+              Reviewed today’s flights.
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="activity-time">12:45</div>
+          <div class="activity-body">
+            <div class="activity-title">System status</div>
+            <div class="activity-text text-muted">
+              Dashboard verified up to date.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-3">
+
+    <div class="card p-3 ops-alerts-card">
+      <div class="ops-alerts-title">Live Operations Alerts</div>
+      <div class="ops-alerts-track">
+        <div class="ops-alert">⚠️ Flight AC204 delayed 27 min</div>
+        <div class="ops-alert">🔁 WS118 now departing Gate 12</div>
+        <div class="ops-alert">🧳 Baggage belt 4 slow processing</div>
+        <div class="ops-alert">🛠 Aircraft C-FGHT in maintenance</div>
+        <div class="ops-alert">👨‍✈️ Crew rotation needed for AC332</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row mt-3">
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3">
+      <div class="section-title mb-2">Aircraft Utilization Overview</div>
+      <div class="section-sub mb-3">Demo operational indicators.</div>
+
+      <div class="row text-center">
+        <div class="col-sm-3 mb-3 util-box">
+          <div class="util-value">78%</div>
+          <div class="util-label">Active</div>
+        </div>
+        <div class="col-sm-3 mb-3 util-box">
+          <div class="util-value">12%</div>
+          <div class="util-label">Maintenance</div>
+        </div>
+        <div class="col-sm-3 mb-3 util-box">
+          <div class="util-value">7%</div>
+          <div class="util-label">Standby</div>
+        </div>
+        <div class="col-sm-3 mb-3 util-box">
+          <div class="util-value">3%</div>
+          <div class="util-label">Issues</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3">
+      <div class="section-title mb-3">Crew Scheduling Snapshot</div>
+      <table class="table table-sm text-center">
+        <thead>
+          <tr>
+            <th>Crew</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Flight</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>J. Carter</td>
+            <td>Pilot</td>
+            <td>On Duty</td>
+            <td>AC204</td>
+          </tr>
+          <tr>
+            <td>M. Lee</td>
+            <td>First Officer</td>
+            <td>On Duty</td>
+            <td>AC204</td>
+          </tr>
+          <tr>
+            <td>S. Khan</td>
+            <td>Cabin Crew</td>
+            <td>Standby</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>A. Gomez</td>
+            <td>Cabin Crew</td>
+            <td>Off Shift</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<div class="row mt-3">
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3">
+      <div class="section-title mb-3">Gate Occupancy Report</div>
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Gate</th>
+            <th>Flight</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Gate 3</td>
+            <td>AC214</td>
+            <td>Boarding</td>
+          </tr>
+          <tr>
+            <td>Gate 6</td>
+            <td>WS118</td>
+            <td>Arrived</td>
+          </tr>
+          <tr>
+            <td>Gate 12</td>
+            <td>—</td>
+            <td>Available</td>
+          </tr>
+          <tr>
+            <td>Gate 15</td>
+            <td>AC448</td>
+            <td>Delayed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3 weather-card">
+      <div class="section-title mb-1">Weather Impact</div>
+      <div class="section-sub mb-3">Current conditions (demo)</div>
+
+      <div class="row text-center">
+        <div class="col-sm-4">
+          <div class="weather-value">-3°C</div>
+          <div class="weather-label">Temperature</div>
+        </div>
+        <div class="col-sm-4">
+          <div class="weather-value">1.8 km</div>
+          <div class="weather-label">Visibility</div>
+        </div>
+        <div class="col-sm-4">
+          <div class="weather-value">22 km/h</div>
+          <div class="weather-label">Wind</div>
+        </div>
+      </div>
+
+      <div class="weather-impact-bar mt-3">
+        <div class="weather-impact-fill"></div>
+      </div>
+      <div class="small text-muted mt-2">Operational impact: Moderate</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row mt-3">
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3">
+      <div class="section-title mb-3">Security & Compliance Feed</div>
+      <ul class="small text-muted">
+        <li>✔ Screening systems operational</li>
+        <li>✔ No-fly list synced 2 min ago</li>
+        <li>⚠ 3 secondary ID verifications triggered</li>
+        <li>✔ Fire safety systems operational</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3">
+      <div class="section-title mb-3">Operational KPIs</div>
+      <div class="kpi-row">
+        <div class="kpi-box">
+          <div class="kpi-value">86%</div>
+          <div class="kpi-label">On-Time</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-value">14m</div>
+          <div class="kpi-label">Avg Delay</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-value">3.1%</div>
+          <div class="kpi-label">Cancels</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-value">42m</div>
+          <div class="kpi-label">Ground Time</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <div class="col-lg-6 mb-3">
+    <div class="card p-3">
+      <div class="section-title mb-2">System Diagnostics</div>
+      <div class="section-sub mb-3">Backend operational status</div>
+      <ul class="small">
+        <li>Database: <span class="text-success">Connected</span></li>
+        <li>API Latency: 121ms</li>
+        <li>Email Queue: 2 pending</li>
+        <li>SMS Queue: 1 pending</li>
+        <li>Cron Jobs: Running</li>
+        <li>Cache: Synced (3.2 MB)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const tabs = document.querySelectorAll("#staffTabs .nav-link");
+    const sections = document.querySelectorAll(".staff-section");
+
+    function showSection(name) {
+      sections.forEach((sec) => {
+        sec.classList.toggle("d-none", sec.id !== `section-${name}`);
+      });
+      tabs.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.section === name);
+      });
+    }
+
+    tabs.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        showSection(btn.dataset.section);
+      });
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const initialTab = params.get("tab");
+    if (initialTab) {
+      const found = Array.from(tabs).find(
+        (t) => t.dataset.section === initialTab
+      );
+      if (found) showSection(initialTab);
+    }
+
+    const customerFilter = document.getElementById("customerFilter");
+    const customerTable = document.getElementById("customerTable");
+    if (customerFilter && customerTable) {
+      customerFilter.addEventListener("input", () => {
+        const q = customerFilter.value.toLowerCase();
+        const rows = customerTable.querySelectorAll("tbody tr");
+        rows.forEach((row) => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(q) ? "" : "none";
+        });
+      });
+    }
+
+    const flightFilter = document.getElementById("flightFilter");
+    const flightTable = document.getElementById("flightTable");
+    if (flightFilter && flightTable) {
+      flightFilter.addEventListener("input", () => {
+        const q = flightFilter.value.toLowerCase();
+        const rows = flightTable.querySelectorAll("tbody tr");
+        rows.forEach((row) => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(q) ? "" : "none";
+        });
+      });
+    }
+
+    const emData = document.getElementById("emissions-data");
+    if (emData) {
+      const flightCount = parseInt(emData.dataset.flightCount || "0", 10);
+      const totalTons = Math.max(0, Math.round(flightCount * 18));
+      const perFlight = flightCount > 0 ? totalTons / flightCount : 0;
+
+      const totalEl = document.getElementById("emissionsTotal");
+      const perEl = document.getElementById("emissionsPerFlight");
+      if (totalEl)
+        totalEl.textContent =
+          totalTons > 0
+            ? totalTons.toLocaleString() + " t CO₂e"
+            : "No estimate";
+      if (perEl)
+        perEl.textContent =
+          perFlight > 0 ? perFlight.toFixed(1) + " t CO₂e / flight" : "–";
+
+      const shortPct = 35;
+      const medPct = 40;
+      const longPct = 25;
+
+      const sBar = document.getElementById("emShortBar");
+      const mBar = document.getElementById("emMediumBar");
+      const lBar = document.getElementById("emLongBar");
+      const sLbl = document.getElementById("emShortLabel");
+      const mLbl = document.getElementById("emMediumLabel");
+      const lLbl = document.getElementById("emLongLabel");
+
+      if (sBar) sBar.style.width = shortPct + "%";
+      if (mBar) mBar.style.width = medPct + "%";
+      if (lBar) lBar.style.width = longPct + "%";
+
+      if (sLbl) sLbl.textContent = shortPct + "%";
+      if (mLbl) mLbl.textContent = medPct + "%";
+      if (lLbl) lLbl.textContent = longPct + "%";
+    }
+  });
+</script>
+{% endblock %}
