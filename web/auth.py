@@ -6,11 +6,13 @@ from . import db
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
+
 def is_safe_url(target: str) -> bool:
     """Only allow local redirects."""
     host_url = urlparse(request.host_url)
     redirect_url = urlparse(urljoin(request.host_url, target))
     return redirect_url.scheme in ("http", "https") and host_url.netloc == redirect_url.netloc
+
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -27,14 +29,19 @@ def login():
         login_user(user)
         flash("Logged in successfully.", "success")
 
-        # if Flask-Login sent us a ?next=... param, go there
+        # staff → staff dashboard
+        if user.is_staff:
+            return redirect(url_for("staff_dashboard.dashboard"))
+
+        # normal users: respect ?next= if present
         next_page = request.args.get("next")
         if next_page and is_safe_url(next_page):
             return redirect(next_page)
 
-        # otherwise pick your post-login landing page
-        return redirect(url_for("search.search"))  # or url_for("home")
+        # otherwise send to normal search page
+        return redirect(url_for("search.search"))
     return render_template("login.html")
+
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -42,6 +49,11 @@ def register():
         email = (request.form.get("email") or "").strip().lower()
         pwd = request.form.get("password") or ""
         confirm = request.form.get("confirm") or ""
+
+        # block staff-domain signup
+        if email.endswith("@skywing.com"):
+            flash("Staff accounts are created by SkyWing admin. Please use a personal email.", "warning")
+            return render_template("register.html")
 
         if pwd != confirm:
             flash("Passwords do not match.", "warning")
@@ -57,6 +69,7 @@ def register():
         flash("Account created. Please log in.", "success")
         return redirect(url_for("auth.login"))
     return render_template("register.html")
+
 
 @auth_bp.route("/logout")
 @login_required

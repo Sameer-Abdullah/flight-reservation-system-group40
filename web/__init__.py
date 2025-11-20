@@ -51,6 +51,9 @@ def create_app():
     from .seat_routes import bp as seats_bp
     app.register_blueprint(seats_bp)
 
+    # NEW: Staff dashboard blueprint
+    from .staff_dashboard import staff_dashboard_bp
+    app.register_blueprint(staff_dashboard_bp)
 
 
 
