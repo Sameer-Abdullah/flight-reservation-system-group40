@@ -8,7 +8,7 @@ app = create_app()
 
 def seed_staff_user():
     email = "sameer-abdullah@skywing.com"
-    password = "Skywing123!"
+    password = "c"
 
     user = User.query.filter_by(email=email.lower()).first()
 

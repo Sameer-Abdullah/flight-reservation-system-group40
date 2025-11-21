@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from flask import Blueprint, render_template, request, Response
 from flask_login import login_required, current_user
 
-from .models import Flight, Seat, Customer, Booking
+from .models import Flight, Seat, Booking
 from . import db
 
 staff_dashboard_bp = Blueprint("staff_dashboard", __name__, url_prefix="/staff")
