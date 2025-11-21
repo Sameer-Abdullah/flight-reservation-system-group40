@@ -70,10 +70,21 @@ def new_booking():
     seat_cabins = [cabin_for_code(code) for code in selected_seats]
 
     valid_class = {"Economy", "Premium", "Business", "First"}
-    class_default = seat_cabins[0] or (ctx.get("class_choice") if ctx.get("class_choice") in valid_class else None) or "Economy"
 
-    seat_pref_default = derived_prefs[0] or prefs_ctx.get("seat") or "Window"
+    if seat_cabins:
+        class_default = seat_cabins[0]
+    elif ctx.get("class_choice") in valid_class:
+        class_default = ctx["class_choice"]
+    else:
+        class_default = "Economy"
+
+    if derived_prefs:
+        seat_pref_default = derived_prefs[0] or prefs_ctx.get("seat") or "Window"
+    else:
+        seat_pref_default = prefs_ctx.get("seat") or "Window"
+
     meal_pref_default = prefs_ctx.get("meal") or "Standard"
+
 
     passenger_seat_prefs = []
     passenger_class_prefs = []
