@@ -1,0 +1,47 @@
+{% extends "staff_base.html" %}
+{% block content %}
+
+<div class="card p-4 mb-4">
+  <h3 class="mb-3">Flight Status Update</h3>
+  <p class="text-muted mb-4">Update delays, cancellations, or general status for active flights.</p>
+
+  <form method="POST" action="{{ url_for('staff_update.update_status') }}">
+    
+    <div class="mb-3">
+      <label class="form-label">Select Flight</label>
+      <select name="flight_id" class="form-select" required>
+        <option value="">Choose a flight...</option>
+        {% for f in flights %}
+          <option value="{{ f.id }}">
+            {{ f.origin }} → {{ f.destination }} — {{ f.depart_time }} (ID: {{ f.id }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">New Status</label>
+      <select name="status" class="form-select" required>
+        <option value="On time">On time</option>
+        <option value="Delayed">Delayed</option>
+        <option value="Cancelled">Cancelled</option>
+        <option value="Boarding">Boarding</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Optional Note</label>
+      <textarea name="note" class="form-control" rows="3"
+        placeholder="Reason for the update (weather, maintenance, crew delay…)"></textarea>
+    </div>
+
+    <button class="btn btn-primary w-100" type="submit">Submit Update</button>
+
+  </form>
+</div>
+
+{% if message %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+
+{% endblock %}
