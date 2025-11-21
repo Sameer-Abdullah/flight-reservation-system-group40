@@ -54,11 +54,11 @@ def dashboard():
 
     flights_today = (
         Flight.query
-        .filter(Flight.depart_time >= today_start_naive,
-                Flight.depart_time < today_end_naive)
         .order_by(Flight.depart_time.asc())
         .all()
     )
+
+
 
     enriched_flights = []
     for f in flights_today:
@@ -165,8 +165,6 @@ def download_today_report():
 
     flights_today = (
         Flight.query
-        .filter(Flight.depart_time >= today_start_naive,
-                Flight.depart_time < today_end_naive)
         .order_by(Flight.depart_time.asc())
         .all()
     )
@@ -215,8 +213,6 @@ def download_today_manifest():
 
     flights_today = (
         Flight.query
-        .filter(Flight.depart_time >= today_start_naive,
-                Flight.depart_time < today_end_naive)
         .order_by(Flight.depart_time.asc())
         .all()
     )
