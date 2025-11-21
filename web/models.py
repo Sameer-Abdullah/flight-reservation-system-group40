@@ -3,6 +3,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db, login_manager
 
+
 # ---- User model ----
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -14,6 +15,7 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(32))
     dob = db.Column(db.Date)
     nationality = db.Column(db.String(64))
+
     bookings = db.relationship(
         "Booking",
         back_populates="user",
@@ -47,20 +49,24 @@ class User(UserMixin, db.Model):
             return f"{(self.first_name or ' ')[0]}{(self.last_name or ' ')[0]}".upper()
         return (self.email[:2] if self.email else "AA").upper()
 
+    def is_staff(self) -> bool:
+        return bool(self.email) and self.email.lower().endswith("@skywing.com")
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-# ---- Aircraft catalog (NEW) ----
+# ---- Aircraft catalog ----
 class AircraftType(db.Model):
     __tablename__ = "aircraft_type"
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(16), unique=True, nullable=False)   # e.g. 'A320', 'B747', 'A380'
-    name = db.Column(db.String(64), nullable=False)                # Human name
-    total_rows = db.Column(db.Integer, nullable=False)             # Total seat rows
-    layout = db.Column(db.String(32), nullable=False)              # 'ABC DEF' or 'ABC DEFG HJK'
+    code = db.Column(db.String(16), unique=True, nullable=False)
+    name = db.Column(db.String(64), nullable=False)
+    total_rows = db.Column(db.Integer, nullable=False)
+    layout = db.Column(db.String(32), nullable=False)
     class_map = db.Column(db.JSON, nullable=False)
 
     def __repr__(self):
@@ -82,7 +88,6 @@ class Flight(db.Model):
         lazy="joined",
     )
 
-    # Seats backref
     seats = db.relationship(
         "Seat",
         back_populates="flight",
@@ -98,14 +103,24 @@ class Seat(db.Model):
     __tablename__ = "seats"
 
     id = db.Column(db.Integer, primary_key=True)
-    flight_id = db.Column(db.Integer, db.ForeignKey("flight.id"), nullable=False, index=True)
+    flight_id = db.Column(
+        db.Integer,
+        db.ForeignKey("flight.id"),
+        nullable=False,
+        index=True,
+    )
     row_num = db.Column(db.Integer, nullable=False)
-    seat_letter = db.Column(db.String(1), nullable=False)          
-    cabin_class = db.Column(db.String(16), nullable=False)         
+    seat_letter = db.Column(db.String(1), nullable=False)
+    cabin_class = db.Column(db.String(16), nullable=False)
     is_blocked = db.Column(db.Boolean, nullable=False, default=False)
 
     __table_args__ = (
-        db.UniqueConstraint("flight_id", "row_num", "seat_letter", name="uniq_flight_row_letter"),
+        db.UniqueConstraint(
+            "flight_id",
+            "row_num",
+            "seat_letter",
+            name="uniq_flight_row_letter",
+        ),
     )
 
     flight = db.relationship("Flight", back_populates="seats")
@@ -117,6 +132,7 @@ class Seat(db.Model):
         return f"<Seat {self.code()} {self.cabin_class} flight={self.flight_id}>"
 
 
+# ---- Booking & Traveler ----
 class Booking(db.Model):
     __tablename__ = "booking"
 
@@ -183,14 +199,23 @@ class Traveler(db.Model):
     __tablename__ = "traveler"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False,
+        index=True,
+    )
     title = db.Column(db.String(16))
     full_name = db.Column(db.String(120), nullable=False)
     dob = db.Column(db.Date)
     gender = db.Column(db.String(24))
     contact_info = db.Column(db.String(80))
     relationship = db.Column(db.String(32))
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
 
     user = db.relationship("User", back_populates="travelers")
 

@@ -6,15 +6,12 @@ from web.models import Flight, AircraftType, Seat, User, Booking, Traveler
 
 app = create_app()
 
-# ---------- schema guard (no Alembic needed) ----------
 def ensure_schema():
-    # create new tables if missing
     AircraftType.__table__.create(bind=db.engine, checkfirst=True)
     Seat.__table__.create(bind=db.engine, checkfirst=True)
     Booking.__table__.create(bind=db.engine, checkfirst=True)
     Traveler.__table__.create(bind=db.engine, checkfirst=True)
 
-    # add aircraft_type_id to flight if missing (SQLite-friendly)
     cols = db.session.execute(text("PRAGMA table_info('flight')")).fetchall()
     colnames = {row[1] for row in cols}
     if "aircraft_type_id" not in colnames:
@@ -54,7 +51,6 @@ def stable_noise(key: str, low=-0.03, high=0.03) -> float:
     return low + (high - low) * rnd
 
 
-# ---------- aircraft helpers ----------
 def ensure_aircraft_types():
     presets = [
         dict(
@@ -94,15 +90,15 @@ def ensure_aircraft_types():
 def pick_aircraft_code(price_cents: int) -> str:
     p = (price_cents or 0) / 100.0
     if p >= 600:
-        return "A380"   # long-haul
+        return "A380"
     if p >= 300:
-        return "B747"   # medium/long
-    return "A320"       # short/medium
+        return "B747"
+    return "A320"
 
 
 def letters_from_layout(layout_str: str):
     letters = []
-    for group in layout_str.split():   # 'ABC DEFG HJK' -> ['A','B','C','D','E','F','G','H','J','K']
+    for group in layout_str.split():
         letters.extend(list(group))
     return letters
 
@@ -115,7 +111,6 @@ def cabin_for_row(row: int, class_map):
 
 
 def attach_aircraft_to_flights_and_seed_seats():
-    # 1) link flights → aircraft types
     atypes = {a.code: a for a in AircraftType.query.all()}
     flights = Flight.query.all()
     touched = 0
@@ -126,7 +121,6 @@ def attach_aircraft_to_flights_and_seed_seats():
     if touched:
         db.session.commit()
 
-    # 2) generate seats only for flights that don't have any yet
     atypes_by_id = {a.id: a for a in AircraftType.query.all()}
     total_new = 0
 
@@ -134,12 +128,9 @@ def attach_aircraft_to_flights_and_seed_seats():
         if not f.aircraft_type_id:
             continue
 
-        # ---- idempotency guard: if seats exist for this flight, skip
         exists = db.session.query(Seat.id).filter_by(flight_id=f.id).limit(1).first()
         if exists:
             continue
-        # If you ever want to re-generate instead of skip:
-        # db.session.execute(text("DELETE FROM seats WHERE flight_id = :fid"), {"fid": f.id})
 
         atype = atypes_by_id[f.aircraft_type_id]
         letters = letters_from_layout(atype.layout)
@@ -149,11 +140,12 @@ def attach_aircraft_to_flights_and_seed_seats():
             cab = cabin_for_row(r, atype.class_map)
             for ch in letters:
                 s = Seat(
-                    flight_id=f.id, row_num=r, seat_letter=ch,
-                    cabin_class=cab, is_blocked=False
+                    flight_id=f.id,
+                    row_num=r,
+                    seat_letter=ch,
+                    cabin_class=cab,
+                    is_blocked=(r == 1 and ch in ("E", "F")),
                 )
-                if r == 1 and ch in ("E", "F"):  # example crew seats
-                    s.is_blocked = True
                 batch.append(s)
 
         db.session.bulk_save_objects(batch)
@@ -292,13 +284,11 @@ def ensure_demo_user_with_bookings():
 
 
 with app.app_context():
-    # ensure schema BEFORE touching data
     ensure_schema()
 
     now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
 
     routes = [
-        # Canada <-> USA
         ("YYZ","JFK",220), ("JFK","YYZ",215),
         ("YYZ","EWR",215), ("EWR","YYZ",210),
         ("YYZ","LGA",215), ("LGA","YYZ",210),
@@ -316,7 +306,6 @@ with app.app_context():
         ("YYZ","BOS",200), ("BOS","YYZ",195),
         ("YYZ","RDU",350), ("RDU","YYZ",345),
 
-        # USA transcons & majors
         ("JFK","LAX",280), ("LAX","JFK",285),
         ("JFK","SFO",300), ("SFO","JFK",305),
         ("JFK","MIA",170), ("MIA","JFK",175),
@@ -327,39 +316,33 @@ with app.app_context():
         ("ORD","LAX",260), ("LAX","ORD",260),
         ("DFW","LAX",210), ("LAX","DFW",210),
 
-        # Transatlantic
         ("YYZ","LHR",650), ("LHR","YYZ",640),
         ("YYZ","CDG",620), ("CDG","YYZ",615),
         ("YYZ","AMS",610), ("AMS","YYZ",605),
         ("JFK","LHR",600), ("LHR","JFK",600),
         ("JFK","CDG",580), ("CDG","JFK",580),
 
-        # Transpacific / Long-haul
         ("YYZ","HND",900), ("HND","YYZ",890),
         ("YYZ","NRT",890), ("NRT","YYZ",880),
         ("JFK","HND",950), ("HND","JFK",945),
         ("LAX","HND",820), ("HND","LAX",815),
 
-        # Middle East
         ("YYZ","DXB",920), ("DXB","YYZ",910),
         ("JFK","DXB",880), ("DXB","JFK",875),
 
-        # Europe hops
         ("LHR","CDG",120), ("CDG","LHR",120),
         ("LHR","AMS",130), ("AMS","LHR",130),
         ("CDG","AMS",110), ("AMS","CDG",110),
 
-        # Canada domestic extras
         ("YVR","YYC",150), ("YYC","YVR",150),
         ("YVR","YUL",360), ("YUL","YVR",360),
         ("YUL","YOW",110), ("YOW","YUL",110),
     ]
 
-    # 21 days out, 5 departures/day per route
-    day_offsets = list(range(1, 22))
+    day_offsets = list(range(0, 22))
     time_offsets = [
-        timedelta(hours=6,  minutes=30),
-        timedelta(hours=9,  minutes=45),
+        timedelta(hours=6, minutes=30),
+        timedelta(hours=9, minutes=45),
         timedelta(hours=13, minutes=15),
         timedelta(hours=18, minutes=30),
         timedelta(hours=21, minutes=0),
@@ -367,8 +350,7 @@ with app.app_context():
 
     slot_mult = {0: -0.06, 1: -0.02, 2: +0.00, 3: +0.07, 4: +0.03}
 
-    def weekend_bump(dt: datetime) -> float:
-        # dt is timezone-aware; weekday() still works
+    def weekend_bump(dt):
         return 0.08 if dt.weekday() in (4, 5) else 0.0
 
     now_min = now + timedelta(days=min(day_offsets)) + min(time_offsets)
@@ -377,7 +359,8 @@ with app.app_context():
     existing = set(
         (f.origin, f.destination, f.depart_time)
         for f in db.session.query(Flight.origin, Flight.destination, Flight.depart_time)
-        .filter(Flight.depart_time >= now_min, Flight.depart_time <= now_max)
+        .filter(Flight.depart_time >= now_min,
+                Flight.depart_time <= now_max)
         .all()
     )
 
@@ -394,6 +377,7 @@ with app.app_context():
                 if key in existing:
                     continue
                 existing.add(key)
+
                 to_insert.append(Flight(
                     origin=origin,
                     destination=dest,
@@ -408,21 +392,8 @@ with app.app_context():
             db.session.commit()
         print(f"Seeded {len(to_insert)} flights.")
     else:
-        print("No new flights to seed (all present).")
+        print("No new flights to seed.")
 
-    # Baseline samples if absolutely empty
-    if Flight.query.count() == 0:
-        samples = [
-            Flight(origin="YYZ", destination="JFK", depart_time=now + timedelta(days=1, hours=3), price_cents=cents(220)),
-            Flight(origin="YYZ", destination="RDU", depart_time=now + timedelta(days=2, hours=1), price_cents=cents(350)),
-            Flight(origin="LAX", destination="JFK", depart_time=now + timedelta(days=3, hours=2), price_cents=cents(280)),
-            Flight(origin="JFK", destination="LHR", depart_time=now + timedelta(days=5, hours=5), price_cents=cents(450)),
-        ]
-        db.session.add_all(samples)
-        db.session.commit()
-        print("Added baseline sample flights.")
-
-    # seed aircraft + seats
     ensure_aircraft_types()
     attach_aircraft_to_flights_and_seed_seats()
     ensure_demo_user_with_bookings()
