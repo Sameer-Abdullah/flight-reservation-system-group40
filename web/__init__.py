@@ -1,10 +1,11 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_required, current_user
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -35,6 +36,24 @@ def create_app():
     def account():
         from .models import Booking, Traveler
 
+        # booking counts for stats
+        bookings_all = Booking.query.filter_by(user_id=current_user.id).all()
+        now = datetime.now(timezone.utc)
+        upcoming_count = 0
+        completed_count = 0
+        for b in bookings_all:
+            depart = b.departure_time
+            dep_cmp = depart
+            if depart and depart.tzinfo is None:
+                dep_cmp = depart.replace(tzinfo=timezone.utc)
+            if b.status == Booking.STATUS_CANCELED:
+                continue
+            if b.status == Booking.STATUS_COMPLETED or (dep_cmp and dep_cmp < now):
+                completed_count += 1
+            else:
+                upcoming_count += 1
+        trips_total = upcoming_count + completed_count
+
         recent_bookings = (
             Booking.query.filter_by(user_id=current_user.id)
             .order_by(Booking.departure_time.desc())
@@ -55,6 +74,9 @@ def create_app():
             travelers=travelers,
             traveler_payload=traveler_payload,
             traveler_payload_json=traveler_payload_json,
+            trips_total=trips_total,
+            upcoming_count=upcoming_count,
+            completed_count=completed_count,
         )
 
     @app.route("/account/profile", methods=["POST"])
@@ -156,5 +178,18 @@ def create_app():
     with app.app_context():
         from . import models
         db.create_all()
+        ensure_booking_columns()
 
     return app
+
+
+def ensure_booking_columns():
+    """
+    Lightweight schema guard to add optional columns without Alembic.
+    Ensures booking.extras exists for storing seats/preferences/baggage.
+    """
+    cols = db.session.execute(text("PRAGMA table_info('booking')")).fetchall()
+    names = {row[1] for row in cols}
+    if "extras" not in names:
+        db.session.execute(text("ALTER TABLE booking ADD COLUMN extras JSON"))
+        db.session.commit()

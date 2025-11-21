@@ -151,6 +151,7 @@
     border: 1px solid #dbe4ee;
     background: linear-gradient(180deg, #f8fbff, #f3f8ff);
     font-weight: 700;
+    height: 100%;
   }
   .stat-pill i {
     color: #0f87c4;
@@ -268,16 +269,17 @@
 
   <div class="row g-3 mt-3">
     <div class="col-6 col-md-3">
-      <div class="stat-pill">
+      <div class="stat-pill h-100">
         <i class="bi bi-airplane"></i>
         <div>
           <div class="small muted">Trips</div>
-          <div class="text-ink-2">12</div>
+          <div class="text-ink-2">{{ trips_total }}</div>
+          <div class="small text-muted">{{ upcoming_count }} upcoming • {{ completed_count }} completed</div>
         </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="stat-pill">
+      <div class="stat-pill h-100">
         <i class="bi bi-currency-dollar"></i>
         <div>
           <div class="small muted">Saved this year</div>
@@ -286,7 +288,7 @@
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="stat-pill">
+      <div class="stat-pill h-100">
         <i class="bi bi-bell"></i>
         <div>
           <div class="small muted">Price alerts</div>
@@ -295,7 +297,7 @@
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="stat-pill">
+      <div class="stat-pill h-100">
         <div>
           <div class="small muted">Status</div>
           <div class="text-ink-2">On time</div>

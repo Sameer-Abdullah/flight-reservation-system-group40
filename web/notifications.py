@@ -53,10 +53,14 @@ def subscribe():
     fullname = request.form.get("fullname")
     email = request.form.get("email")
     phone = request.form.get("phone")
+    flight_id = request.form.get("flight_id", type=int) or request.args.get("flight_id", type=int)
 
     save_subscriber(fullname, email, phone)
     send_email(email, "Booking Confirmed", f"<h3>Thanks {fullname}!</h3><p>Your booking has been confirmed.</p>")
     send_sms(phone, f"Hey {fullname}, your booking has been confirmed!")
 
     flash("Booking confirmed! You’ll receive updates soon.", "success")
-    return redirect(url_for("payments.payments_page"))
+    # Redirect to the payment page if we know the flight, otherwise fall back to search.
+    if flight_id:
+        return redirect(url_for("payments.payments_page", flight_id=flight_id))
+    return redirect(url_for("search.search"))

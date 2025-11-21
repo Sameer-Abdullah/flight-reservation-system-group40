@@ -164,6 +164,7 @@ class Booking(db.Model):
     cancellation_reason = db.Column(db.String(160))
     cancellation_ack = db.Column(db.Boolean, nullable=False, default=False)
     canceled_at = db.Column(db.DateTime)
+    extras = db.Column(db.JSON)
     created_at = db.Column(
         db.DateTime,
         nullable=False,

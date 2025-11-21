@@ -19,6 +19,7 @@ def ensure_schema():
         db.session.commit()
 
     ensure_user_columns()
+    ensure_booking_columns()
 
 
 def ensure_user_columns():
@@ -38,6 +39,14 @@ def ensure_user_columns():
             db.session.execute(text(f"ALTER TABLE user ADD COLUMN {col} {ddl}"))
             changed = True
     if changed:
+        db.session.commit()
+
+
+def ensure_booking_columns():
+    columns = db.session.execute(text("PRAGMA table_info('booking')")).fetchall()
+    existing = {row[1] for row in columns}
+    if "extras" not in existing:
+        db.session.execute(text("ALTER TABLE booking ADD COLUMN extras JSON"))
         db.session.commit()
 
 

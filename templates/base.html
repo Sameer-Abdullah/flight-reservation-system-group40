@@ -128,8 +128,9 @@
       messages %}
       <div class="mb-3">
         {% for category, message in messages %}
-        <div class="alert alert-{{ category }} mb-2" role="alert">
+        <div class="alert alert-{{ category }} alert-dismissible fade show mb-2" role="alert">
           {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endfor %}
       </div>

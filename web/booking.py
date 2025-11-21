@@ -8,8 +8,7 @@ from .state import get_booking_context, update_booking_context
 booking_bp = Blueprint("booking", __name__, url_prefix="/booking")
 
 CANCELLATION_POLICY = (
-    "By canceling this booking, you may incur a cancellation fee based on your fare "
-    "type. Refunds (if any) will be processed in 5–10 business days."
+    "Refunds are returned to your original payment method in 5–10 business days."
 )
 
 
