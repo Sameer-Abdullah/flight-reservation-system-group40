@@ -54,6 +54,9 @@ def create_app():
     # NEW: Staff dashboard blueprint
     from .staff_dashboard import staff_dashboard_bp
     app.register_blueprint(staff_dashboard_bp)
+    
+    from .staff_update import staff_update_bp
+    app.register_blueprint(staff_update_bp)
 
 
 

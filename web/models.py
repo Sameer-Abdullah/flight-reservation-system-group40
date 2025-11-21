@@ -47,6 +47,8 @@ class Flight(db.Model):
     destination = db.Column(db.String(3), nullable=False)
     depart_time = db.Column(db.DateTime, nullable=False)
     price_cents = db.Column(db.Integer, nullable=False, default=0)
+    status = db.Column(db.String(32), default="On time")
+    status_note = db.Column(db.String(255), nullable=True)
 
     aircraft_type_id = db.Column(db.Integer, nullable=True, index=True)
     aircraft_type = db.relationship(

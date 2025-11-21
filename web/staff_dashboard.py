@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from flask import Blueprint, render_template, request, Response
 from flask_login import login_required, current_user
 
-from .models import Flight, Seat, Booking
+from .models import Flight, Seat, Booking, Customer
 from . import db
 
 staff_dashboard_bp = Blueprint("staff_dashboard", __name__, url_prefix="/staff")
@@ -54,11 +54,11 @@ def dashboard():
 
     flights_today = (
         Flight.query
-        .filter(Flight.depart_time >= today_start_naive,
-                Flight.depart_time < today_end_naive)
         .order_by(Flight.depart_time.asc())
         .all()
     )
+
+
 
     enriched_flights = []
     for f in flights_today:
@@ -165,8 +165,6 @@ def download_today_report():
 
     flights_today = (
         Flight.query
-        .filter(Flight.depart_time >= today_start_naive,
-                Flight.depart_time < today_end_naive)
         .order_by(Flight.depart_time.asc())
         .all()
     )
@@ -215,8 +213,6 @@ def download_today_manifest():
 
     flights_today = (
         Flight.query
-        .filter(Flight.depart_time >= today_start_naive,
-                Flight.depart_time < today_end_naive)
         .order_by(Flight.depart_time.asc())
         .all()
     )
