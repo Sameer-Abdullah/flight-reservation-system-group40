@@ -1,0 +1,979 @@
+{% extends "base.html" %}
+{% set body_class = 'bg-light' %}
+
+{% block content %}
+<style>
+  :root {
+    --ink: #0b2447;
+    --ink-soft: #1a2c4f;
+    --brand: #0ea5e9;
+    --brand-2: #0b63a3;
+    --mint: #e0f7ff;
+    --soft-bg: #f5f8fc;
+    --border: rgba(11, 36, 71, 0.12);
+    --shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+    --danger: #ef4444;
+    --muted: #6b7a92;
+  }
+
+  .booking-hero {
+    border-radius: 22px;
+    padding: 32px;
+    background: radial-gradient(
+        circle at 10% 20%,
+        rgba(255, 255, 255, 0.35),
+        transparent 45%
+      ),
+      linear-gradient(135deg, var(--brand-2), #118ccf 55%, var(--brand) 100%);
+    color: #fff;
+    box-shadow: var(--shadow);
+  }
+
+  .booking-section {
+    margin-top: 28px;
+    border-radius: 18px;
+    background: #fff;
+    padding: 24px 24px 12px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    border: 1px solid var(--border);
+  }
+  .booking-section + .booking-section {
+    margin-top: 20px;
+  }
+
+  .booking-card {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #fdfefe;
+  }
+  .booking-card + .booking-card {
+    margin-top: 14px;
+  }
+  .booking-route {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .airport-code {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .route-divider {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, var(--brand) 0%, #a5e3ff 100%);
+    position: relative;
+  }
+  .route-divider::after {
+    content: "\f1d7";
+    font-family: "bootstrap-icons";
+    color: var(--brand-2);
+    position: absolute;
+    right: -6px;
+    top: -12px;
+  }
+
+  .booking-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .meta-block {
+    min-width: 140px;
+  }
+  .meta-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.4px;
+  }
+  .meta-value {
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .status-pill.on-time {
+    background: #e3fff3;
+    color: #0f8a4b;
+  }
+  .status-pill.completed {
+    background: #ebfbea;
+    color: #16743b;
+  }
+  .status-pill.canceled {
+    background: #ffecec;
+    color: #b3261e;
+  }
+
+  .empty-state {
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    color: var(--muted);
+    background: var(--soft-bg);
+  }
+
+  .cancellation-alert {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .cancellation-alert.active {
+    display: flex;
+  }
+
+  /* Modal */
+  .cancel-modal .modal-content {
+    border: none;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+  }
+  .cancel-step {
+    display: none;
+  }
+  .cancel-step.active {
+    display: block;
+  }
+  .summary-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    background: var(--soft-bg);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(6px);
+  }
+  .cancel-step h5, .cancel-step h6 { color: var(--ink-soft); }
+  .ref-row {
+    display:flex; justify-content:space-between; gap:1rem; padding:.6rem .8rem;
+    border-radius:12px; background:rgba(14,165,233,0.08); border:1px solid rgba(14,165,233,0.16);
+  }
+  .policy-card {
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: #fff8f8;
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .policy-button {
+    border: none;
+    background: transparent;
+    color: var(--brand-2);
+    font-weight: 600;
+    padding: 4px 0;
+    text-decoration: underline;
+    opacity: 0.75;
+  }
+  .policy-button:hover {
+    opacity: 1;
+  }
+  .btn-cancel-flight {
+    border-radius: 999px;
+  }
+  .ack-required {
+    border-color: rgba(239, 68, 68, 0.55) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+  }
+  .stepper {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .step-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--soft-bg);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .step-chip .dot {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  .step-chip.active {
+    background: #e8f6ff;
+    color: var(--ink);
+    border-color: rgba(14, 165, 233, 0.35);
+    box-shadow: 0 12px 26px rgba(14, 165, 233, 0.15);
+  }
+  .step-chip.active .dot {
+    background: var(--brand);
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .booking-hero {
+      padding: 24px;
+    }
+    .booking-card {
+      padding: 16px;
+    }
+    .booking-meta {
+      flex-direction: column;
+    }
+    .booking-tabs {
+      width: 100%;
+      flex-direction: column;
+    }
+  }
+</style>
+
+<section class="booking-hero mb-4">
+  <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+    <div>
+      <p class="text-uppercase fw-semibold mb-1 small">Trips</p>
+      <h1 class="h3 fw-bold mb-1">My Bookings</h1>
+      <p class="mb-0 text-white-50">
+        Monitor upcoming flights, review past journeys, and cancel when plans change.
+      </p>
+    </div>
+    <div class="text-lg-end">
+      <a href="{{ url_for('search.search') }}" class="btn btn-light fw-semibold">
+        Book flights
+      </a>
+    </div>
+  </div>
+</section>
+
+<div
+  id="cancellationSuccess"
+  class="alert alert-success cancellation-alert {{ 'active' if show_cancel_banner else '' }}"
+  role="alert"
+>
+  <span class="flex-grow-1">Your flight was canceled.</span>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+{% macro booking_card(booking, bucket) -%}
+  {% set depart = booking.departure_time.strftime('%b %d, %Y • %I:%M %p') if booking.departure_time else '—' %}
+  {% set arrive = booking.arrival_time.strftime('%b %d, %Y • %I:%M %p') if booking.arrival_time else '—' %}
+  <div
+    class="booking-card"
+    data-booking-card
+    data-status="{{ bucket }}"
+    data-booking-id="{{ booking.id }}"
+    data-booking-ref="{{ booking.booking_reference }}"
+    data-booking-route="{{ booking.origin }} → {{ booking.destination }}"
+    data-booking-airline="{{ booking.airline }}"
+    data-booking-flight="{{ booking.flight_number }}"
+    data-booking-depart="{{ depart }}"
+    data-booking-depart-iso="{{ booking.departure_time.isoformat() if booking.departure_time else '' }}"
+    data-booking-arrive="{{ arrive }}"
+    data-booking-amount="{{ booking.formatted_total() }}"
+    data-booking-total-cents="{{ booking.total_paid_cents or 0 }}"
+  >
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+      <div class="booking-route">
+        <div class="airport-code">{{ booking.origin }}</div>
+        <div class="route-divider"></div>
+        <div class="airport-code">{{ booking.destination }}</div>
+      </div>
+      <div>
+        {% if bucket == 'upcoming' %}
+          <span class="status-pill on-time">On time</span>
+        {% elif bucket == 'past' %}
+          <span class="status-pill completed">Completed</span>
+        {% else %}
+          <span class="status-pill canceled">Canceled</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="booking-meta">
+      <div class="meta-block">
+        <div class="meta-label">Airline</div>
+        <div class="meta-value">{{ booking.airline }} • {{ booking.flight_number }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Departure</div>
+        <div class="meta-value">{{ depart }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Arrival</div>
+        <div class="meta-value">{{ arrive }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Booking Ref</div>
+        <div class="meta-value">{{ booking.booking_reference }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Ticket</div>
+        <div class="meta-value">{{ booking.ticket_type }}</div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Total paid</div>
+        <div class="meta-value">{{ booking.formatted_total() }}</div>
+      </div>
+    </div>
+
+    {% set extras = extras_map.get(booking.id) if extras_map is defined else None %}
+    {% if extras %}
+      <div class="bg-light rounded-3 border p-3">
+        {% set seats = extras.get('selected_seats', []) %}
+        {% set price_meta = extras.get('pricing', {}) %}
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="border rounded-3 p-3 bg-white h-100 shadow-sm">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="m-0 fw-bold">Passenger preferences</h6>
+                <span class="badge text-bg-info-subtle text-dark">{{ seats|length or extras.get('passengers',[])|length }} pax</span>
+              </div>
+              {% if extras.get('passengers') %}
+                <div class="vstack gap-2">
+                  {% for pax in extras.get('passengers', []) %}
+                    {% set seat = seats[loop.index0] if seats else '' %}
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                      <span class="badge text-bg-light border px-2">P{{ loop.index }}</span>
+                      <div>
+                        <div class="fw-semibold small">{{ pax.get('full_name') or 'Passenger ' ~ loop.index }}</div>
+                        <div class="small text-muted">
+                          Class: {{ pax.get('class_pref','—') }} • {{ pax.get('seat_pref','—') }} Seat • Meal: {{ pax.get('meal_pref','—') }} • Extra bags: {{ pax.get('extra_bags',0) }}
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-muted small">No passenger preferences saved.</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="border rounded-3 p-3 bg-white h-100 shadow-sm">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="m-0 fw-bold">Passenger details</h6>
+                <span class="badge text-bg-light border">Seats</span>
+              </div>
+              <div class="vstack gap-2">
+                {% if extras.get('passengers') %}
+                  {% for pax in extras.get('passengers', []) %}
+                    {% set seat = seats[loop.index0] if seats else '' %}
+                    <div class="d-flex justify-content-between align-items-center border rounded-2 px-2 py-1 bg-light-subtle">
+                      <div class="fw-semibold small">{{ pax.get('full_name') or 'Passenger ' ~ loop.index }}</div>
+                      <span class="badge text-bg-light border">{{ seat or 'No seat' }}</span>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="text-muted small">No passenger details saved.</div>
+                {% endif %}
+              </div>
+              <div class="mt-3 small text-muted">
+                Baggage: {{ extras.get('baggage_total') if extras.get('baggage_total') is not none else '—' }} total • Included: {{ price_meta.get('included_bags','—') }} • Extras: {{ price_meta.get('additional_bags','—') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if bucket == 'upcoming' %}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <small class="text-muted">
+          Free online cancellation up to 2 hours before departure.
+        </small>
+        <button class="btn btn-outline-danger btn-cancel-flight" type="button" data-bs-toggle="modal" data-bs-target="#cancelModal">
+          Cancel flight
+        </button>
+      </div>
+    {% elif bucket == 'canceled' and booking.cancellation_reason %}
+      <div class="text-muted small">
+        Reason: {{ booking.cancellation_reason }}
+      </div>
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+<section class="booking-section" data-booking-section="upcoming">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="m-0 fw-bold">Upcoming flights</h4>
+    <span class="badge text-bg-info" data-count-badge="upcoming">{{ upcoming|length }} trips</span>
+  </div>
+  <div class="booking-card-grid" data-card-container="upcoming">
+    {% for booking in upcoming %}
+      {{ booking_card(booking, 'upcoming') }}
+    {% endfor %}
+  </div>
+  <div class="empty-state {% if upcoming|length %}d-none{% endif %}" data-empty="upcoming">
+    No upcoming trips yet.
+  </div>
+</section>
+
+<section class="booking-section" data-booking-section="past">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="m-0 fw-bold">Past trips</h4>
+    <span class="badge text-bg-success" data-count-badge="past">{{ past|length }} completed</span>
+  </div>
+  <div class="booking-card-grid" data-card-container="past">
+    {% for booking in past %}
+      {{ booking_card(booking, 'past') }}
+    {% endfor %}
+  </div>
+  <div class="empty-state {% if past|length %}d-none{% endif %}" data-empty="past">
+    No past trips recorded.
+  </div>
+</section>
+
+<section class="booking-section" data-booking-section="canceled">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="m-0 fw-bold">Canceled</h4>
+    <span class="badge text-bg-danger" data-count-badge="canceled">{{ canceled|length }} canceled</span>
+  </div>
+  <div class="booking-card-grid" data-card-container="canceled">
+    {% for booking in canceled %}
+      {{ booking_card(booking, 'canceled') }}
+    {% endfor %}
+  </div>
+  <div class="empty-state {% if canceled|length %}d-none{% endif %}" data-empty="canceled">
+    No canceled bookings.
+  </div>
+</section>
+
+<!-- Cancel confirmation modal -->
+<div class="modal fade cancel-modal" id="cancelModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <p class="text-uppercase text-muted small mb-1">Manage booking</p>
+          <h5 class="modal-title fw-bold">Cancel flight</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="stepper" data-stepper>
+          <span class="step-chip active" data-step-chip="1"><span class="dot">1</span>Confirm</span>
+          <span class="step-chip" data-step-chip="2"><span class="dot">2</span>Policy</span>
+          <span class="step-chip" data-step-chip="3"><span class="dot">3</span>Refund</span>
+        </div>
+
+        <div class="cancel-step active" data-step="1">
+          <p class="text-muted">
+            Are you sure you want to cancel this flight? We’ll show the policy and your refund before you commit.
+          </p>
+          <div class="summary-card mb-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+              <div>
+                <div class="text-uppercase small text-muted">Route</div>
+                <div class="fw-bold" id="summaryRoute">—</div>
+                <div class="text-muted" id="summaryAirline">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Departure</div>
+                <div class="fw-semibold" id="summaryDepart">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Arrival</div>
+                <div class="fw-semibold" id="summaryArrive">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Total paid</div>
+                <div class="fw-bold" id="summaryAmount">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep flight</button>
+            <button class="btn btn-primary" id="cancelStepNext">Review policy</button>
+          </div>
+        </div>
+
+        <div class="cancel-step" data-step="2">
+          <div class="summary-card d-flex align-items-center gap-3 mb-3">
+            <div class="badge text-bg-danger-subtle text-danger border">Policy</div>
+            <div>
+              <div class="fw-semibold" id="policyWindowTag">We’ll check the timing of your flight.</div>
+              <div class="small text-muted" id="policyWindowDesc">Refunds vary based on how close you are to departure.</div>
+            </div>
+          </div>
+
+          <div class="policy-card mb-3" id="policyDetails">
+            <p class="fw-semibold mb-2">Flight cancellation policy</p>
+            <ul class="ps-3 mb-2 small text-muted">
+              <li>Cancel more than 24 hours before departure: full refund.</li>
+              <li>Cancel within 24 hours to 2 hours before departure: 75% of what you paid is refunded.</li>
+              <li>Cancel within 2 hours of departure: cancellation allowed but non-refundable (refund of $0).</li>
+            </ul>
+            <p class="mb-0 small text-muted">{{ policy_text }}</p>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-lg-6">
+              <label for="cancelReason" class="form-label">Reason for cancellation <span class="text-muted">(optional)</span></label>
+              <select class="form-select" id="cancelReason">
+                <option value="">Select a reason</option>
+                <option value="Schedule change">Schedule change</option>
+                <option value="Found a better deal">Found a better deal</option>
+                <option value="Health or personal reasons">Health or personal reasons</option>
+                <option value="Weather concerns">Weather concerns</option>
+                <option value="other">Other</option>
+              </select>
+              <div class="mt-2 d-none" id="cancelReasonOtherWrap">
+                <label for="cancelReasonOther" class="form-label">Tell us more</label>
+                <textarea class="form-control" id="cancelReasonOther" rows="2" maxlength="200"></textarea>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="summary-card h-100" id="ackCard">
+                <div class="d-flex align-items-start gap-2">
+                  <input class="form-check-input mt-1" type="checkbox" id="cancelAck" />
+                  <div class="small">
+                    <div class="fw-semibold">I understand the cancellation terms</div>
+                    <div class="text-muted">We’ll calculate your refund using this policy and release your seats.</div>
+                  </div>
+                </div>
+                <div class="text-danger small mt-2 d-none" id="ackWarning">
+                  Please confirm you understand the cancellation terms to continue.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" id="cancelStepBack" type="button">
+              <i class="bi bi-arrow-left"></i> Back
+            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Keep booking</button>
+              <button class="btn btn-primary" id="cancelShowSummary" type="button">
+                See refund details
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cancel-step" data-step="3">
+          <div class="summary-card mb-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+              <div>
+                <div class="text-uppercase small text-muted">Route</div>
+                <div class="fw-bold" id="summaryRouteFinal">—</div>
+                <div class="text-muted" id="summaryAirlineFinal">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Departure</div>
+                <div class="fw-semibold" id="summaryDepartFinal">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Arrival</div>
+                <div class="fw-semibold" id="summaryArriveFinal">—</div>
+              </div>
+              <div>
+                <div class="text-uppercase small text-muted">Amount paid</div>
+                <div class="fw-bold" id="summaryAmountCopy">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <div class="summary-card h-100">
+                <p class="text-uppercase small text-muted mb-1">Refund estimate</p>
+                <div class="d-flex align-items-baseline gap-2 mb-2">
+                  <div class="display-6 fw-bold text-success" id="summaryRefund">$0.00</div>
+                  <span class="badge text-bg-light border" id="refundWindowBadge">—</span>
+                </div>
+                <div class="ref-row">
+                  <span>Amount paid</span>
+                  <span id="summaryAmountCopyInline">—</span>
+                </div>
+                <div class="ref-row text-danger bg-danger-subtle bg-opacity-10 border-danger-subtle">
+                  <span>Fees withheld</span>
+                  <span id="summaryFee">$0.00</span>
+                </div>
+                <div class="small text-muted mt-2" id="summaryRule">
+                  Refund amounts are calculated based on your departure time.
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="summary-card h-100">
+                <p class="fw-semibold mb-2">What happens next</p>
+                <ul class="small text-muted mb-3">
+                  <li>We’ll send a cancellation email and release your seats.</li>
+                  <li>Eligible refunds return to your original payment method.</li>
+                  <li id="summaryWindowReminder">We’ll apply the policy shown above.</li>
+                </ul>
+                <div class="alert alert-info small mb-0">
+                  You can still back out below if you change your mind.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <button class="btn btn-outline-secondary" type="button" id="cancelStepBackToTwo">
+              <i class="bi bi-arrow-left"></i> Back to policy
+            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Keep booking</button>
+              <button class="btn btn-danger" id="confirmCancellation" type="button" disabled>Cancel flight</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const successAlert = document.getElementById("cancellationSuccess");
+    const successClose = successAlert?.querySelector(".btn-close");
+    const modalEl = document.getElementById("cancelModal");
+    const modal = modalEl && window.bootstrap ? new window.bootstrap.Modal(modalEl) : null;
+
+    const cancelStepOne = modalEl?.querySelector('[data-step="1"]');
+    const cancelStepTwo = modalEl?.querySelector('[data-step="2"]');
+    const cancelStepThree = modalEl?.querySelector('[data-step="3"]');
+    const stepChips = modalEl?.querySelectorAll("[data-step-chip]");
+    const btnNext = document.getElementById("cancelStepNext");
+    const btnBack = document.getElementById("cancelStepBack");
+    const btnBackToTwo = document.getElementById("cancelStepBackToTwo");
+    const btnShowSummary = document.getElementById("cancelShowSummary");
+    const btnConfirm = document.getElementById("confirmCancellation");
+    const ackCard = document.getElementById("ackCard");
+    const ackWarning = document.getElementById("ackWarning");
+    const reasonSelect = document.getElementById("cancelReason");
+    const reasonOtherWrap = document.getElementById("cancelReasonOtherWrap");
+    const reasonOtherInput = document.getElementById("cancelReasonOther");
+    const ackCheckbox = document.getElementById("cancelAck");
+    const summaryRoute = document.getElementById("summaryRoute");
+    const summaryAirline = document.getElementById("summaryAirline");
+    const summaryDepart = document.getElementById("summaryDepart");
+    const summaryArrive = document.getElementById("summaryArrive");
+    const summaryAmount = document.getElementById("summaryAmount");
+    const summaryRouteFinal = document.getElementById("summaryRouteFinal");
+    const summaryAirlineFinal = document.getElementById("summaryAirlineFinal");
+    const summaryDepartFinal = document.getElementById("summaryDepartFinal");
+    const summaryArriveFinal = document.getElementById("summaryArriveFinal");
+    const summaryAmountCopy = document.getElementById("summaryAmountCopy");
+    const summaryAmountCopyInline = document.getElementById("summaryAmountCopyInline");
+    const summaryRefund = document.getElementById("summaryRefund");
+    const summaryFee = document.getElementById("summaryFee");
+    const summaryRule = document.getElementById("summaryRule");
+    const refundWindowBadge = document.getElementById("refundWindowBadge");
+    const policyWindowTag = document.getElementById("policyWindowTag");
+    const policyWindowDesc = document.getElementById("policyWindowDesc");
+    const summaryWindowReminder = document.getElementById("summaryWindowReminder");
+
+    let activeCard = null;
+    let activeTotals = { refund_cents: 0, fee_cents: 0, rule: "", window_label: "", hours_until: null };
+
+    const formatCurrency = (cents) => {
+      const safeCents = Number.isFinite(cents) ? cents : 0;
+      return `$${(safeCents / 100).toFixed(2)}`;
+    };
+
+    const formatHoursAway = (hours) => {
+      if (hours === null || Number.isNaN(hours)) return "—";
+      if (hours < 0) return "Departure time has passed.";
+      if (hours >= 48) return `${Math.round(hours / 24)} days from now`;
+      if (hours >= 24) return "About a day away";
+      if (hours >= 1) return `${Math.floor(hours)} hours from now`;
+      const minutes = Math.max(0, Math.round(hours * 60));
+      return `${minutes} minutes from now`;
+    };
+
+    const computeRefund = (totalCents, departIso) => {
+      const base = {
+        refund_cents: totalCents || 0,
+        fee_cents: 0,
+        rule: "",
+        window_label: "",
+        hours_until: null,
+      };
+
+      if (!departIso) {
+        base.rule = "Refund calculated once departure time is available.";
+        return base;
+      }
+
+      const departDate = new Date(departIso);
+      if (Number.isNaN(departDate.getTime())) {
+        base.rule = "Refund calculated once departure time is available.";
+        return base;
+      }
+
+      const now = new Date();
+      const diffHours = (departDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+      base.hours_until = diffHours;
+
+      if (diffHours > 24) {
+        base.refund_cents = totalCents;
+        base.fee_cents = 0;
+        base.window_label = "Full refund window";
+        base.rule = "More than 24 hours before departure: full refund applies.";
+      } else if (diffHours >= 2) {
+        base.refund_cents = Math.round(totalCents * 0.75);
+        base.fee_cents = Math.max(0, totalCents - base.refund_cents);
+        base.window_label = "75% refund window";
+        base.rule = "Between 24 hours and 2 hours before departure: 75% refunded, balance kept as fee.";
+      } else if (diffHours >= 0) {
+        base.refund_cents = 0;
+        base.fee_cents = totalCents;
+        base.window_label = "Inside 2 hours";
+        base.rule = "Less than 2 hours before departure: cancellation allowed but non-refundable.";
+      } else {
+        base.refund_cents = 0;
+        base.fee_cents = totalCents;
+        base.window_label = "Departure passed";
+        base.rule = "Departure time has passed; refunds are not available.";
+      }
+
+      return base;
+    };
+
+    const refreshEmptyState = (sectionName) => {
+      const section = document.querySelector(`[data-booking-section="${sectionName}"]`);
+      if (!section) return;
+      const cards = section.querySelectorAll("[data-booking-card]");
+      const empty = section.querySelector(`[data-empty="${sectionName}"]`);
+
+      if (!empty) return;
+      if (cards.length === 0) {
+        empty.classList.remove("d-none");
+      } else {
+        empty.classList.add("d-none");
+      }
+    };
+
+    const refreshCounts = () => {
+      const labels = {
+        upcoming: "trips",
+        past: "completed",
+        canceled: "canceled",
+      };
+      ["upcoming", "past", "canceled"].forEach((sectionName) => {
+        const container = document.querySelector(
+          `[data-card-container="${sectionName}"]`
+        );
+        const badge = document.querySelector(
+          `[data-count-badge="${sectionName}"]`
+        );
+        if (!container || !badge) return;
+        const total = container.querySelectorAll("[data-booking-card]").length;
+        const label = labels[sectionName] || "";
+        badge.textContent = `${total} ${label}`.trim();
+      });
+    };
+
+    const setStep = (step) => {
+      [cancelStepOne, cancelStepTwo, cancelStepThree].forEach((node, idx) => {
+        if (!node) return;
+        const currentStep = idx + 1;
+        node.classList.toggle("active", currentStep === step);
+      });
+      stepChips?.forEach((chip) => {
+        const chipStep = Number(chip.dataset.stepChip);
+        chip.classList.toggle("active", chipStep === step);
+      });
+    };
+
+    successClose?.addEventListener("click", () => {
+      successAlert?.classList.remove("active");
+    });
+
+    const resetModal = () => {
+      setStep(1);
+      reasonSelect.value = "";
+      reasonOtherWrap?.classList.add("d-none");
+      reasonOtherInput.value = "";
+      ackCheckbox.checked = false;
+      btnConfirm.disabled = true;
+      if (btnShowSummary) btnShowSummary.disabled = false;
+      ackCard?.classList.remove("ack-required");
+      ackWarning?.classList.add("d-none");
+    };
+
+    const updateRefundUI = () => {
+      if (!activeCard) return;
+      const totalCents = parseInt(activeCard.dataset.bookingTotalCents || "0", 10);
+      const departIso = activeCard.dataset.bookingDepartIso || "";
+      const est = computeRefund(totalCents, departIso);
+      activeTotals = est;
+
+      summaryRefund.textContent = formatCurrency(est.refund_cents);
+      summaryFee.textContent = formatCurrency(est.fee_cents);
+      summaryRule.textContent = est.rule || "";
+      summaryAmountCopy.textContent = activeCard.dataset.bookingAmount || "—";
+      summaryAmountCopyInline.textContent = activeCard.dataset.bookingAmount || "—";
+      refundWindowBadge.textContent = est.window_label || "Refund window";
+      let windowText;
+      if (est.hours_until === null || Number.isNaN(est.hours_until)) {
+        windowText = "We could not determine your departure time.";
+      } else if (est.hours_until < 0) {
+        windowText = "Departure time has passed.";
+      } else {
+        windowText = `Departing ${formatHoursAway(est.hours_until)}.`;
+      }
+      policyWindowDesc.textContent = `${windowText} Refunds are determined by the policy below.`;
+      policyWindowTag.textContent = est.window_label || "Timing-based refund";
+      summaryWindowReminder.textContent = `${windowText} ${est.rule || ""}`.trim();
+    };
+
+    const attachHandlers = () => {
+      document.querySelectorAll(".btn-cancel-flight").forEach((btn) => {
+        btn.addEventListener("click", (evt) => {
+          const card = evt.currentTarget.closest("[data-booking-card]");
+          if (!card || !modal) return;
+          activeCard = card;
+
+          const airlineLine = `${card.dataset.bookingAirline || ""} • ${card.dataset.bookingFlight || ""}`.trim();
+          summaryRoute.textContent = card.dataset.bookingRoute || "—";
+          summaryAirline.textContent = airlineLine || "—";
+          summaryDepart.textContent = card.dataset.bookingDepart || "—";
+          summaryArrive.textContent = card.dataset.bookingArrive || "—";
+          summaryAmount.textContent = card.dataset.bookingAmount || "—";
+
+          summaryRouteFinal.textContent = card.dataset.bookingRoute || "—";
+          summaryAirlineFinal.textContent = airlineLine || "—";
+          summaryDepartFinal.textContent = card.dataset.bookingDepart || "—";
+          summaryArriveFinal.textContent = card.dataset.bookingArrive || "—";
+
+          resetModal();
+          updateRefundUI();
+          modal.show();
+        });
+      });
+    };
+
+    attachHandlers();
+
+    btnNext?.addEventListener("click", () => setStep(2));
+    btnBack?.addEventListener("click", () => setStep(1));
+    btnShowSummary?.addEventListener("click", () => {
+      if (!ackCheckbox?.checked) {
+        ackCard?.classList.add("ack-required");
+        ackWarning?.classList.remove("d-none");
+        ackCheckbox?.focus();
+        return;
+      }
+      ackCard?.classList.remove("ack-required");
+      ackWarning?.classList.add("d-none");
+      updateRefundUI();
+      setStep(3);
+      btnConfirm?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    btnBackToTwo?.addEventListener("click", () => setStep(2));
+
+    reasonSelect?.addEventListener("change", (evt) => {
+      if (evt.target.value === "other") {
+        reasonOtherWrap?.classList.remove("d-none");
+      } else {
+        reasonOtherWrap?.classList.add("d-none");
+        reasonOtherInput.value = "";
+      }
+    });
+
+    ackCheckbox?.addEventListener("change", (evt) => {
+      btnConfirm.disabled = !evt.target.checked;
+      if (evt.target.checked) {
+        ackCard?.classList.remove("ack-required");
+        ackWarning?.classList.add("d-none");
+      }
+    });
+
+    btnConfirm?.addEventListener("click", async () => {
+      if (!activeCard || !ackCheckbox?.checked) {
+        return;
+      }
+      btnConfirm.disabled = true;
+      const bookingId = activeCard.dataset.bookingId;
+      const selectedReason = reasonSelect.value;
+      const reason =
+        selectedReason === "other"
+          ? reasonOtherInput.value.trim()
+          : selectedReason;
+
+      try {
+        const response = await fetch(`/booking/${bookingId}/cancel`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            acknowledged: !!ackCheckbox.checked,
+            reason,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to cancel booking.");
+        }
+
+        const payload = await response.json();
+        modal?.hide();
+        successAlert?.classList.add("active");
+        const refundText = `Refund: ${formatCurrency(activeTotals.refund_cents)} • Fees: ${formatCurrency(activeTotals.fee_cents)}.`;
+        const successText = payload?.message
+          ? `${payload.message} ${refundText}`
+          : `Your flight was canceled. ${refundText}`;
+        if (successAlert) {
+          const span = successAlert.querySelector("span");
+          if (span) span.textContent = successText;
+        }
+
+        if (activeCard) {
+          activeCard.dataset.status = "canceled";
+          const pill = activeCard.querySelector(".status-pill");
+          if (pill) {
+            pill.classList.remove("on-time");
+            pill.classList.add("canceled");
+            pill.innerHTML = '<i class="bi bi-x-circle"></i> Canceled';
+          }
+          const actionRow = activeCard.querySelector(".btn-cancel-flight")?.parentElement;
+          if (actionRow) {
+            actionRow.remove();
+          }
+          const canceledSectionEl = document.querySelector(`[data-booking-section="canceled"]`);
+          const canceledContainer = canceledSectionEl?.querySelector(
+            "[data-card-container='canceled']"
+          );
+          canceledContainer?.appendChild(activeCard);
+        }
+        refreshEmptyState("upcoming");
+        refreshEmptyState("canceled");
+        refreshCounts();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btnConfirm.disabled = !ackCheckbox.checked;
+      }
+    });
+
+    modalEl?.addEventListener("hidden.bs.modal", () => {
+      activeCard = null;
+      activeTotals = { refund_cents: 0, fee_cents: 0, rule: "", window_label: "", hours_until: null };
+      resetModal();
+    });
+  });
+</script>
+
+{% endblock %}

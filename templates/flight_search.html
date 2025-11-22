@@ -353,7 +353,7 @@
                     <div class="price">${{ '%.2f' % price_num }}</div>
                     <div class="small text-muted">Taxes & fees included</div>
                   </div>
-                    <a class="btn btn-primary book-btn" href="/flights/{{ f.id }}/seats">
+                    <a class="btn btn-primary book-btn" href="/flights/{{ f.id }}/seats?pax={{ request.args.get('pax','1') }}&cabin={{ request.args.get('cabin','economy') }}">
                       <i class="bi bi-ticket-perforated me-1"></i> Book
                     </a>
 
@@ -665,12 +665,19 @@
   // Submit loading
   (() => {
     const form = $('#flightSearch'); const btn = $('#searchBtn');
+    const pax = $('select[name="pax"]');
     if(form && btn){
       form.addEventListener('submit', ()=>{
+        if(pax) sessionStorage.setItem('passengerCount', pax.value);
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Searching...';
       });
     }
+    $$('.book-btn').forEach(link=>{
+      link.addEventListener('click', ()=>{
+        if(pax) sessionStorage.setItem('passengerCount', pax.value);
+      });
+    });
   })();
 
   // Price alert (UI only)
@@ -692,6 +699,4 @@
   })();
 </script>
 {% endblock %}
-
-
 

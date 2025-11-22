@@ -20,6 +20,7 @@
     background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);
     color:#111; min-height:100svh; display:flex; flex-direction:column;
     position:relative; overflow-x:hidden;
+    padding-bottom:140px;
   }
   body::before{
     content:""; position:fixed; inset:0;
@@ -148,13 +149,32 @@
   .exitRow::after{content:"EXIT ROW"; position:absolute; right:8px; top:-10px; font-size:11px; font-weight:800; color:#dc2626; background:#fff; padding:2px 6px; border-radius:6px; border:2px solid #fca5a5}
 
   .actions{
-    display:flex; justify-content:space-between; align-items:center; width:100%; max-width:860px; margin-top:10px;
-    background:rgba(255,255,255,.95); backdrop-filter:blur(12px); padding:20px 24px; border-radius:16px;
+    position:fixed; left:50%; transform:translateX(-50%); bottom:16px;
+    width:min(1120px, calc(100% - 32px));
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    background:rgba(255,255,255,.96); backdrop-filter:blur(14px);
+    padding:16px 20px; border-radius:16px; border:1px solid rgba(0,0,0,.08);
+    box-shadow:0 -10px 30px rgba(15,23,42,.12), 0 12px 36px rgba(14,165,233,.15);
+    z-index:30;
   }
+  .actions .left{flex:1; min-width:0;}
+  .summary-title{font-size:13px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); font-weight:700; margin-bottom:4px;}
+  .pax-chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .p-chip{
+    display:flex; flex-direction:column; align-items:flex-start;
+    border:1px solid rgba(14,165,233,.2); border-radius:14px; padding:10px 12px;
+    background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(226,244,255,.9));
+    min-width:136px; cursor:pointer;
+    box-shadow:0 10px 24px rgba(14,165,233,.14);
+    transition:all .15s ease;
+  }
+  .p-chip.active{border-color:#0284c7; box-shadow:0 0 0 3px rgba(2,132,199,.25);}
+  .p-chip strong{color:#0b2545; letter-spacing:0.2px;}
+  .p-chip small{color:#0ea5e9; font-weight:700; text-transform:uppercase; letter-spacing:.3px;}
   .total{font-weight:800;font-size:18px;background:linear-gradient(135deg,#0ea5e9,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
   .btn{background:linear-gradient(135deg,#0ea5e9,#06b6d4); color:#fff; border:0; border-radius:12px; padding:14px 28px; font-weight:700; font-size:15px; cursor:pointer}
   .btn:disabled{opacity:.5; cursor:not-allowed}
-  .note{color:var(--muted); font-size:13px; margin-top:6px; text-align:right; font-weight:500}
+  .summary-sub{color:#475569; font-size:13px; margin-top:4px;}
 </style>
 </head>
 <body>
@@ -164,6 +184,7 @@
   <div class="meta">
     <div>✈️ <strong>Flight:</strong> <span id="flight-label"></span></div>
     <div>🪑 <strong>Layout:</strong> <span id="layout-label"></span></div>
+    <div>👥 <strong>Passengers:</strong> <span id="passenger-count"></span></div>
     <div id="legend">
       <span class="pill"><span class="sw available"></span>Available</span>
       <span class="pill"><span class="sw selected"></span>Selected</span>
@@ -194,32 +215,84 @@
       <div id="grid" data-flight-id=""></div>
     </div>
   </div>
+</div>
 
-  <div class="actions">
-    <div class="total">🎫 Selected: <span id="total">0 seats</span></div>
-    <div>
-      <button id="continue" class="btn" disabled   data-booking-url="{{ url_for('booking.new_booking') }}">Continue to Checkout</button>
-      <div class="note">💳 Seat price shown at checkout</div>
-    </div>
+<div class="actions" aria-live="polite">
+  <div class="left">
+    <div class="summary-title">Seat summary</div>
+    <div class="pax-chips" id="pax-chips"></div>
+  </div>
+  <div class="right text-end">
+    <div class="total">🎫 <span id="total">0 seats</span></div>
+    <div class="summary-sub">Active: <span id="active-label">Passenger 1</span></div>
+  </div>
+  <div>
+    <button id="continue" class="btn" disabled data-booking-url="{{ url_for('booking.new_booking') }}">Continue to Checkout</button>
   </div>
 </div>
 
+<!-- server-provided seed data for JS; keeps inline script error-free -->
+<script id="seat-seed" type="application/json">
+  {{ {"passenger_count": passenger_count, "preselected_seats": preselected_seats}|tojson }}
+</script>
+
 <script>
   const path = location.pathname.split('/').filter(Boolean);
-  const flightId = path[path.indexOf('flights') + 1];
+  const qs = new URLSearchParams(location.search);
+  const flightIdFromPath = path.includes('flights') ? path[path.indexOf('flights') + 1] : null;
+  const flightId = flightIdFromPath || qs.get('flight_id');
+
+  if (!flightId) {
+    alert('No flight id provided for seat selection.');
+    throw new Error('Missing flight id');
+  }
 
   const grid = document.getElementById('grid');
   const wTop = document.getElementById('w-top');
   const wBtm = document.getElementById('w-btm');
+  const chips = document.getElementById('pax-chips');
+  const activeLabel = document.getElementById('active-label');
+  const passengerCountEl = document.getElementById('passenger-count');
   grid.dataset.flightId = flightId;
+
+  let serverPax = null;
+  let presetSeatsRaw = [];
+  try {
+    const seed = document.getElementById('seat-seed')?.textContent || '{}';
+    const parsed = JSON.parse(seed);
+    serverPax = parsed?.passenger_count ?? null;
+    const raw = parsed?.preselected_seats;
+    presetSeatsRaw = Array.isArray(raw) ? raw : [];
+  } catch (err) {
+    console.warn('Failed to parse seat seed data', err);
+  }
+  const paxFromQuery = Number(qs.get('pax')) || 0;
+  const paxFromSession = Number(sessionStorage.getItem('passengerCount')) || 0;
+  const presetSeats = Array.isArray(presetSeatsRaw) ? presetSeatsRaw : [];
+
+  let passengerCount = Number.isFinite(Number(serverPax)) ? Number(serverPax) : 0;
+  passengerCount = passengerCount || paxFromQuery || paxFromSession || 1;
+  if (!Number.isFinite(passengerCount) || passengerCount < 1) passengerCount = 1;
+  passengerCount = Math.round(passengerCount);
+  sessionStorage.setItem('passengerCount', String(passengerCount));
+  passengerCountEl.textContent = passengerCount;
+
+  if(!presetSeats || presetSeats.length === 0){
+    sessionStorage.removeItem(`seats:${flightId}`);
+  }
+  const initialSeats = Array.isArray(presetSeats) && presetSeats.length ? presetSeats : [];
 
   const state = {
     origin:"", destination:"", depart_time:"",
     layout:"", rows:0, classes:[],
     occupied:new Set(), held:new Set(), blocked:new Set(),
-    prices:{}, selected:new Set(),
+    prices:{},
+    selectedSeats:Array.from({length: passengerCount}, (_,i)=>initialSeats[i] || null),
     exit_rows:[]
   };
+
+  let activePassenger = Math.max(0, state.selectedSeats.findIndex(seat => !seat));
+  if (activePassenger === -1) activePassenger = 0;
 
   const totalEl = document.getElementById('total');
   const continueBtn = document.getElementById('continue');
@@ -302,61 +375,142 @@
       grid.appendChild(rowEl);
     }
 
-    const label = `${state.origin} → ${state.destination} (${new Date(state.depart_time).toLocaleString()})`;
+    const departDate = state.depart_time ? new Date(state.depart_time) : null;
+    const departLabel = departDate && !Number.isNaN(departDate.getTime())
+      ? departDate.toLocaleString()
+      : '—';
+    const label = `${state.origin || '—'} → ${state.destination || '—'} (${departLabel})`;
     document.getElementById('flight-label').textContent = label;
-    document.getElementById('layout-label').textContent = state.layout;
+    document.getElementById('layout-label').textContent = state.layout || '—';
 
     buildWindows(Math.max(20, Math.min(36, Math.round(state.rows*0.55))));
+    restoreSelections();
+    renderPassengers();
+    updateTotal();
   }
 
-  // single selection
+  function restoreSelections(){
+    state.selectedSeats.forEach(code=>{
+      if(!code) return;
+      const el=document.querySelector(`.seat[data-code="${code}"]`);
+      if(el && !el.disabled) el.classList.add('selected');
+    });
+  }
+
+  function renderPassengers(){
+    chips.innerHTML='';
+    state.selectedSeats.forEach((seat, idx)=>{
+      const chip=document.createElement('button');
+      chip.type='button';
+      chip.className=`p-chip ${idx===activePassenger?'active':''}`;
+      chip.innerHTML=`<small>Passenger ${idx+1}</small><strong>${seat || 'Select seat'}</strong>`;
+      chip.addEventListener('click', ()=>{
+        activePassenger = idx;
+        renderPassengers();
+      });
+      chips.appendChild(chip);
+    });
+    activeLabel.textContent = `Passenger ${activePassenger+1}`;
+  }
+
+  function persistLocal(){
+    sessionStorage.setItem(`seats:${flightId}`, JSON.stringify(state.selectedSeats));
+    sessionStorage.setItem('passengerCount', String(passengerCount));
+  }
+
   function toggleSeat(code, btn){
-    for(const c of state.selected){
-      if(c!==code){
-        const el=document.querySelector(`.seat.selected[data-code="${c}"]`);
-        if(el) el.classList.remove('selected');
-      }
-    }
-    state.selected.clear();
-    if(!btn.classList.contains('selected')){
-      state.selected.add(code);
-      btn.classList.add('selected');
-    }else{
+    const assignedIdx = state.selectedSeats.findIndex(seat => seat === code);
+    const prevForActive = state.selectedSeats[activePassenger];
+
+    if (assignedIdx === activePassenger){
+      state.selectedSeats[activePassenger] = null;
       btn.classList.remove('selected');
+    } else {
+      if (assignedIdx !== -1){
+        state.selectedSeats[assignedIdx] = null;
+        const prevBtn = document.querySelector(`.seat[data-code="${code}"]`);
+        prevBtn?.classList.remove('selected');
+      }
+      if (prevForActive){
+        const old = document.querySelector(`.seat[data-code="${prevForActive}"]`);
+        old?.classList.remove('selected');
+      }
+      state.selectedSeats[activePassenger] = code;
+      btn.classList.add('selected');
+
+      const nextIdx = state.selectedSeats.findIndex((seat, idx)=>!seat && idx>=activePassenger);
+      if(nextIdx !== -1) activePassenger = nextIdx;
     }
+    persistLocal();
+    renderPassengers();
     updateTotal();
   }
 
   function updateTotal(){
-    const count = state.selected.size;
-    totalEl.textContent = `${count} seat${count!==1?'s':''}`;
-    continueBtn.disabled = count === 0;
+    const filled = state.selectedSeats.filter(Boolean).length;
+    const pax = Number(passengerCount) || 1;
+    totalEl.textContent = `${filled}/${pax} seat${pax!==1?'s':''}`;
+    continueBtn.disabled = filled !== pax;
   }
 
-  continueBtn.addEventListener('click', ()=>{
-  const seat = Array.from(state.selected)[0] || "";
-  const base = continueBtn.dataset.bookingUrl;  
-  window.location.href = `${base}?flight_id=${encodeURIComponent(flightId)}`;
-});
+  async function saveSelection(){
+    const payload = {
+      flight_id: Number(flightId),
+      passenger_count: passengerCount,
+      seat_map: state.selectedSeats,
+      seats: state.selectedSeats.filter(Boolean),
+    };
+    const res = await fetch('/api/booking/selection', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if(!res.ok){
+      throw new Error('Could not save seats. Please try again.');
+    }
+  }
+
+  continueBtn.addEventListener('click', async ()=>{
+    if (!flightId){
+      alert('Missing flight id.');
+      return;
+    }
+    const base = continueBtn.dataset.bookingUrl;  
+    continueBtn.disabled = true;
+    continueBtn.textContent = "Saving...";
+    try{
+      await saveSelection();
+      window.location.href = `${base}?flight_id=${encodeURIComponent(flightId)}&pax=${passengerCount}`;
+    }catch(err){
+      alert(err.message);
+      continueBtn.disabled = false;
+      continueBtn.textContent = "Continue to Checkout";
+    }
+  });
 
 
 
   (async function init(){
-    const res = await fetch(`/api/flights/${flightId}/seats`);
-    if(!res.ok){ alert('Failed to load seats'); return; }
-    const data = await res.json();
-    state.origin = data.origin; state.destination = data.destination; state.depart_time = data.depart_time;
-    state.layout = data.layout; state.rows = data.rows; state.classes = data.classes || [];
-    state.prices = data.prices || {};
-    state.occupied = new Set(data.occupied || []);
-    state.held = new Set(data.held || []);
-    state.blocked = new Set(data.blocked || []);
-    state.exit_rows = data.exit_rows || [];
-    renderGrid(); updateTotal();
+    try{
+      const res = await fetch(`/api/flights/${encodeURIComponent(flightId)}/seats`);
+      if(!res.ok){
+        const msg = await res.text();
+        throw new Error(msg || 'Failed to load seats');
+      }
+      const data = await res.json();
+      state.origin = data.origin; state.destination = data.destination; state.depart_time = data.depart_time;
+      state.layout = data.layout; state.rows = data.rows; state.classes = data.classes || [];
+      state.prices = data.prices || {};
+      state.occupied = new Set(data.occupied || []);
+      state.held = new Set(data.held || []);
+      state.blocked = new Set(data.blocked || []);
+      state.exit_rows = data.exit_rows || [];
+      renderGrid();
+    }catch(err){
+      alert(err.message || 'Unable to load seat map.'); 
+      console.error(err);
+    }
   })();
 </script>
 </body>
 </html>
-
-
-

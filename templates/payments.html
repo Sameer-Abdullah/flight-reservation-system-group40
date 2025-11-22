@@ -1,14 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+  .pay-card{border:1px solid rgba(15,23,42,.08); box-shadow:0 18px 44px rgba(15,23,42,.08); background:linear-gradient(180deg,#fff, #f8fafc);}
+  .summary-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;}
+</style>
 <div class="container my-5">
   <div class="row">
     <!-- Payment Form -->
     <div class="col-lg-8">
-      <div class="card shadow-sm border-0 rounded-4">
+      <div class="card shadow-sm border-0 rounded-4 pay-card">
         <div class="card-body p-4">
-          <h2 class="h4 mb-4">Payment Information</h2>
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <div>
+              <h2 class="h4 mb-1">Payment Information</h2>
+              <p class="text-muted small mb-0">Complete billing to finalize your booking.</p>
+            </div>
+            <span class="badge bg-info-subtle text-dark">Passengers {{ passenger_count }}</span>
+          </div>
 
-          <ul class="nav nav-pills gap-2 mb-3" id="payTabs" role="tablist">
+          <ul class="nav nav-pills gap-2 my-3" id="payTabs" role="tablist">
             <li class="nav-item" role="presentation">
               <button class="nav-link active" id="card-tab" data-bs-toggle="pill"
                 data-bs-target="#card-pane" type="button" role="tab"
@@ -38,26 +48,26 @@
 
                 <div class="col-12">
                   <label class="form-label d-flex align-items-center justify-content-between">
-                    <span>Card Number</span>
+                    <span>Card Number (optional)</span>
                     <span id="brandBadge" class="badge bg-secondary-subtle text-dark border rounded-pill px-3">
                       <i class="bi bi-credit-card"></i> Card
                     </span>
                   </label>
                   <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
-                    <input id="ccNumber" name="card_number" inputmode="numeric" autocomplete="cc-number"
-                           class="form-control" placeholder="1234 5678 9012 3456" required />
+                    <input id="ccNumber" name="card_number" inputmode="numeric" autocomplete="off"
+                           class="form-control" placeholder="1234 5678 9012 3456" />
                   </div>
                   <div id="ccFeedback" class="form-text"></div>
                 </div>
 
                 <div class="col-md-6">
-                  <label class="form-label">Expiry</label>
-                  <input id="ccExp" name="exp" class="form-control" placeholder="MM/YY" required />
+                  <label class="form-label">Expiry (optional)</label>
+                  <input id="ccExp" name="exp" class="form-control" placeholder="MM/YY" autocomplete="off" />
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">CVV</label>
-                  <input name="cvv" inputmode="numeric" class="form-control" placeholder="123" required />
+                  <label class="form-label">CVV (optional)</label>
+                  <input name="cvv" inputmode="numeric" class="form-control" placeholder="123" autocomplete="off" />
                 </div>
 
                 <div class="col-12"><h6 class="mt-2">Billing Address</h6></div>
@@ -71,10 +81,11 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Country</label>
-                  <select name="country" class="form-select" required>
+                  <select name="country" class="form-select" required id="countrySelect">
                     <option value="">Select a country</option>
-                    <option>Canada</option><option>United States</option><option>United Kingdom</option>
-                    <option>Australia</option><option>India</option><option>France</option><option>Germany</option>
+                    {% for name in country_rates %}
+                      <option value="{{ name }}" {% if name == selected_country %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
                   </select>
                 </div>
                 <div class="col-md-6">
@@ -82,7 +93,7 @@
                   <input name="postal" class="form-control" placeholder="Postal / ZIP" required />
                 </div>
 
-                <div class="col-12 d-grid">
+                <div class="col-12 d-grid pt-2">
                   <button id="payCardBtn" class="btn btn-primary py-2" type="submit">
                     <i class="bi bi-lock-fill me-1"></i> Confirm & Pay
                   </button>
@@ -92,13 +103,9 @@
 
             <!-- PayPal Pane -->
             <div class="tab-pane fade" id="paypal-pane" role="tabpanel" aria-labelledby="paypal-tab">
-              <div class="alert alert-info d-flex align-items-center" role="alert">
-                <i class="bi bi-info-circle me-2"></i>
-                PayPal is running in demo mode for this project.
-              </div>
-              <button id="paypalDemoBtn" class="btn btn-outline-primary">
+              <a id="paypalDemoBtn" class="btn btn-outline-primary" href="{{ url_for('payments.mock_paypal', flight_id=flight_id) }}">
                 <i class="bi bi-paypal me-1"></i> Pay with PayPal (demo)
-              </button>
+              </a>
             </div>
           </div>
         </div>
@@ -109,12 +116,61 @@
     <div class="col-lg-4 mt-4 mt-lg-0">
       <div class="card shadow-sm border-0 rounded-4">
         <div class="card-body p-4">
-          <h3 class="h6 mb-3"><i class="bi bi-receipt-cutoff me-2"></i>Order Summary</h3>
-          <div class="d-flex justify-content-between"><span>Fare</span><strong id="fareTotal">$220.00</strong></div>
-          <div class="d-flex justify-content-between"><span>Taxes & Fees</span><span>$0.00</span></div>
+          <h3 class="h6 mb-3"><i class="bi bi-receipt-cutoff me-2"></i>Booking Summary</h3>
+          <div class="mb-3">
+            <div class="fw-bold">{{ flight.origin }} → {{ flight.destination }}</div>
+          </div>
+          <div class="mb-3">
+            <div class="small text-muted mb-1">Passengers</div>
+            <div class="vstack gap-2 small" id="passengerList">
+              {% for pax in passengers %}
+                {% set seat = seat_map[loop.index0] if seat_map else '' %}
+                <div data-passenger="{{ loop.index }}" class="border rounded-3 px-3 py-2 bg-light-subtle">
+                  <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="badge text-bg-light border">Traveller {{ loop.index }}</span>
+                    <span class="fw-semibold">{{ pax.full_name or '—' }}</span>
+                  </div>
+                  <div class="text-muted d-flex flex-wrap gap-2 mt-1">
+                    <span>Class: {{ pax.class_pref or class_choice }}</span>
+                    <span>• Meal: {{ pax.meal_pref or 'Standard' }}</span>
+                    <span>• Extra bags: {{ pax.extra_bags or 0 }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="mb-2">
+            <div class="small text-muted mb-1">Seats</div>
+            <div class="d-flex flex-wrap gap-2">
+              {% for seat in seat_map %}
+                <span class="badge text-bg-light border">Passenger {{ loop.index }}: {{ seat or 'Select seat' }}</span>
+              {% endfor %}
+            </div>
+          </div>
           <hr />
-          <div class="d-flex justify-content-between"><span class="fw-semibold">Total</span><span class="fw-semibold" id="grandTotal">$220.00</span></div>
-          <a href="{{ url_for('search.search') }}" class="btn btn-link mt-3"><i class="bi bi-arrow-left"></i> Back</a>
+          <div class="d-flex justify-content-between"><span>Base fare ({{ passenger_count }} × ${{ '%.2f' % (flight.price_cents/100) }})</span><strong id="fareBase">{{ pricing.formatted.base }}</strong></div>
+          {% if upgrade_labels %}
+            <div class="d-flex justify-content-between">
+              <span>Class upgrade ({{ upgrade_labels|join(', ') }})</span>
+              <strong id="upgradeLine">{{ pricing.formatted.upgrade }}</strong>
+            </div>
+          {% else %}
+            <div class="d-flex justify-content-between">
+              <span>Class upgrade</span>
+              <strong id="upgradeLine">{{ pricing.formatted.upgrade }}</strong>
+            </div>
+          {% endif %}
+          <div class="d-flex justify-content-between">
+            <span>Additional baggage ({{ pricing.additional_bags }} × $50)</span>
+            <strong id="bagLine">{{ pricing.formatted.baggage }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span id="taxLabel">Tax ({{ (pricing.tax_rate * 100)|round(1) }}%)</span>
+            <strong id="taxAmount">{{ pricing.formatted.tax }}</strong>
+          </div>
+          <hr />
+          <div class="d-flex justify-content-between"><span class="fw-semibold">Total</span><span class="fw-semibold" id="grandTotal">{{ pricing.formatted.total }}</span></div>
+          <a href="{{ url_for('booking.new_booking', flight_id=flight.id) }}" class="btn btn-link mt-3"><i class="bi bi-arrow-left"></i> Back to trip</a>
         </div>
       </div>
     </div>
@@ -122,23 +178,30 @@
 </div>
 
 <!-- Scripts -->
+<script id="payment-seed" type="application/json">
+  {{ {"pricing": pricing, "tax_rates": tax_rates}|tojson }}
+</script>
 <script>
   // Tabs: clicking "PayPal" in the pills switches pane (Bootstrap handles); also support a “Switch to PayPal” programmatically if needed.
   document.getElementById('paypal-tab')?.addEventListener('click', () => {});
 
-  // PayPal Demo: show message then redirect to mock route.
-  const paypalBtn = document.getElementById('paypalDemoBtn');
-  if (paypalBtn) {
-    paypalBtn.addEventListener('click', () => {
-      alert('Payment completed (PayPal – mock).');
-      window.location.href = "{{ url_for('payments.mock_paypal', flight_id=flight_id) }}";
-    });
-  }
+  // PayPal Demo uses the link href; no extra JS needed.
 
   // Card: brand detection + Luhn validation + formatting
   const ccInput = document.getElementById('ccNumber');
   const badge = document.getElementById('brandBadge');
   const feedback = document.getElementById('ccFeedback');
+  const countrySelect = document.getElementById('countrySelect');
+  let pricing = {};
+  let taxRates = {};
+  try {
+    const seed = document.getElementById('payment-seed')?.textContent || '{}';
+    const parsed = JSON.parse(seed);
+    pricing = parsed?.pricing || {};
+    taxRates = parsed?.tax_rates || {};
+  } catch (err) {
+    console.error('Failed to parse payment seed data', err);
+  }
 
   function digitsOnly(v){ return v.replace(/\D+/g,''); }
 
@@ -179,28 +242,53 @@
     return '<i class="bi bi-credit-card"></i> Card';
   }
 
-  ccInput.addEventListener('input', () => {
-    const raw = digitsOnly(ccInput.value).slice(0,19);
-    const brand = detectBrand(raw);
-    ccInput.value = groupFormat(raw, brand);
-    badge.innerHTML = brandBadgeText(brand);
+  if (ccInput) {
+    ccInput.addEventListener('input', () => {
+      const raw = digitsOnly(ccInput.value).slice(0,19);
+      const brand = detectBrand(raw);
+      ccInput.value = groupFormat(raw, brand);
+      badge.innerHTML = brandBadgeText(brand);
 
-    if (raw.length >= 12) {
-      const valid = luhnCheck(raw);
-      feedback.textContent = valid ? 'Card number looks valid.' : 'Invalid card number.';
-      feedback.className = valid ? 'form-text text-success' : 'form-text text-danger';
-    } else {
-      feedback.textContent = '';
-      feedback.className = 'form-text';
-    }
-  });
+      if (raw.length >= 12) {
+        const valid = luhnCheck(raw);
+        feedback.textContent = valid ? 'Card number looks valid.' : 'Invalid card number.';
+        feedback.className = valid ? 'form-text text-success' : 'form-text text-danger';
+      } else {
+        feedback.textContent = '';
+        feedback.className = 'form-text';
+      }
+    });
+  }
 
   // Expiry mask MM/YY
   const exp = document.getElementById('ccExp');
-  exp.addEventListener('input', () => {
+  exp?.addEventListener('input', () => {
     let v = exp.value.replace(/\D+/g,'').slice(0,4);
     if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
     exp.value = v;
   });
+
+  // Tax recalculation on country change
+  const taxLabel = document.getElementById('taxLabel');
+  const taxAmount = document.getElementById('taxAmount');
+  const grandTotal = document.getElementById('grandTotal');
+
+  function formatMoney(cents){
+    return `$${(cents/100).toFixed(2)}`;
+  }
+
+  function recalcTotals(countryName){
+    const rate = taxRates[countryName] || 0;
+    const subtotal = (pricing.base_cents || 0) + (pricing.upgrade_cents || 0) + (pricing.baggage_cents || 0);
+    const tax = Math.round(subtotal * rate);
+    const total = subtotal + tax;
+    if(taxLabel) taxLabel.textContent = `Tax (${(rate*100).toFixed(1)}%)`;
+    if(taxAmount) taxAmount.textContent = formatMoney(tax);
+    if(grandTotal) grandTotal.textContent = formatMoney(total);
+  }
+
+  countrySelect?.addEventListener('change', (evt)=>recalcTotals(evt.target.value));
+  recalcTotals(countrySelect?.value || pricing.country);
+
 </script>
 {% endblock %}

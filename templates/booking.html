@@ -39,6 +39,25 @@
     border-radius:14px;
     font-weight:700;
   }
+  .summary-pill{
+    border:1px solid rgba(2,6,23,.08);
+    border-radius:12px;
+    background:#fff;
+    padding:8px 10px;
+    display:inline-flex;
+    flex-direction:column;
+    min-width:120px;
+    box-shadow:0 6px 14px rgba(2,6,23,.06);
+  }
+  .summary-pill small{ color:#64748b; font-weight:700; }
+  .summary-pill strong{ color:#0b2545; }
+  .passenger-card{
+    border:1px solid rgba(2,6,23,.08);
+    border-radius:14px;
+    padding:14px;
+    background: rgba(255,255,255,.9);
+    box-shadow:0 10px 24px rgba(2,6,23,.06);
+  }
 </style>
 
 <!-- background layers for consistency -->
@@ -66,19 +85,21 @@
       <p class="fs-5 mb-0">Price: <strong>${{ '%.2f' % (flight.price_cents/100) }}</strong></p>
     </div>
 
-    <form method="POST" action="{{ url_for('notifications.subscribe') }}">
+    <form method="POST" action="{{ url_for('booking.capture_booking_details') }}" id="bookingForm">
+      <input type="hidden" name="flight_id" value="{{ flight.id }}">
+      <input type="hidden" name="passenger_count" value="{{ passenger_count }}">
       <div class="row g-3">
         <div class="col-md-6">
           <label for="fullname" class="form-label">Full Name</label>
-          <input type="text" class="form-control" id="fullname" name="fullname" placeholder="John Doe" required>
+          <input type="text" class="form-control" id="fullname" name="fullname" placeholder="John Doe" value="{{ lead_passenger.full_name or '' }}" required>
         </div>
         <div class="col-md-6">
           <label for="email" class="form-label">Email</label>
-          <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" required>
+          <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" value="{{ lead_passenger.email or '' }}" required>
         </div>
         <div class="col-md-6">
           <label for="phone" class="form-label">Phone Number</label>
-          <input type="tel" class="form-control" id="phone" name="phone" placeholder="+1 555 123 4567" required>
+          <input type="tel" class="form-control" id="phone" name="phone" placeholder="+1 555 123 4567" value="{{ lead_passenger.phone or '' }}" required>
         </div>
         <div class="col-md-6">
           <label for="seat" class="form-label">Seat Preference</label>
@@ -86,6 +107,18 @@
             <option value="Window">Window</option>
             <option value="Aisle">Aisle</option>
             <option value="Middle">Middle</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="meal_pref" class="form-label">Meal Preference</label>
+          <select class="form-select" id="meal_pref" name="meal_pref">
+            {% set meal_default = meal_pref_default or 'Standard' %}
+            <option value="Standard" {{ 'selected' if meal_default=='Standard' else '' }}>Standard</option>
+            <option value="Vegetarian" {{ 'selected' if meal_default=='Vegetarian' else '' }}>Vegetarian</option>
+            <option value="Vegan" {{ 'selected' if meal_default=='Vegan' else '' }}>Vegan</option>
+            <option value="Kosher" {{ 'selected' if meal_default=='Kosher' else '' }}>Kosher</option>
+            <option value="Halal" {{ 'selected' if meal_default=='Halal' else '' }}>Halal</option>
+            <option value="Gluten-free" {{ 'selected' if meal_default=='Gluten-free' else '' }}>Gluten-free</option>
           </select>
         </div>
         <div class="col-md-6">
@@ -97,19 +130,443 @@
           </select>
         </div>
         <div class="col-md-6">
-          <label for="bags" class="form-label">Baggage</label>
-          <select class="form-select" id="bags" name="bags">
-            <option value="1">1 Bag</option>
-            <option value="2">2 Bags</option>
-            <option value="3">3+ Bags</option>
-          </select>
+          <label for="lead_extra_bags" class="form-label">Extra Checked Bags</label>
+          <input type="number" min="0" class="form-control" id="lead_extra_bags" name="lead_extra_bags" value="{{ passenger_extra_bags[0] if passenger_extra_bags|length else 0 }}" data-extra-bag>
+          <div class="form-text">1 bag included for this passenger.</div>
+        </div>
+      </div>
+
+      {% if passenger_count|int > 1 %}
+        <div class="mt-4">
+          <h5 class="fw-bold mb-3">Additional passengers</h5>
+          <div class="vstack gap-3">
+            {% for idx in range(2, passenger_count + 1) %}
+              <div class="passenger-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="fw-semibold">Passenger {{ idx }}</div>
+                  {% if selected_seats|length >= idx %}
+                    <span class="badge text-bg-light border">Seat {{ selected_seats[idx-1] or 'Select seat' }}</span>
+                  {% endif %}
+                </div>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label small">Full Name</label>
+                    <input class="form-control" name="pax{{ idx }}_name" placeholder="Full name" value="{{ passenger_names[idx-1] if passenger_names|length >= idx else '' }}" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Date of Birth</label>
+                    <input type="date" class="form-control" name="pax{{ idx }}_dob" value="{{ passenger_dobs[idx-1] if passenger_dobs|length >= idx else '' }}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Email</label>
+                    <input type="email" class="form-control" name="pax{{ idx }}_email" placeholder="name@email.com" value="{{ passenger_emails[idx-1] if passenger_emails|length >= idx else '' }}" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Phone</label>
+                    <input type="tel" class="form-control" name="pax{{ idx }}_phone" placeholder="+1 555 123 4567" value="{{ passenger_phones[idx-1] if passenger_phones|length >= idx else '' }}" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Seat Preference</label>
+                    {% set pseat = passenger_seat_prefs[idx-1] if passenger_seat_prefs|length >= idx else seat_pref_default %}
+                    <select class="form-select" name="pax{{ idx }}_seat_pref">
+                      <option value="Window" {{ 'selected' if pseat=='Window' else '' }}>Window</option>
+                      <option value="Aisle" {{ 'selected' if pseat=='Aisle' else '' }}>Aisle</option>
+                      <option value="Middle" {{ 'selected' if pseat=='Middle' else '' }}>Middle</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Meal Preference</label>
+                    {% set pmeal = passenger_meal_prefs[idx-1] if passenger_meal_prefs|length >= idx else meal_pref_default %}
+                    <select class="form-select" name="pax{{ idx }}_meal_pref">
+                      <option value="Standard" {{ 'selected' if pmeal=='Standard' else '' }}>Standard</option>
+                      <option value="Vegetarian" {{ 'selected' if pmeal=='Vegetarian' else '' }}>Vegetarian</option>
+                      <option value="Vegan" {{ 'selected' if pmeal=='Vegan' else '' }}>Vegan</option>
+                      <option value="Kosher" {{ 'selected' if pmeal=='Kosher' else '' }}>Kosher</option>
+                      <option value="Halal" {{ 'selected' if pmeal=='Halal' else '' }}>Halal</option>
+                      <option value="Gluten-free" {{ 'selected' if pmeal=='Gluten-free' else '' }}>Gluten-free</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Class Preference</label>
+                    {% set pclass = passenger_class_prefs[idx-1] if passenger_class_prefs|length >= idx else class_default %}
+                    <select class="form-select" name="pax{{ idx }}_class_pref">
+                      <option value="Economy" {{ 'selected' if pclass=='Economy' else '' }}>Economy</option>
+                      <option value="Premium" {{ 'selected' if pclass=='Premium' else '' }}>Premium</option>
+                      <option value="Business" {{ 'selected' if pclass=='Business' else '' }}>Business</option>
+                      <option value="First" {{ 'selected' if pclass=='First' else '' }}>First</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Extra checked bags</label>
+                    <input type="number" min="0" value="{{ passenger_extra_bags[idx-1] if passenger_extra_bags|length >= idx else 0 }}" class="form-control" name="pax{{ idx }}_extra_bags" data-extra-bag>
+                    <div class="form-text">1 bag already included for this passenger.</div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="mt-4">
+        <div class="bg-light rounded-3 border p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="m-0 fw-bold">Seat summary</h6>
+            <span class="badge text-bg-info">{{ passenger_count }} passenger{{ 's' if passenger_count|default(1) > 1 else '' }}</span>
+          </div>
+          <div class="d-flex flex-wrap gap-2" id="seatSummaryPills">
+            {% for seat in selected_seats %}
+              <div class="summary-pill">
+                <small>Passenger {{ loop.index }}</small>
+                <strong>{{ seat or 'Select seat' }}</strong>
+              </div>
+            {% endfor %}
+            {% if not selected_seats %}
+              <div class="text-muted small">Seat choices will appear after selection.</div>
+            {% endif %}
+          </div>
+          <div class="small text-muted mt-1">Need to adjust seats? Go back and reassign before continuing.</div>
         </div>
       </div>
       <div class="d-flex gap-2 mt-4">
-        <a class="btn btn-primary w-100" href="{{ url_for('payments.payments_page', flight_id=flight.id) }}">Confirm Booking</a>
-        <a class="btn btn-outline-secondary w-100" href="/search">Back to Search</a>
+        <button class="btn btn-primary w-100" type="submit">Continue to Payment</button>
+        <a class="btn btn-outline-secondary w-100" href="{{ url_for('seats.seat_page', flight_id=flight.id) }}?pax={{ passenger_count }}">Back to Seat Selection</a>
       </div>
     </form>
+  </div>
+</div>
+<!-- Data blob for JS without upsetting IDE JS parser -->
+<div id="bookingData"
+     hidden
+     data-seat-assignments='{{ selected_seats|tojson|safe }}'
+     data-class-map='{{ class_map|tojson|safe }}'
+     data-seat-layout='{{ layout|tojson|safe }}'
+     data-class-default='{{ class_default|tojson|safe }}'
+     data-seat-pref-default='{{ seat_pref_default|tojson|safe }}'
+     data-passenger-seat-prefs='{{ passenger_seat_prefs|tojson|safe }}'
+     data-passenger-count="{{ passenger_count }}"
+     data-flight-id="{{ flight.id }}"
+     data-total-rows="{{ flight.aircraft_type.total_rows if flight.aircraft_type else 0 }}">
+</div>
+<script>
+  const bookingDataEl = document.getElementById('bookingData');
+  const parseJsonAttr = (val, fallback) => {
+    if (!val) return fallback;
+    try { return JSON.parse(val); } catch(err) { return fallback; }
+  };
+  let seatAssignments = parseJsonAttr(bookingDataEl?.dataset.seatAssignments, []);
+  const classMap = parseJsonAttr(bookingDataEl?.dataset.classMap, []);
+  const seatLayout = parseJsonAttr(bookingDataEl?.dataset.seatLayout, "ABC DEF");
+  const classDefault = parseJsonAttr(bookingDataEl?.dataset.classDefault, "Economy");
+  const seatPrefDefault = parseJsonAttr(bookingDataEl?.dataset.seatPrefDefault, "Window");
+  const passengerSeatPrefs = parseJsonAttr(bookingDataEl?.dataset.passengerSeatPrefs, []);
+  const passengerCountValue = Number(bookingDataEl?.dataset.passengerCount || 1);
+  const flightId = Number(bookingDataEl?.dataset.flightId || 0);
+  const totalRows = Number(bookingDataEl?.dataset.totalRows || 0);
+  const seatHolder = document.getElementById('seatSummaryPills');
+  function refreshSeats(){
+    if(!seatHolder) return;
+    seatHolder.innerHTML = "";
+    if(!seatAssignments || !seatAssignments.length){
+      seatHolder.innerHTML = '<div class="text-muted small">Seat choices will appear after selection.</div>';
+      return;
+    }
+    seatAssignments.forEach((seat, idx)=>{
+      const pill = document.createElement('div');
+      pill.className = 'summary-pill';
+      pill.innerHTML = `<small>Passenger ${idx+1}</small><strong>${seat || 'Select seat'}</strong>`;
+      seatHolder.appendChild(pill);
+    });
+  }
+  refreshSeats();
+
+  const seatPref = document.getElementById('seat');
+  const mealPref = document.getElementById('meal_pref');
+  const extraBagInputs = Array.from(document.querySelectorAll('[data-extra-bag]'));
+  const classSelect = document.getElementById('class');
+  const passengerPrefSelects = Array.from(document.querySelectorAll('[name^="pax"][name$="_seat_pref"]'));
+
+  function setSelectValue(el, val){
+    if(!el) return;
+    Array.from(el.options).forEach(opt=>{
+      opt.selected = (opt.value === val);
+    });
+  }
+  setSelectValue(classSelect, classDefault || "Economy");
+
+  function deriveSeatPref(code){
+    if(!code) return null;
+    const layout = seatLayout || "ABC DEF";
+    const groups = layout.split(' ');
+    if(!groups.length) return null;
+    const letter = code.replace(/\d+/g,'');
+    const windowLetters = new Set([groups[0][0], groups[groups.length-1].slice(-1)[0]]);
+    const aisleLetters = new Set();
+    for(let i=0;i<groups.length-1;i++){
+      aisleLetters.add(groups[i].slice(-1)[0]);
+      aisleLetters.add(groups[i+1][0]);
+    }
+    if(windowLetters.has(letter)) return "Window";
+    if(aisleLetters.has(letter)) return "Aisle";
+    return "Middle";
+  }
+
+  function applySeatPrefDefaults(){
+    const leadPref = deriveSeatPref(seatAssignments[0]) || seatPrefDefault || "Window";
+    setSelectValue(seatPref, leadPref);
+    passengerPrefSelects.forEach((sel, idx)=>{
+      const pref = deriveSeatPref(seatAssignments[idx+1]) || passengerSeatPrefs[idx+1] || passengerSeatPrefs[idx] || leadPref || "Window";
+      setSelectValue(sel, pref);
+    });
+  }
+  applySeatPrefDefaults();
+
+  function refreshPrefs(){ /* preferences summary removed */ }
+  seatPref?.addEventListener('change', refreshPrefs);
+  mealPref?.addEventListener('change', refreshPrefs);
+  extraBagInputs.forEach(inp=>inp.addEventListener('input', refreshPrefs));
+
+  // Seat/class validation modal
+  const modalEl = document.getElementById('seatClassModal');
+  const modalBody = document.getElementById('seatClassModalBody');
+  let modal;
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      modal = new bootstrap.Modal(modalEl);
+    }
+  });
+
+  function checkSeatFit(meta){
+    if (!classSelect || !seatAssignments || !seatAssignments.length) return;
+    const desiredClass = classSelect.value;
+    const classMap = meta.classes || [];
+    const layout = meta.layout || "ABC DEF";
+    const classRank = {"Economy":1,"Premium":2,"Business":3,"First":4};
+
+    function cabinForRow(row){
+      for (const block of classMap){
+        if (row >= block.from && row <= block.to) return block.class;
+      }
+      return "Economy";
+    }
+    const letters = layout.split(' ').map(g=>g.split(''));
+    const windowLetters = new Set([letters[0]?.[0], letters[letters.length-1]?.slice(-1)[0]].filter(Boolean));
+    const aisleLetters = new Set();
+    for(let i=0;i<letters.length-1;i++){
+      const left = letters[i]; const right = letters[i+1];
+      if(left?.length) aisleLetters.add(left[left.length-1]);
+      if(right?.length) aisleLetters.add(right[0]);
+    }
+
+    let warnings = [];
+    // auto-upgrade class dropdown to match highest selected cabin
+    let highestCabin = desiredClass;
+    seatAssignments.forEach(code=>{
+      if(!code) return;
+      const row = parseInt(code, 10);
+      const seatCabin = cabinForRow(row);
+      if (classRank[seatCabin] > classRank[highestCabin] || !classRank[highestCabin]){
+        highestCabin = seatCabin;
+      }
+    });
+    if (highestCabin && classSelect.value !== highestCabin){
+      classSelect.value = highestCabin;
+    }
+
+    seatAssignments.forEach((code, idx)=>{
+      if(!code) return;
+      const row = parseInt(code, 10);
+      const letter = code.replace(/\d+/,'');
+      const seatCabin = cabinForRow(row);
+      if (desiredClass && seatCabin !== desiredClass){
+        warnings.push(`Passenger ${idx+1}: Seat ${code} is ${seatCabin}, but class is set to ${desiredClass}.`);
+      }
+      let pref = "";
+      if(idx === 0){
+        pref = seatPref?.value || "";
+      }else{
+        const sel = document.querySelector(`[name="pax${idx+1}_seat_pref"]`);
+        pref = (sel && sel.value) || "";
+      }
+      if (pref === "Aisle" && !aisleLetters.has(letter)){
+        warnings.push(`Passenger ${idx+1}: Seat ${code} is not an aisle seat.`);
+      }
+      if (pref === "Window" && !windowLetters.has(letter)){
+        warnings.push(`Passenger ${idx+1}: Seat ${code} is not a window seat.`);
+      }
+    });
+
+    if (warnings.length && modal && modalBody){
+      modalBody.innerHTML = `<ul class="mb-0 ps-3">${warnings.map(w=>`<li>${w}</li>`).join('')}</ul>`;
+      modal.show();
+    }
+  }
+
+  function seatPrefsForPassengers(){
+    const prefs = [];
+    for(let i=0;i<passengerCountValue;i++){
+      if(i===0){
+        prefs.push(seatPref?.value || "Window");
+      }else{
+        const sel = passengerPrefSelects[i-1];
+        prefs.push((sel && sel.value) || (seatPref?.value || "Window"));
+      }
+    }
+    return prefs;
+  }
+
+  function layoutLetters(layoutStr){
+    return layoutStr.split(' ').map(g=>g.split('')).filter(Boolean);
+  }
+
+  async function ensureSeatMeta(){
+    if(window._seatMetaCache) return window._seatMetaCache;
+    const res = await fetch(`/api/flights/${flightId}/seats`);
+    if(!res.ok) throw new Error('Could not load seats for reassignment.');
+    const data = await res.json();
+    window._seatMetaCache = data;
+    return data;
+  }
+
+  function assignSeatsForClass(meta, desiredClass){
+    const lettersGroups = layoutLetters(meta.layout || "ABC DEF");
+    const windowLetters = new Set([lettersGroups[0]?.[0], lettersGroups[lettersGroups.length-1]?.slice(-1)[0]].filter(Boolean));
+    const aisleLetters = new Set();
+    for(let i=0;i<lettersGroups.length-1;i++){
+      const left = lettersGroups[i]; const right = lettersGroups[i+1];
+      if(left?.length) aisleLetters.add(left[left.length-1]);
+      if(right?.length) aisleLetters.add(right[0]);
+    }
+
+    const classBlocks = meta.classes || [];
+    const available = [];
+    const blocked = new Set(meta.blocked || []);
+    const occupied = new Set(meta.occupied || []);
+    const held = new Set(meta.held || []);
+
+    const cabinForRow = (row)=>{
+      for(const block of classBlocks){
+        if(row >= block.from && row <= block.to) return block.class;
+      }
+      return "Economy";
+    };
+
+    for(let r=1; r<=meta.rows; r++){
+      const cabin = cabinForRow(r);
+      if(cabin !== desiredClass) continue;
+      for(const group of lettersGroups){
+        for(const ch of group){
+          const code = `${r}${ch}`;
+          if(blocked.has(code) || occupied.has(code) || held.has(code)) continue;
+          available.push({code, row:r, letter:ch});
+        }
+      }
+    }
+
+    const prefs = seatPrefsForPassengers();
+    const chosen = [];
+    const grabSeat = (pref)=>{
+      const pick = (lettersSet)=>{
+        const idx = available.findIndex(s=>lettersSet.has(s.letter));
+        if(idx>=0){ return available.splice(idx,1)[0]; }
+        return null;
+      };
+      if(pref==="Window"){
+        return pick(windowLetters) || pick(new Set()) || available.shift() || null;
+      }
+      if(pref==="Aisle"){
+        return pick(aisleLetters) || pick(new Set()) || available.shift() || null;
+      }
+      if(pref==="Middle"){
+        const middleIdx = available.findIndex(s=>!windowLetters.has(s.letter) && !aisleLetters.has(s.letter));
+        if(middleIdx>=0) return available.splice(middleIdx,1)[0];
+        return available.shift() || null;
+      }
+      return available.shift() || null;
+    };
+
+    prefs.forEach(pref=>{
+      const seat = grabSeat(pref);
+      chosen.push(seat ? seat.code : null);
+    });
+    return chosen;
+  }
+
+  async function handleClassChange(){
+    try{
+      const meta = await ensureSeatMeta();
+      const desired = classSelect?.value || meta.classes?.[0]?.class || "Economy";
+      const newSeats = assignSeatsForClass(meta, desired);
+      seatAssignments = newSeats;
+      refreshSeats();
+      refreshPrefs();
+      await saveSeatSelection(newSeats);
+
+      if(modal && modalBody){
+        const items = newSeats.map((s,idx)=>`Passenger ${idx+1}: ${s || 'No seat available in this cabin'}`);
+        modalBody.innerHTML = `<p class="mb-2">We adjusted your seats to your new ${desired} preference:</p><ul class="mb-0 ps-3">${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+        modal.show();
+      }
+    }catch(err){
+      console.error(err);
+    }
+  }
+
+  async function handleSeatPrefsChange(){
+    try{
+      const meta = await ensureSeatMeta();
+      const desired = classSelect?.value || meta.classes?.[0]?.class || "Economy";
+      const newSeats = assignSeatsForClass(meta, desired);
+      seatAssignments = newSeats;
+      refreshSeats();
+      refreshPrefs();
+      await saveSeatSelection(newSeats);
+      if(modal && modalBody){
+        const items = newSeats.map((s,idx)=>`Passenger ${idx+1}: ${s || 'No seat available for this preference'}`);
+        modalBody.innerHTML = `<p class="mb-2">Seats have been updated to match your seat/class preferences:</p><ul class="mb-0 ps-3">${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+        modal.show();
+      }
+    }catch(err){
+      console.error(err);
+    }
+  }
+
+  async function saveSeatSelection(seats){
+    const payload = {
+      flight_id: flightId,
+      passenger_count: passengerCountValue,
+      seat_map: seats,
+    };
+    await fetch('/api/booking/selection', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+  }
+
+  (function validateSeatsAgainstClass(){
+    const meta = {classes: classMap || [], layout: seatLayout || "ABC DEF", rows: totalRows};
+    checkSeatFit(meta);
+    classSelect?.addEventListener('change', handleClassChange);
+    seatPref?.addEventListener('change', handleSeatPrefsChange);
+    passengerPrefSelects.forEach(sel=>sel.addEventListener('change', handleSeatPrefsChange));
+  })();
+</script>
+
+<!-- Modal for seat/class mismatch -->
+<div class="modal fade" id="seatClassModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Seat & preference check</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="seatClassModalBody">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
