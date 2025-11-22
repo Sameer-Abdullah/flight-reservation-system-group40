@@ -1,0 +1,74 @@
+{% extends "staff_base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Route Popularity Report</h2>
+
+    {% if route_data %}
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Origin</th>
+                <th>Destination</th>
+                <th>Number of Flights</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route in route_data %}
+            <tr>
+                <td>{{ route.origin }}</td>
+                <td>{{ route.destination }}</td>
+                <td>{{ route.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Chart -->
+    <canvas id="routeChart" width="400" height="200"></canvas>
+
+    {% else %}
+    <p>No flight data available.</p>
+    {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const routeLabels = [
+        {% for route in route_data %}
+            "{{ route.origin }} → {{ route.destination }}",
+        {% endfor %}
+    ];
+
+    const routeCounts = [
+        {% for route in route_data %}
+            {{ route.count }},
+        {% endfor %}
+    ];
+
+    const ctx = document.getElementById('routeChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: routeLabels,
+            datasets: [{
+                label: 'Number of Flights',
+                data: routeCounts,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
