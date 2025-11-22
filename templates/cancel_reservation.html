@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow-sm p-4">
+    <h3 class="mb-3 text-center">Cancel a Reservation</h3>
+    <form method="POST" class="text-center">
+      <div class="mb-3">
+        <label for="booking_ref" class="form-label fw-semibold">Booking Reference</label>
+        <input
+          type="text"
+          class="form-control text-center"
+          id="booking_ref"
+          name="booking_ref"
+          placeholder="Enter your reservation reference"
+          required
+        />
+      </div>
+      <button type="submit" class="btn btn-danger px-4 fw-semibold">Cancel Reservation</button>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mt-4">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} text-center">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+</div>
+{% endblock %}
