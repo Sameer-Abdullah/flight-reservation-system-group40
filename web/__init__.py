@@ -58,6 +58,10 @@ def create_app():
     from .staff_update import staff_update_bp
     app.register_blueprint(staff_update_bp)
 
+    from .contact import general_bp
+    app.register_blueprint(general_bp)
+
+
 
 
     from .search import search_bp   

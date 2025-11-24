@@ -1,0 +1,715 @@
+{% extends "base.html" %} {% block title %}Contact Us{% endblock %} {% block
+content %}
+<style>
+  :root {
+    --sky-primary: #0d6efd;
+    --sky-primary-soft: rgba(13, 110, 253, 0.08);
+    --sky-secondary: #6f42c1;
+    --sky-accent: #20c997;
+    --sky-text-main: #142032;
+    --sky-text-muted: #5b6478;
+    --sky-border-soft: rgba(111, 138, 197, 0.18);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, #e3f0ff 0, #f3f6fb 40%, #fdfbff 100%),
+      radial-gradient(circle at bottom right, #ffe9f5 0, transparent 55%);
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+      sans-serif;
+  }
+
+  .contact-page {
+    max-width: 1150px;
+    margin: 40px auto 70px;
+    padding: 0 20px;
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .contact-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .contact-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: var(--sky-primary-soft);
+    color: #0b5ed7;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .contact-pill-icon {
+    font-size: 13px;
+  }
+
+  .contact-title {
+    font-size: 34px;
+    font-weight: 750;
+    color: var(--sky-text-main);
+    margin-bottom: 6px;
+  }
+
+  .contact-subtitle {
+    font-size: 15px;
+    color: var(--sky-text-muted);
+    max-width: 680px;
+    margin: 0 auto 18px;
+  }
+
+  .contact-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .contact-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.8);
+    color: #384256;
+    border: 1px solid rgba(197, 208, 234, 0.7);
+    backdrop-filter: blur(10px);
+  }
+
+  .contact-meta-pill span {
+    font-size: 13px;
+  }
+
+  .contact-layout {
+    display: grid;
+    grid-template-columns: 2fr 1.4fr;
+    gap: 26px;
+    align-items: flex-start;
+  }
+
+  /* Left column (form + cards) */
+  .contact-main-card {
+    background: linear-gradient(135deg, #ffffff, #f7fbff);
+    border-radius: 20px;
+    padding: 24px 26px 26px;
+    box-shadow: 0 14px 40px rgba(43, 69, 119, 0.18);
+    border: 1px solid var(--sky-border-soft);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .contact-main-card::after {
+    content: "";
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(13, 110, 253, 0.16) 0,
+      transparent 60%
+    );
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  .contact-section-title {
+    font-size: 18px;
+    font-weight: 650;
+    color: #1b2740;
+    margin-bottom: 6px;
+  }
+
+  .contact-section-text {
+    font-size: 14px;
+    color: #616b83;
+    margin-bottom: 18px;
+  }
+
+  .contact-reasons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .reason-card {
+    background: linear-gradient(135deg, #f7f9ff, #edf4ff);
+    border-radius: 14px;
+    padding: 10px 12px 11px;
+    border: 1px solid rgba(165, 186, 232, 0.8);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .reason-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(88, 114, 169, 0.25);
+    border-color: rgba(13, 110, 253, 0.55);
+  }
+
+  .reason-chip {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 11px;
+    color: #6c7ba6;
+    opacity: 0.8;
+  }
+
+  .reason-icon {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .reason-title {
+    font-size: 13px;
+    font-weight: 650;
+    color: #202b46;
+    margin-bottom: 4px;
+  }
+
+  .reason-text {
+    font-size: 12px;
+    color: #6a7486;
+  }
+
+  /* Form styling */
+  .contact-form {
+    margin-top: 4px;
+  }
+
+  .form-row-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .form-row {
+    margin-bottom: 14px;
+  }
+
+  .form-row label {
+    font-size: 13px;
+    font-weight: 550;
+    color: #3c465e;
+    margin-bottom: 5px;
+    display: block;
+  }
+
+  .form-row input,
+  .form-row textarea {
+    width: 100%;
+    padding: 10px 11px;
+    border-radius: 9px;
+    border: 1px solid #c5d0ea;
+    font-size: 14px;
+    background: #f9fbfe;
+    transition: 0.2s ease;
+  }
+
+  .form-row textarea {
+    resize: none;
+    min-height: 110px;
+  }
+
+  .form-row input:focus,
+  .form-row textarea:focus {
+    outline: none;
+    background: #ffffff;
+    border-color: var(--sky-primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.16);
+  }
+
+  .contact-helper-text {
+    font-size: 12px;
+    color: #7a8397;
+    margin-top: 4px;
+  }
+
+  .contact-submit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .contact-submit-btn {
+    flex: 1;
+    padding: 13px;
+    border-radius: 999px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--sky-primary), var(--sky-secondary));
+    box-shadow: 0 8px 18px rgba(13, 110, 253, 0.3);
+    transition: 0.2s ease;
+  }
+
+  .contact-submit-btn:hover {
+    transform: translateY(-1px);
+    opacity: 0.97;
+    box-shadow: 0 12px 26px rgba(13, 110, 253, 0.35);
+  }
+
+  .contact-safe-note {
+    font-size: 11px;
+    color: #7c8495;
+    max-width: 210px;
+    line-height: 1.4;
+  }
+
+  .contact-safe-note span {
+    font-size: 13px;
+    margin-right: 4px;
+  }
+
+  .success-message {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    background: #d4f7d4;
+    border-radius: 9px;
+    border: 1px solid #7ad77a;
+    color: #256c2e;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .success-message span {
+    font-size: 16px;
+  }
+
+  /* Right column (info + FAQ) */
+  .contact-side-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: 0 14px 38px rgba(43, 69, 119, 0.16);
+    border: 1px solid rgba(167, 182, 220, 0.55);
+    overflow: hidden;
+  }
+
+  .side-banner {
+    padding: 14px 18px 16px;
+    background: linear-gradient(135deg, #0d6efd, #20c997);
+    color: #ffffff;
+    position: relative;
+  }
+
+  .side-banner::after {
+    content: "";
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 255, 255, 0.55);
+    opacity: 0.75;
+  }
+
+  .side-banner-title {
+    font-size: 16px;
+    font-weight: 650;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .side-banner-title span {
+    font-size: 18px;
+  }
+
+  .side-banner-text {
+    font-size: 13px;
+    opacity: 0.9;
+  }
+
+  .side-content {
+    padding: 18px 18px 20px;
+  }
+
+  .side-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #202b46;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .side-section-title span {
+    font-size: 17px;
+  }
+
+  .support-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: #5a6675;
+  }
+
+  .support-list li {
+    margin-bottom: 6px;
+  }
+
+  .support-highlight {
+    font-weight: 600;
+    color: #1f2b3b;
+  }
+
+  .mini-divider {
+    height: 1px;
+    background: #e1e6f2;
+    margin: 14px 0;
+  }
+
+  .urgent-chip {
+    display: inline-block;
+    padding: 3px 9px;
+    font-size: 11px;
+    border-radius: 999px;
+    background: rgba(220, 53, 69, 0.09);
+    color: #b02a37;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .side-note {
+    font-size: 12px;
+    color: #7a8497;
+    margin-top: 2px;
+  }
+
+  details {
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: #f7f8fc;
+    padding: 8px 10px;
+    border: 1px solid #dde2f2;
+  }
+
+  summary {
+    font-size: 13px;
+    font-weight: 540;
+    color: #2e3950;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  summary::after {
+    content: "▾";
+    font-size: 11px;
+    color: #7a859d;
+    margin-left: 8px;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  details[open] summary::after {
+    content: "▴";
+  }
+
+  details p {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #626d80;
+  }
+
+  .faq-extra-note {
+    font-size: 12px;
+    color: #7a8397;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 900px) {
+    .contact-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .contact-page {
+      margin-top: 24px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .form-row-group {
+      grid-template-columns: 1fr;
+    }
+
+    .contact-main-card,
+    .contact-side-card {
+      border-radius: 16px;
+    }
+
+    .contact-title {
+      font-size: 28px;
+    }
+  }
+</style>
+
+<div class="contact-page">
+  <div class="contact-header">
+    <div class="contact-pill">
+      <span class="contact-pill-icon">🛫</span>
+      SkyWing Support
+    </div>
+    <h1 class="contact-title">We’re here to help</h1>
+    <p class="contact-subtitle">
+      If you have questions about your booking, payment, account, or any part of
+      your SkyWing experience, use this page to reach our support team. Share a
+      few details and we’ll get back to you as soon as possible.
+    </p>
+
+    <div class="contact-meta-row">
+      <div class="contact-meta-pill">
+        <span>⚡</span> Most emails answered within 24 hours
+      </div>
+      <div class="contact-meta-pill">
+        <span>🧾</span> Have your booking reference ready for faster help
+      </div>
+      <div class="contact-meta-pill">
+        <span>🔒</span> Your information is kept secure
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-layout">
+    <!-- LEFT: main card with reasons + form -->
+    <div class="contact-main-card">
+      <div>
+        <div class="contact-section-title">Tell us how we can help</div>
+        <p class="contact-section-text">
+          Whether you’re experiencing an issue with a reservation, need help
+          with flight details, or want to share feedback, fill out the form
+          below and we’ll take care of the rest.
+        </p>
+      </div>
+
+      <div class="contact-reasons">
+        <div class="reason-card">
+          <span class="reason-chip">Bookings</span>
+          <div class="reason-icon">✈️</div>
+          <div class="reason-title">Booking & Changes</div>
+          <div class="reason-text">
+            Questions about your flight, date changes, passenger updates, or
+            seat issues.
+          </div>
+        </div>
+        <div class="reason-card">
+          <span class="reason-chip">Payments</span>
+          <div class="reason-icon">💳</div>
+          <div class="reason-title">Payment & Receipts</div>
+          <div class="reason-text">
+            Problems with charges, refunds, invoices, or missing payment
+            confirmations.
+          </div>
+        </div>
+        <div class="reason-card">
+          <span class="reason-chip">Accounts</span>
+          <div class="reason-icon">👤</div>
+          <div class="reason-title">Account & Login</div>
+          <div class="reason-text">
+            Trouble signing in, managing your profile, or viewing your existing
+            bookings.
+          </div>
+        </div>
+      </div>
+
+      {% if success %}
+      <div class="success-message">
+        <span>✅</span>
+        <div>
+          Your message has been sent. Our team will reach out to you shortly.
+        </div>
+      </div>
+      {% endif %}
+
+      <form
+        class="contact-form"
+        action="{{ url_for('general.contact') }}"
+        method="POST"
+      >
+        <div class="form-row-group">
+          <div class="form-row">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" required />
+          </div>
+
+          <div class="form-row">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" required />
+          </div>
+        </div>
+
+        <div class="form-row-group">
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+
+          <div class="form-row">
+            <label for="booking_ref">Booking Reference (optional)</label>
+            <input type="text" id="booking_ref" name="booking_ref" />
+            <div class="contact-helper-text">
+              Add this if your question is about a specific trip.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="message">Your Message</label>
+          <textarea id="message" name="message" required"></textarea>
+          <div class="contact-helper-text">
+            Include as many details as you can (dates, airports, passengers,
+            etc.) so we can help you faster.
+          </div>
+        </div>
+
+        <div class="contact-submit-row">
+          <button type="submit" class="contact-submit-btn">Send Message</button>
+          <div class="contact-safe-note">
+            <span>🔐</span>
+            We’ll only use your details to follow up on your request.
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- RIGHT: side info card -->
+    <div class="contact-side-card">
+      <div class="side-banner">
+        <div class="side-banner-title">
+          <span>🕒</span> Need help with an upcoming flight?
+        </div>
+        <div class="side-banner-text">
+          If your flight is within the next 24 hours, include your booking
+          reference so we can prioritize your request.
+        </div>
+      </div>
+
+      <div class="side-content">
+        <div>
+          <div class="side-section-title">
+            <span>📞</span> Support information
+          </div>
+          <ul class="support-list">
+            <li>
+              <span class="support-highlight">Support hours:</span> 9:00 AM –
+              9:00 PM (EST)
+            </li>
+            <li>
+              <span class="support-highlight">Average response time:</span>
+              within 24 hours
+            </li>
+            <li>
+              <span class="support-highlight">Priority:</span> upcoming
+              departures are reviewed first
+            </li>
+          </ul>
+        </div>
+
+        <div class="mini-divider"></div>
+
+        <div>
+          <span class="urgent-chip">Urgent requests</span>
+          <ul class="support-list">
+            <li>
+              Mention “URGENT” at the start of your message if your flight is
+              today.
+            </li>
+            <li>Have your booking reference or confirmation email ready.</li>
+            <li>
+              Include any changes you’d like us to make in one clear message.
+            </li>
+          </ul>
+          <div class="side-note">
+            For airport emergencies, please also speak with airline staff at the
+            check-in or boarding gate.
+          </div>
+        </div>
+
+        <div class="mini-divider"></div>
+
+        <div>
+          <div class="side-section-title">
+            <span>❓</span> Quick FAQs
+          </div>
+
+          <details>
+            <summary>How can I change or cancel my flight?</summary>
+            <p>
+              Most changes can be done from your “My Bookings” page. If you
+              can’t modify your booking there, contact us with your booking
+              reference and what you’d like to change.
+            </p>
+          </details>
+
+          <details>
+            <summary>
+              I didn’t receive my confirmation email. What should I do?
+            </summary>
+            <p>
+              First, check your spam or promotions folder. If it’s not there,
+              send us the email used for the booking and we’ll resend the
+              confirmation.
+            </p>
+          </details>
+
+          <details>
+            <summary>Can I update passenger details after booking?</summary>
+            <p>
+              Minor corrections (like spelling) can usually be fixed. For major
+              changes, share your booking details and we’ll let you know what’s
+              possible based on airline rules.
+            </p>
+          </details>
+
+          <p class="faq-extra-note">
+            Still unsure? Send us a message with as much detail as possible and
+            our team will guide you through the next steps.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

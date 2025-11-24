@@ -547,7 +547,9 @@
     </div>
     <div class="d-flex gap-2">
       <a href="/support" class="btn btn-outline-primary fw-semibold"><i class="bi bi-chat-dots me-1"></i> Live chat</a>
-      <a href="/help" class="btn btn-primary fw-semibold"><i class="bi bi-life-preserver me-1"></i> Help center</a>
+      <a href="{{ url_for('general.contact') }}" class="btn btn-primary fw-semibold">
+        <i class="bi bi-life-preserver me-1"></i> Help center
+      </a>
     </div>
   </div>
 </section>
