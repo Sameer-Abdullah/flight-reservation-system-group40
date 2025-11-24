@@ -49,6 +49,7 @@ class User(UserMixin, db.Model):
             return f"{(self.first_name or ' ')[0]}{(self.last_name or ' ')[0]}".upper()
         return (self.email[:2] if self.email else "AA").upper()
 
+    @property
     def is_staff(self) -> bool:
         return bool(self.email) and self.email.lower().endswith("@skywing.com")
 
@@ -56,6 +57,9 @@ class User(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# fixes issues with other versions using different names
+Customer = User
 
 
 # ---- Aircraft catalog ----
