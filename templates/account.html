@@ -1,511 +1,770 @@
-{% extends "base.html" %} {% set body_class = 'bg-light' %} {% block content %}
+{% extends "base.html" %}
+{% set body_class = 'bg-light' %}
+{% block content %}
+
+{% set member_since_text = member_since.strftime('%b %Y') if member_since else '2025' %}
 
 <style>
   :root {
-    --ink: #0b2447;
-    --ink-2: #1d3358;
-    --brand: #0ea5e9;
-    --brand-deep: #0b63a3;
-    --accent: #ffc857;
-    --soft: #eaf6ff;
-    --ring: rgba(14, 165, 233, 0.28);
+    --ink: #0f2745;
+    --muted: #6b7a8c;
+    --primary: #0f87c4;
+    --primary-deep: #0b63a3;
+    --soft: #f5f7fb;
     --card: #ffffff;
-    --muted: #667085;
-    --success: #12b981;
-    --danger: #ef4444;
-    --border: rgba(2, 6, 23, 0.1);
-    --shadow: 0 10px 28px rgba(2, 6, 23, 0.06);
-    --shadow-lg: 0 14px 40px rgba(2, 6, 23, 0.12);
+    --border: rgba(12, 46, 80, 0.12);
+    --shadow: 0 24px 60px rgba(10, 52, 92, 0.12);
+    --radius: 18px;
   }
 
-  /* small resets so text matches palette */
   body.bg-light {
     color: var(--ink);
   }
-  .text-muted,
+
   .muted {
     color: var(--muted) !important;
   }
 
-  /* ===== Page header ===== */
-  .acct-head {
+  .hero-card {
     position: relative;
-    border-radius: 20px;
+    border-radius: 22px;
     padding: 20px;
-    background: radial-gradient(
-        900px 420px at -10% -40%,
-        rgba(255, 255, 255, 0.4),
-        transparent 60%
-      ),
-      linear-gradient(
-        135deg,
-        var(--brand-deep) 0%,
-        #0f87c4 55%,
-        var(--brand) 100%
-      );
     color: #fff;
-    box-shadow: var(--shadow-lg);
     overflow: hidden;
-    isolation: isolate;
-  }
-  .acct-head::after {
-    content: "";
-    position: absolute;
-    inset: -30% -10% auto -10%;
-    height: 220%;
-    background: radial-gradient(
-      700px 340px at 25% 20%,
-      rgba(255, 255, 255, 0.18),
-      transparent 45%
-    );
-    pointer-events: none;
+    background: radial-gradient(90% 80% at 10% 10%, rgba(255,255,255,0.32), transparent 50%),
+      linear-gradient(135deg, #0d6fb8 0%, #0f87c4 55%, #0bb1e8 100%);
+    box-shadow: var(--shadow);
   }
 
-  .acct-name {
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: 0.2px;
+  .hero-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(110% 70% at 80% 0%, rgba(255,255,255,0.15), transparent 50%);
   }
-  .acct-chip {
+
+  .hero-name {
+    font-weight: 800;
+    font-size: 1.6rem;
+    line-height: 1.1;
+  }
+
+  .hero-sub {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.42rem 0.72rem;
+    gap: 0.45rem;
+    padding: 0.35rem 0.75rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.36);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.16);
     font-weight: 700;
     color: #fff;
   }
-  .avatar {
-    width: 72px;
-    height: 72px;
+
+  .avatar-circle {
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     background: #fff;
-    color: var(--ink);
+    color: var(--primary-deep);
     display: grid;
     place-items: center;
     font-weight: 800;
-    box-shadow: var(--shadow);
+    font-size: 1.3rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
   }
 
-  /* ===== Cards ===== */
-  .card-lite {
-    border: 2px solid var(--border);
-    border-radius: 20px;
-    background: var(--card);
-    box-shadow: var(--shadow);
+  .btn-hero {
+    font-weight: 700;
+    border-radius: 10px;
+    border-width: 1.5px;
   }
 
-  .card-lite .card-body {
-    padding: 1.75rem 2rem;
-  }
-  .card-lite .card-header {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    border-top-left-radius: 18px;
-    border-top-right-radius: 18px;
-    padding: 1.25rem 2rem;
-  }
-
-  .list-group-item {
-    padding: 1rem 1.5rem;
-  }
-
-  /* ===== Pills===== */
-  .stat-pill {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    padding: 0.8rem 1rem;
+  .stat-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.72));
     border-radius: 14px;
-    border: 1px solid #dbe4ee;
-    background: linear-gradient(180deg, #f8fbff, #f3f8ff);
-    font-weight: 700;
-  }
-  .stat-pill i {
-    color: #0f87c4;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    padding: 0.9rem 1rem;
+    height: 100%;
+    color: #0b2140;
   }
 
-  .badge-soft {
-    background: #fff7e1;
-    border: 1px solid #ffe29c;
-    color: #5c4200;
-    font-weight: 700;
+  .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.82;
+    font-weight: 600;
   }
 
-  .list-clean .list-group-item {
+  .stat-value {
+    font-weight: 800;
+    font-size: 1.1rem;
+  }
+
+  .stat-sub {
+    color: #22456d;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .card-panel {
+    background: var(--card);
     border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 40px rgba(15, 36, 64, 0.08);
   }
 
-  /* ===== Forms ===== */
+  .card-panel__head {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-panel__body {
+    padding: 1.5rem;
+  }
+  .card-panel a {
+    text-decoration: none;
+  }
+
+  .label-muted {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 0.1rem;
+  }
+
+  .value-strong {
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .pill-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 12px;
+    padding: 0.25rem 0.55rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    background: #fff4d6;
+    color: #7a5200;
+    border: 1px solid #ffd37a;
+  }
+
+  .booking-line {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .booking-line:last-child {
+    border-bottom: none;
+  }
+
+  .cta-link {
+    color: var(--primary-deep);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .list-clean a {
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .list-clean a:hover {
+    color: var(--primary-deep);
+  }
+
+  .quick-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .quick-item:last-child {
+    border-bottom: none;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(180deg, #0f9ada, #0b6fb0);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.65rem 1.3rem;
+  }
+
+  .btn-gradient:hover {
+    background: linear-gradient(180deg, #12a5e8, #0f87c4);
+    color: #fff;
+  }
+  .btn-gradient-ghost {
+    background: #fff;
+    border: 1.5px solid #0f87c4;
+    color: #0f87c4;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.65rem 1.3rem;
+    box-shadow: 0 8px 24px rgba(15, 135, 196, 0.15);
+  }
+  .btn-gradient-ghost:hover {
+    background: #eaf6ff;
+    color: #0b63a3;
+  }
+  .detail-modal {
+    max-width: 560px;
+  }
+  .detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .detail-title {
+    font-weight: 800;
+    font-size: 18px;
+    margin: 0;
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .detail-tile {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #f8fafc;
+  }
+  .detail-label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+  .detail-value {
+    font-weight: 800;
+    color: #0f172a;
+  }
+
   .form-control,
   .form-select {
-    border-color: #e6eaf0;
+    border-color: #e4e9f1;
   }
+
   .form-control:focus,
   .form-select:focus {
-    border-color: var(--brand);
-    box-shadow: 0 0 0 0.24rem var(--ring);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.24rem rgba(15, 135, 196, 0.22);
   }
 
-  /* ===== Buttons ===== */
-  .btn-primary {
-    background: linear-gradient(180deg, #1199d6, var(--brand-deep));
-    border-color: #0f7bb6;
+  .d-none {
+    display: none !important;
   }
-  .btn-primary:hover {
-    background: linear-gradient(180deg, #10a8ee, #0f87c4);
-    border-color: #0f87c4;
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 1050;
   }
-  .btn-outline-primary {
-    color: #0f87c4;
-    border-color: #0f87c4;
-  }
-  .btn-outline-primary:hover {
-    background: #e9f6ff;
-  }
-  .btn-outline-danger {
-    border-color: var(--danger);
-    color: var(--danger);
-  }
-  .btn-outline-danger:hover {
-    background: #fff1f1;
-  }
-  .btn-outline-secondary:hover {
-    background: #f7fafc;
+  .modal-shell {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 28px 60px rgba(15, 36, 64, 0.2);
+    max-width: 860px;
+    width: 100%;
+    padding: 1.2rem 1.4rem 1.1rem;
+    border: 1px solid rgba(12, 46, 80, 0.12);
   }
 
-  /* ===== Utilities ===== */
-  .divider-soft {
-    height: 1px;
-    background: var(--border);
-  }
-  .text-ink-2 {
-    color: var(--ink-2);
-  }
-
-  /* Motion respect */
-  @media (prefers-reduced-motion: reduce) {
-    .acct-head::after {
-      animation: none !important;
+  @media (max-width: 767px) {
+    .hero-name {
+      font-size: 1.4rem;
+    }
+    .card-panel__body {
+      padding: 1.1rem;
     }
   }
 </style>
 
-<!-- ===== Header ===== -->
-<section class="acct-head mb-4">
-  <div
-    class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3"
-  >
+<section class="hero-card mb-4">
+  <div class="d-flex flex-column flex-lg-row align-items-start justify-content-between gap-3 position-relative" style="z-index: 1;">
     <div class="d-flex align-items-center gap-3">
-      <div class="avatar">
-        {% if user and user.initials %} {{ user.initials }} {% else %}
-        <i class="bi bi-person-fill fs-3"></i>
-        {% endif %}
-      </div>
+      <div class="avatar-circle">{{ initials or "YOU" }}</div>
       <div>
-        <div class="acct-name h3 m-0">
-          {% if user and user.full_name %} {{ user.full_name }} {% elif
-          current_user.is_authenticated %} {{ current_user.username }} {% else
-          %} Your Account {% endif %}
+        <div class="hero-name">{{ display_name or "Your account" }}</div>
+        <div class="hero-sub small">
+          {{ user_email }}
         </div>
-        <div class="muted small">
-          {% if user and user.email %}{{ user.email }} • {% endif %} Member
-          since {{ (user.member_since.strftime('%b %Y') if user and
-          user.member_since else '2025') }}
-        </div>
-        <div class="mt-2 d-flex flex-wrap gap-2">
-          <span class="acct-chip"
-            ><i class="bi bi-shield-check"></i> Verified email</span
-          >
-          <span class="acct-chip"
-            ><i class="bi bi-stars"></i> SkyWings Basic</span
-          >
+        <div class="d-flex flex-wrap gap-2 mt-2">
+          <span class="chip"><i class="bi bi-stars"></i> SkyWings Basic</span>
         </div>
       </div>
     </div>
-    <div class="d-flex gap-2">
-      <a href="#" class="btn btn-light fw-semibold"
-        ><i class="bi bi-pencil me-1"></i> Edit profile</a
-      >
-      <a href="/auth/login" class="btn btn-outline-light fw-semibold"
-        ><i class="bi bi-box-arrow-right me-1"></i> Logout</a
-      >
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-light btn-hero" href="{{ url_for('auth.logout') }}">
+        <i class="bi bi-box-arrow-right me-1"></i> Logout
+      </a>
     </div>
   </div>
 
-  <div class="row g-3 mt-3">
+  <div class="row g-3 mt-3 position-relative" style="z-index: 1;">
     <div class="col-6 col-md-3">
-      <div class="stat-pill">
-        <i class="bi bi-airplane"></i>
-        <div>
-          <div class="small muted">Trips</div>
-          <div class="text-ink-2">12</div>
-        </div>
+      <div class="stat-card">
+        <div class="stat-label">Trips</div>
+        <div class="stat-value">{{ stats.trip_count }}</div>
+        <div class="stat-sub">{{ stats.upcoming }} upcoming • {{ stats.completed }} completed</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="stat-pill">
-        <i class="bi bi-currency-dollar"></i>
-        <div>
-          <div class="small muted">Saved this year</div>
-          <div class="text-ink-2">$3102</div>
-        </div>
+      <div class="stat-card">
+        <div class="stat-label">Saved this year</div>
+        <div class="stat-value">${{ "{:,.0f}".format(stats.saved) }}</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="stat-pill">
-        <i class="bi bi-bell"></i>
-        <div>
-          <div class="small muted">Price alerts</div>
-          <div class="text-ink-2">0 active</div>
-        </div>
+      <div class="stat-card">
+        <div class="stat-label">Price alerts</div>
+        <div class="stat-value">{{ stats.alerts }} active</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="stat-pill">
-        <i class="bi bi-patch-check"></i>
-        <div>
-          <div class="small muted">Status</div>
-          <div class="text-ink-2">On time ✈️</div>
-        </div>
+      <div class="stat-card">
+        <div class="stat-label">Status</div>
+        <div class="stat-value">{{ stats.status }}</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== Grid ===== -->
 <div class="row g-3">
-  <!-- Main column -->
   <div class="col-lg-8">
-    <!-- Profile details -->
-    <div class="card-lite mb-4">
-      <div
-        class="card-header d-flex justify-content-between align-items-center"
-      >
-        <h5 class="m-0 fw-bold">
-          <i class="bi bi-person-gear me-2"></i> Profile
-        </h5>
-        <a href="#" class="btn btn-sm btn-outline-primary"
-          ><i class="bi bi-pencil-square me-1"></i> Edit</a
-        >
+    <div class="card-panel mb-3">
+      <div class="card-panel__head d-flex justify-content-between align-items-center">
+        <h5 class="m-0 fw-bold"><i class="bi bi-person-gear me-2"></i> Profile</h5>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-profile-edit>
+          <i class="bi bi-pencil-square me-1"></i> Edit
+        </button>
       </div>
-      <div class="card-body">
-        <form class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">First name</label>
-            <input
-              type="text"
-              class="form-control"
-              value="{{ (user.first_name if user else '') or '' }}"
-              placeholder="First name"
-            />
+      <div class="card-panel__body">
+        <div id="profile-read" class="row gy-3">
+          <div class="col-md-4">
+            <div class="label-muted">Title</div>
+            <div class="value-strong">{{ profile.title or "Add title" }}</div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Last name</label>
-            <input
-              type="text"
-              class="form-control"
-              value="{{ (user.last_name if user else '') or '' }}"
-              placeholder="Last name"
-            />
+          <div class="col-md-4">
+            <div class="label-muted">First name</div>
+            <div class="value-strong">{{ profile.first_name or "Add first name" }}</div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Email</label>
-            <input
-              type="email"
-              class="form-control"
-              value="{{ (user.email if user else '') or '' }}"
-              placeholder="you@example.com"
-            />
+          <div class="col-md-4">
+            <div class="label-muted">Last name</div>
+            <div class="value-strong">{{ profile.last_name or "Add last name" }}</div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Phone</label>
-            <input
-              type="tel"
-              class="form-control"
-              value="{{ (user.phone if user else '') or '' }}"
-              placeholder="+1 (555) 555-5555"
-            />
+          <div class="col-md-4">
+            <div class="label-muted">Email</div>
+            <div class="value-strong">{{ user_email }}</div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Date of birth</label>
-            <input
-              type="date"
-              class="form-control"
-              value="{{ (user.dob.strftime('%Y-%m-%d') if user and user.dob else '') }}"
-            />
+          <div class="col-md-4">
+            <div class="label-muted">Phone</div>
+            <div class="value-strong">{{ profile.phone or "Add phone" }}</div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Nationality</label>
-            <select class="form-select">
-              <option selected>Canada</option>
-              <option>United States</option>
-              <option>United Kingdom</option>
-              <option>India</option>
-              <option>Other</option>
+          <div class="col-md-4">
+            <div class="label-muted">Date of birth</div>
+            <div class="value-strong">
+              {% if profile.dob %}{{ profile.dob.strftime('%b %d, %Y') }}{% else %}Add date of birth{% endif %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="label-muted">Nationality</div>
+            <div class="value-strong">{{ profile.nationality or "Add nationality" }}</div>
+          </div>
+        </div>
+
+        <form id="profile-form" class="row g-3 d-none mt-1" method="POST" novalidate>
+          <input type="hidden" name="form_type" value="profile" />
+          <div class="col-md-3">
+            <label class="form-label label-muted mb-1">Title</label>
+            <select class="form-select" name="title">
+              <option value="" {% if not profile.title %}selected{% endif %}>Select title</option>
+              {% for title in title_options %}
+              <option value="{{ title }}" {% if profile.title == title %}selected{% endif %}>{{ title }}</option>
+              {% endfor %}
             </select>
           </div>
-          <div class="col-12 d-flex justify-content-end">
-            <button type="button" class="btn btn-primary fw-semibold">
-              <i class="bi bi-save me-1"></i> Save changes
-            </button>
+          <div class="col-md-3">
+            <label class="form-label label-muted mb-1">First name</label>
+            <input type="text" class="form-control" name="first_name" value="{{ profile.first_name or '' }}" placeholder="First name" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label label-muted mb-1">Middle name</label>
+            <input type="text" class="form-control" name="middle_name" value="{{ profile.middle_name or '' }}" placeholder="Middle name" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label label-muted mb-1">Last name</label>
+            <input type="text" class="form-control" name="last_name" value="{{ profile.last_name or '' }}" placeholder="Last name" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label label-muted mb-1">Email</label>
+            <input type="email" class="form-control" value="{{ user_email }}" disabled />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label label-muted mb-1">Phone</label>
+            <input type="tel" class="form-control" name="phone" value="{{ profile.phone or '' }}" placeholder="+1 555 555 5555" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label label-muted mb-1">Date of birth</label>
+            <input type="date" class="form-control" name="dob" value="{{ profile.dob.strftime('%Y-%m-%d') if profile.dob else '' }}" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label label-muted mb-1">Nationality</label>
+            <select class="form-select" name="nationality">
+              <option value="" {% if not profile.nationality %}selected{% endif %}>Select nationality</option>
+              {% for country in nationality_options %}
+              <option value="{{ country }}" {% if profile.nationality == country %}selected{% endif %}>{{ country }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-profile-cancel>Cancel</button>
+            <button type="submit" class="btn btn-primary fw-semibold"><i class="bi bi-save me-1"></i> Save changes</button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Recent bookings -->
-    <div class="card-lite mb-4">
-      <div
-        class="card-header d-flex justify-content-between align-items-center"
-      >
-        <h5 class="m-0 fw-bold">
-          <i class="bi bi-ticket-perforated me-2"></i> Recent bookings
-        </h5>
-        <a href="/bookings" class="btn btn-sm btn-outline-primary">View all</a>
+    <div class="card-panel">
+      <div class="card-panel__head">
+        <h6 class="m-0 fw-bold"><i class="bi bi-ticket-perforated me-2"></i> Recent bookings</h6>
       </div>
-      <div class="list-group list-clean list-group-flush">
-        <div
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
+      <div class="card-panel__body p-0">
+        {% for b in bookings %}
+        <div class="booking-line d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
-            <div class="fw-semibold">
-              YYZ → LAX <span class="badge badge-soft ms-2">Economy</span>
+            <div class="fw-bold">
+              {{ b.origin }} → {{ b.destination }} <span class="pill-badge">{{ b.ticket_type }}</span>
             </div>
-            <div class="small text-muted">Departs Apr 12, 2025 • 10:05</div>
-          </div>
-          <a href="#" class="btn btn-sm btn-outline-secondary"
-            ><i class="bi bi-eye me-1"></i> Details</a
-          >
-        </div>
-        <div
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          <div>
-            <div class="fw-semibold">
-              JFK → CDG <span class="badge badge-soft ms-2">Business</span>
+            <div class="muted small">
+              {% if b.depart %}Departs {{ b.depart.strftime('%b %d, %Y') }} · {{ b.depart.strftime('%H:%M') }}{% else %}TBD{% endif %}
             </div>
-            <div class="small text-muted">Departs May 3, 2025 • 19:40</div>
           </div>
-          <a href="#" class="btn btn-sm btn-outline-secondary"
-            ><i class="bi bi-eye me-1"></i> Details</a
-          >
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            data-booking-detail
+            data-origin="{{ b.origin }}"
+            data-destination="{{ b.destination }}"
+            data-flight="{{ b.flight_number if b.flight_number else '' }}"
+            data-depart="{{ b.depart.isoformat() if b.depart else '' }}"
+            data-arrival="{{ b.arrival.isoformat() if b.arrival else '' }}"
+            data-paid="{{ '%.2f' % b.total_paid if b.total_paid is defined else '0.00' }}"
+            data-ref="{{ b.booking_ref if b.booking_ref else '' }}"
+          >View detail</button>
         </div>
-        <div
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          <div>
-            <div class="fw-semibold">
-              YYZ → YVR <span class="badge badge-soft ms-2">Economy</span>
-            </div>
-            <div class="small text-muted">Departs Jun 1, 2025 • 08:15</div>
-          </div>
-          <a href="#" class="btn btn-sm btn-outline-secondary"
-            ><i class="bi bi-eye me-1"></i> Details</a
-          >
-        </div>
+        {% endfor %}
       </div>
     </div>
   </div>
 
-  <!-- Sidebar -->
   <div class="col-lg-4">
-    <!-- Quick actions -->
-    <div class="card-lite mb-4">
-      <div class="card-header">
-        <h6 class="m-0 fw-bold">
-          <i class="bi bi-lightning-charge me-2"></i> Quick actions
-        </h6>
+    <div class="card-panel mb-3">
+      <div class="card-panel__head">
+        <div class="label-muted mb-0">Trips</div>
+        <div class="fw-bold fs-5 text-dark">Go to My Bookings</div>
       </div>
-      <div class="list-group list-group-flush">
-        <a class="list-group-item list-group-item-action" href="/search"
-          ><i class="bi bi-search me-2"></i> Find a flight</a
-        >
-        <a class="list-group-item list-group-item-action" href="#"
-          ><i class="bi bi-bell me-2"></i> Set price alert</a
-        >
-        <a class="list-group-item list-group-item-action" href="#"
-          ><i class="bi bi-people me-2"></i> Add traveler</a
-        >
-        <a class="list-group-item list-group-item-action" href="#"
-          ><i class="bi bi-credit-card me-2"></i> Add payment method</a
-        >
+      <div class="card-panel__body">
+        <p class="muted mb-3">Jump back into your itinerary to manage upcoming and past flights.</p>
+        <a class="btn-gradient d-inline-flex align-items-center gap-2" href="{{ url_for('bookings.my_bookings') }}">
+          <i class="bi bi-ticket-perforated"></i> Go to My Bookings
+        </a>
       </div>
     </div>
 
-    <!-- Payment methods -->
-    <div class="card-lite mb-4">
-      <div
-        class="card-header d-flex justify-content-between align-items-center"
-      >
-        <h6 class="m-0 fw-bold">
-          <i class="bi bi-wallet2 me-2"></i> Payment methods
-        </h6>
-        <a href="#" class="btn btn-sm btn-outline-primary"
-          ><i class="bi bi-plus-lg"></i
-        ></a>
+    <div class="card-panel mb-3">
+      <div class="card-panel__head">
+        <div class="label-muted mb-0">Discover</div>
+        <div class="fw-bold fs-5 text-dark">Plan your next trip</div>
       </div>
-      <div class="list-group list-clean list-group-flush">
-        <div
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          <div>
-            <div class="fw-semibold">
-              <i class="bi bi-credit-card-2-front me-1"></i> Visa •••• 1234
+      <div class="card-panel__body">
+        <p class="muted mb-3">Search flights and find the best options for your upcoming travel.</p>
+        <a class="btn-gradient d-inline-flex align-items-center gap-2" href="{{ url_for('search.search') }}">
+          <i class="bi bi-search"></i> Find a flight
+        </a>
+      </div>
+    </div>
+
+    <div class="card-panel" id="traveler-card">
+      <div class="card-panel__head d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold"><i class="bi bi-people me-2"></i> Travelers</h6>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-traveler-toggle>Add traveler</button>
+      </div>
+      <div class="card-panel__body">
+        {% if travelers %}
+          <div class="mb-0">
+            {% for t in travelers %}
+            <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2">
+              <div>
+                <div class="fw-bold">{{ t.full_name }}</div>
+                <div class="muted small">{{ t.relation or "Traveler" }}</div>
+              </div>
+              <div class="text-end muted small">
+                {% if t.dob %}DOB: {{ t.dob.strftime('%b %d, %Y') }}<br>{% endif %}
+                {% if t.nationality %}{{ t.nationality }}{% endif %}
+              </div>
             </div>
-            <div class="small text-muted">Exp 08/27 • Default</div>
+            {% endfor %}
           </div>
-          <div class="btn-group">
-            <a href="#" class="btn btn-sm btn-outline-secondary"
-              ><i class="bi bi-pencil"></i
-            ></a>
-            <a href="#" class="btn btn-sm btn-outline-danger"
-              ><i class="bi bi-trash"></i
-            ></a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Security -->
-    <div class="card-lite">
-      <div class="card-header">
-        <h6 class="m-0 fw-bold">
-          <i class="bi bi-shield-lock me-2"></i> Security
-        </h6>
-      </div>
-      <div class="card-body">
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" id="mfa" checked />
-          <label class="form-check-label" for="mfa"
-            >Two-factor authentication (recommended)</label
-          >
-        </div>
-        <div class="d-grid gap-2">
-          <a href="#" class="btn btn-outline-secondary"
-            ><i class="bi bi-key me-1"></i> Change password</a
-          >
-          <a href="#" class="btn btn-outline-danger"
-            ><i class="bi bi-trash3 me-1"></i> Delete account</a
-          >
-        </div>
+        {% else %}
+          <p class="muted m-0">No travelers added yet.</p>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
 
+<!-- Traveler Modal -->
+<div id="traveler-modal" class="modal-overlay d-none">
+  <div class="modal-shell">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="fw-bold fs-5">Add traveler</div>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-traveler-close>&times;</button>
+    </div>
+    <form id="traveler-form" class="row g-3" method="POST">
+      <input type="hidden" name="form_type" value="traveler" />
+      <div class="col-md-3">
+        <label class="form-label label-muted mb-1">Title</label>
+        <select class="form-select" name="traveler_title">
+          <option value="" selected>Select title</option>
+          {% for title in title_options %}
+          <option value="{{ title }}">{{ title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label label-muted mb-1">First name</label>
+        <input type="text" class="form-control" name="traveler_first_name" placeholder="First name" required />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label label-muted mb-1">Middle name</label>
+        <input type="text" class="form-control" name="traveler_middle_name" placeholder="Middle name" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label label-muted mb-1">Last name</label>
+        <input type="text" class="form-control" name="traveler_last_name" placeholder="Last name" required />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label label-muted mb-1">Email</label>
+        <input type="email" class="form-control" name="traveler_email" placeholder="email@example.com" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label label-muted mb-1">Phone</label>
+        <input type="tel" class="form-control" name="traveler_phone" placeholder="+1 555 555 5555" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label label-muted mb-1">Date of birth</label>
+        <input type="date" class="form-control" name="traveler_dob" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label label-muted mb-1">Nationality</label>
+        <select class="form-select" name="traveler_nationality">
+          <option value="" selected>Select nationality</option>
+          {% for country in nationality_options %}
+          <option value="{{ country }}">{{ country }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label label-muted mb-1">Relation to main traveler</label>
+        <select class="form-select" name="traveler_relation_select" data-relation-select>
+          <option value="" selected>Select relation</option>
+          <option>Spouse</option>
+          <option>Partner</option>
+          <option>Child</option>
+          <option>Parent</option>
+          <option>Sibling</option>
+          <option>Friend</option>
+          <option>Colleague</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="col-md-6 d-none" data-relation-other>
+        <label class="form-label label-muted mb-1">Relation (other)</label>
+        <input type="text" class="form-control" name="traveler_relation_other" placeholder="Describe relation" />
+      </div>
+      <div class="col-12 d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-traveler-close>Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="bi bi-person-plus me-1"></i> Save traveler</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Booking detail modal -->
+<div id="booking-modal" class="modal-overlay d-none">
+  <div class="modal-shell detail-modal">
+    <div class="detail-header">
+      <div>
+        <div class="label-muted text-uppercase small fw-bold mb-1">Booking detail</div>
+        <h6 class="detail-title mb-0" data-detail-route>Route</h6>
+      </div>
+    </div>
+    <p class="muted small mb-3" data-detail-ref></p>
+    <div class="detail-grid mb-3">
+      <div class="detail-tile">
+        <div class="detail-label">Flight</div>
+        <div class="detail-value" data-detail-flight>–</div>
+      </div>
+      <div class="detail-tile">
+        <div class="detail-label">Departure</div>
+        <div class="detail-value" data-detail-depart>–</div>
+      </div>
+      <div class="detail-tile">
+        <div class="detail-label">Arrival</div>
+        <div class="detail-value" data-detail-arrival>–</div>
+      </div>
+      <div class="detail-tile">
+        <div class="detail-label">Amount paid</div>
+        <div class="detail-value" data-detail-paid>–</div>
+      </div>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+      <button class="btn btn-outline-secondary" type="button" data-booking-close>Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  // Max DOB
   (() => {
-    const dob = document.querySelector('input[type="date"]');
-    if (!dob) return;
-    const t = new Date();
-    const y = t.getFullYear(),
-      m = String(t.getMonth() + 1).padStart(2, "0"),
-      d = String(t.getDate()).padStart(2, "0");
-    dob.max = `${y}-${m}-${d}`;
+    const setMaxDate = (selector) => {
+      const field = document.querySelector(selector);
+      if (!field) return;
+      const t = new Date();
+      const y = t.getFullYear();
+      const m = String(t.getMonth() + 1).padStart(2, "0");
+      const d = String(t.getDate()).padStart(2, "0");
+      field.max = `${y}-${m}-${d}`;
+    };
+    setMaxDate('input[name="dob"]');
+    setMaxDate('input[name="traveler_dob"]');
+
+    const editBtn = document.querySelector("[data-profile-edit]");
+    const cancelBtn = document.querySelector("[data-profile-cancel]");
+    const read = document.getElementById("profile-read");
+    const form = document.getElementById("profile-form");
+
+    const setMode = (editing) => {
+      if (!read || !form) return;
+      if (editing) {
+        read.classList.add("d-none");
+        form.classList.remove("d-none");
+      } else {
+        read.classList.remove("d-none");
+        form.classList.add("d-none");
+      }
+    };
+
+    editBtn?.addEventListener("click", () => setMode(true));
+    cancelBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      setMode(false);
+    });
+
+    const travelerForm = document.getElementById("traveler-form");
+    const travelerToggle = document.querySelector("[data-traveler-toggle]");
+    const travelerLink = document.querySelector("[data-open-traveler]");
+    const travelerModal = document.getElementById("traveler-modal");
+    const travelerCloses = document.querySelectorAll("[data-traveler-close]");
+    const relationSelect = document.querySelector("[data-relation-select]");
+    const relationOtherWrap = document.querySelector("[data-relation-other]");
+
+    const openTraveler = () => travelerModal?.classList.remove("d-none");
+    const closeTraveler = () => travelerModal?.classList.add("d-none");
+
+    travelerToggle?.addEventListener("click", openTraveler);
+    travelerLink?.addEventListener("click", (e) => {
+      e.preventDefault();
+      openTraveler();
+    });
+    travelerCloses.forEach((btn) => btn.addEventListener("click", closeTraveler));
+    travelerModal?.addEventListener("click", (e) => {
+      if (e.target === travelerModal) closeTraveler();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeTraveler();
+    });
+
+    relationSelect?.addEventListener("change", (e) => {
+      if (!relationOtherWrap) return;
+      if (e.target.value === "Other") {
+        relationOtherWrap.classList.remove("d-none");
+      } else {
+        relationOtherWrap.classList.add("d-none");
+      }
+    });
+
+    // Booking detail modal
+    const bookingModal = document.getElementById("booking-modal");
+    const bookingOpeners = document.querySelectorAll("[data-booking-detail]");
+    const bookingCloses = document.querySelectorAll("[data-booking-close]");
+    const detailRoute = bookingModal?.querySelector("[data-detail-route]");
+    const detailRef = bookingModal?.querySelector("[data-detail-ref]");
+    const detailFlight = bookingModal?.querySelector("[data-detail-flight]");
+    const detailDepart = bookingModal?.querySelector("[data-detail-depart]");
+    const detailArrival = bookingModal?.querySelector("[data-detail-arrival]");
+    const detailPaid = bookingModal?.querySelector("[data-detail-paid]");
+
+    const formatDate = (val) => {
+      if (!val) return "—";
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return "—";
+      return d.toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).replace(",", " ·");
+    };
+
+    const money = (v) => {
+      const n = Number(v) || 0;
+      return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const openBooking = (btn) => {
+      if (!bookingModal) return;
+      const route = `${btn.dataset.origin} → ${btn.dataset.destination}`;
+      detailRoute && (detailRoute.textContent = route);
+      detailRef && (detailRef.textContent = btn.dataset.ref ? `Booking ref: ${btn.dataset.ref}` : "");
+      detailFlight && (detailFlight.textContent = btn.dataset.flight || "—");
+      detailDepart && (detailDepart.textContent = formatDate(btn.dataset.depart));
+      detailArrival && (detailArrival.textContent = formatDate(btn.dataset.arrival || btn.dataset.depart));
+      detailPaid && (detailPaid.textContent = money(btn.dataset.paid));
+      bookingModal.classList.remove("d-none");
+    };
+
+    const closeBooking = () => bookingModal?.classList.add("d-none");
+
+    bookingOpeners.forEach((btn) => btn.addEventListener("click", () => openBooking(btn)));
+    bookingCloses.forEach((btn) => btn.addEventListener("click", closeBooking));
+    bookingModal?.addEventListener("click", (e) => {
+      if (e.target === bookingModal) closeBooking();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeBooking();
+    });
   })();
 </script>
 

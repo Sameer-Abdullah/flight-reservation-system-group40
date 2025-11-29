@@ -35,6 +35,13 @@
     border-color: rgba(96,165,250,1);
 }
 
+.steady-card:hover {
+    transform: none;
+    rotate: 0deg;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+    border-color: rgba(148,163,184,0.45);
+}
+
 .card::before {
     content: "";
     position: absolute;
@@ -149,6 +156,11 @@ table.table tbody tr:hover {
     transition: all .2s ease;
 }
 
+.stable-rows tbody tr:hover {
+    transform: none;
+    background: rgba(56,126,255,0.25);
+}
+
 table.table thead {
     background: rgba(30,64,175,0.55);
     border-bottom: 2px solid rgba(96,165,250,0.55);
@@ -207,4 +219,3 @@ table.table thead {
     0% { opacity:0; transform: translateY(16px); }
     100% { opacity:1; transform: translateY(0); }
 }
-

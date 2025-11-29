@@ -1,0 +1,1660 @@
+{% extends "base.html" %}
+{% set body_class = 'bg-body-tertiary' %}
+{% block content %}
+<style>
+  :root {
+    --ink: #0f172a;
+    --muted: #6b7280;
+    --muted-soft: #7d8797;
+    --border: #e5e7eb;
+    --card: #ffffff;
+    --brand: #0ea5e9;
+    --brand-deep: #0284c7;
+    --success-soft: #e5f9ed;
+    --danger-soft: #ffe6e6;
+  }
+  body.bg-body-tertiary {
+    background: radial-gradient(1200px 520px at 10% -10%, rgba(14, 165, 233, 0.08), transparent 60%),
+      radial-gradient(900px 480px at 90% 0%, rgba(56, 189, 248, 0.06), transparent 58%),
+      linear-gradient(180deg, #f5f7fb 0%, #f8fafc 38%, #ffffff 100%);
+  }
+  .bookings-shell {
+    max-width: 1220px;
+    margin: 0 auto;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .trips-hero {
+    padding: 18px 20px;
+  }
+  .trips-hero {
+    background: linear-gradient(135deg, #1e9be8 0%, #0ca6e9 45%, #0b8bd3 100%);
+    border-radius: 22px;
+    padding: 26px 28px;
+    color: #fff;
+    box-shadow: 0 22px 46px rgba(2, 6, 23, 0.12);
+    position: relative;
+    overflow: hidden;
+  }
+  .trips-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(640px 260px at 10% 10%, rgba(255, 255, 255, 0.22), transparent 60%),
+      radial-gradient(420px 180px at 100% 30%, rgba(255, 255, 255, 0.18), transparent 60%);
+    pointer-events: none;
+  }
+  .hero-kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+  .hero-title {
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    font-size: clamp(1.5rem, 3vw, 1.9rem);
+    margin-bottom: 0.2rem;
+  }
+  .hero-sub {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0;
+  }
+  .hero-cta {
+    font-weight: 700;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+    padding: 10px 16px;
+  }
+  .section-block {
+    background: var(--card);
+    border: 1px solid #e4e7ec;
+    border-radius: 20px;
+    padding: 12px 12px 10px;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.04);
+    margin-top: 20px;
+  }
+  .section-head h3 {
+    margin: 0;
+    font-weight: 800;
+    color: #1f2937;
+    font-size: 20px;
+  }
+  .count-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 11px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.92rem;
+  }
+  .pill-sky {
+    color: #0284c7;
+    background: #e0f2fe;
+  }
+  .pill-success {
+    color: #15803d;
+    background: #dcfce7;
+  }
+  .pill-danger {
+    color: #b91c1c;
+    background: #fee2e2;
+  }
+  .trip-card {
+    border: 1px solid #e3e7ef;
+    border-radius: 20px;
+    padding: 12px 12px 10px;
+    box-shadow: 0 16px 38px rgba(2, 6, 23, 0.05);
+    background: #ffffff;
+  }
+  .trip-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+  .route {
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: #0f2648;
+    font-size: 21px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .route-divider {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #0d71c8;
+    font-weight: 800;
+    font-size: 16px;
+  }
+  .route-divider i { font-size: 13px; color: #0d71c8; }
+  .meta-grid {
+    display: grid;
+    grid-template-columns:
+      minmax(140px, 1fr)
+      minmax(190px, 1.08fr)
+      minmax(190px, 1.08fr)
+      minmax(240px, 1.3fr)
+      minmax(120px, 0.85fr)
+      minmax(130px, 0.9fr);
+    width: 100%;
+    gap: 12px 14px;
+    margin-top: 8px;
+    align-items: end;
+  }
+  .meta-grid > div {
+    min-width: 0;
+  }
+  .meta-grid > div:nth-of-type(5),
+  .meta-grid > div:nth-of-type(6) {
+    justify-self: end;
+  }
+  .meta-label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+    color: #8b95a7;
+    margin-bottom: 2px;
+    font-weight: 800;
+  }
+  .meta-value {
+    font-weight: 800;
+    color: #0f2648;
+    font-size: 15px;
+    white-space: nowrap;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .meta-value.meta-datetime {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+  }
+  .meta-money {
+    color: #0f2648;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 15px;
+    background: #d9fbe7;
+    color: #15803d;
+    border: 1px solid #bfead1;
+    white-space: nowrap;
+  }
+  .panel {
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 8px 9px;
+    box-shadow: 0 8px 18px rgba(2, 6, 23, 0.05);
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .panel-title {
+    font-weight: 800;
+    margin: 0;
+    color: #0f172a;
+    font-size: 16px;
+  }
+  .pill-muted {
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 10px;
+    padding: 5px 9px;
+    font-weight: 800;
+    font-size: 13px;
+  }
+  .pill-outline {
+    border: 1px solid #d5deeb;
+    background: #f8fafc;
+  }
+  .pax-row {
+    display: flex;
+    gap: 10px 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 8px;
+    border: 1px solid #d9dee7;
+    border-radius: 10px;
+    background: #f1f5f9;
+    margin-bottom: 8px;
+  }
+  .pax-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #eef2f7;
+    font-weight: 800;
+    color: #0f172a;
+    border: 1px solid #d7dce5;
+    flex-shrink: 0;
+    font-size: 13px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pax-name {
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #0f172a;
+    font-size: 15px;
+  }
+  .pax-meta {
+    color: #505b6f;
+    font-size: 14px;
+    margin-bottom: 0;
+  }
+  .pax-row .pax-body{
+    flex:1;
+    min-width: 220px;
+  }
+  .seat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    border: 1px solid #d9dee7;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    background: #f1f5f9;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  .seat-name {
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    font-size: 14px;
+  }
+  .seat-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    border-radius: 10px;
+    border: 1px solid #d7e3f4;
+    background: #f8fbff;
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 13px;
+  }
+  .baggage-note {
+    color: #4b5563;
+    font-size: 14px;
+    margin: 4px 0 0;
+    font-weight: 600;
+  }
+  .fare-note {
+    color: #505b6f;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .passenger-wrap {
+    border: 1px solid #e4e8f0;
+    background: #f8fafc;
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  }
+  .cancel-btn {
+    border-radius: 999px;
+    font-weight: 700;
+    padding: 10px 18px;
+    border: 2px solid #ef4444;
+    color: #d9251a;
+    background: #fff;
+    font-size: 15px;
+  }
+  .cancel-btn:hover {
+    background: #fff5f5;
+    color: #b91c1c;
+  }
+  .empty-card {
+    border: 1px dashed #d8dee9;
+    border-radius: 14px;
+    padding: 16px;
+    background: #f8fafc;
+    color: #6b7280;
+    font-weight: 600;
+  }
+  .cancel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 1200;
+  }
+.cancel-shell {
+  background: #fff;
+  width: min(1000px, 100%);
+  border-radius: 22px;
+  box-shadow: 0 32px 70px rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(2, 6, 23, 0.12);
+  padding: 18px 20px 16px;
+}
+  .rebook-shell {
+    max-width: 640px;
+    width: 100%;
+  }
+  .cancel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .cancel-head .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+    color: #6b7280;
+    font-size: 12px;
+  }
+  .cancel-close {
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .cancel-close:hover {
+    background: #e2e8f0;
+  }
+  .stepper {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .step-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 14px;
+    transition: all 0.15s ease;
+  }
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    background: #e5e7eb;
+    color: #0f172a;
+    font-size: 13px;
+  }
+  .step-pill.active {
+    background: #e0f2fe;
+    border-color: #bae6fd;
+    color: #0f172a;
+  }
+  .step-pill.active .step-num {
+    background: #0ea5e9;
+    color: #fff;
+  }
+  .step-pill .step-label {
+    white-space: nowrap;
+  }
+  .summary-card {
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 12px 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px 12px;
+    align-items: stretch;
+  }
+  .summary-tile {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 12px;
+    min-height: 82px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .tile-label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+  .tile-value {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 15px;
+  }
+  .tile-sub {
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .question-copy {
+    font-weight: 700;
+    color: #111827;
+    font-size: 15px;
+  }
+  .cancel-note {
+    color: #4b5563;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .policy-note {
+    border: 1px solid #dbeafe;
+    background: #f8fbff;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .policy-badge {
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    color: #0f172a;
+    font-weight: 800;
+    padding: 6px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .policy-badge.policy-chip {
+    background: #ffe4e6;
+    border-color: #fecdd3;
+    color: #b91c1c;
+  }
+  .policy-box {
+    border: 1px solid #fecdd3;
+    background: #fff1f2;
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .policy-box h6 {
+    font-weight: 800;
+    color: #b91c1c;
+  }
+  .policy-box ul {
+    padding-left: 18px;
+    margin-bottom: 8px;
+  }
+  .policy-box li {
+    margin-bottom: 4px;
+    font-weight: 600;
+    color: #4b5563;
+  }
+  .terms-box {
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .refund-box {
+    border: 1px solid #e1e5ec;
+    background: #f9fbff;
+    border-radius: 18px;
+    padding: 16px 16px 14px;
+    height: 100%;
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+    min-height: 260px;
+  }
+  .refund-amount {
+    font-size: 38px;
+    font-weight: 900;
+    color: #16a34a;
+    line-height: 1.1;
+  }
+  .refund-breakdown {
+    border: none;
+    background: transparent;
+    border-radius: 14px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .refund-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    font-weight: 800;
+    color: #0f172a;
+    border: none;
+    border-radius: 12px;
+    background: #e6f2ff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  .refund-row.fee-row {
+    background: #ffd8d8;
+    color: #b91c1c;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+  .refund-row span:last-child {
+    font-weight: 900;
+  }
+  .next-box {
+    border: 1px solid #e1e5ec;
+    background: #f9fbff;
+    border-radius: 18px;
+    padding: 16px 16px 14px;
+    height: 100%;
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+    min-height: 260px;
+  }
+  .next-box ul {
+    padding-left: 20px;
+    color: #4b5563;
+    font-weight: 600;
+    margin-bottom: 14px;
+    line-height: 1.45;
+    font-size: 14px;
+  }
+  .info-hint {
+    background: #c8f3ff;
+    border: 1px solid #9ed9f4;
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: #035f87;
+    font-weight: 800;
+    font-size: 15px;
+  }
+  .badge-soft {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #111827;
+    font-weight: 800;
+    font-size: 12px;
+  }
+    .status-pill.cancelled {
+      background: #fee2e2;
+      border-color: #fecdd3;
+      color: #b91c1c;
+    }
+  .status-pill.rebooked {
+    background: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+  }
+  .cancel-shell .btn {
+    border-radius: 12px;
+    font-weight: 800;
+  }
+  .cancel-shell .btn-outline-secondary {
+    border: 2px solid #cbd5e1;
+    color: #0f172a;
+    background: #fff;
+  }
+  .cancel-shell .btn-outline-secondary:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+  .cancel-shell .btn-danger {
+    padding: 10px 18px;
+    font-weight: 800;
+  }
+  .btn-back-ghost {
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    color: #0f172a;
+    padding: 10px 16px;
+  }
+  .btn-back-ghost:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+  .refund-desc {
+    font-size: 15px;
+    font-weight: 600;
+    color: #4b5563;
+  }
+  .next-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #111827;
+  }
+  .policy-reminder {
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .next-box li {
+    margin-bottom: 6px;
+  }
+  @media (max-width: 992px) {
+    .meta-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 576px) {
+    .trips-hero,
+    .section-block,
+    .trip-card {
+      padding: 16px;
+    }
+    .count-pill {
+      padding: 6px 10px;
+    }
+  }
+</style>
+
+<div class="bookings-shell">
+  <div class="trips-hero mb-4">
+    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+      <div>
+        <div class="hero-kicker">Trips</div>
+        <div class="hero-title">My Bookings</div>
+        <p class="hero-sub mb-0">Monitor upcoming flights, review past journeys, and cancel when plans change.</p>
+      </div>
+      <div class="z-1">
+        <a class="btn btn-light hero-cta" href="{{ url_for('search.search') }}">Book flights</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="section-block">
+    <div class="section-head d-flex align-items-center justify-content-between mb-3">
+      <h3>Upcoming flights</h3>
+      <span class="count-pill pill-sky">{{ bookings.upcoming|length }} trips</span>
+    </div>
+
+    <div id="upcoming-list">
+    {% if bookings.upcoming %}
+      {% for trip in bookings.upcoming %}
+        <article class="trip-card mb-3">
+          <div class="trip-head flex-wrap">
+            <div class="flex-grow-1">
+              <div class="route">
+                {{ trip.origin }}
+                <span class="route-divider" aria-hidden="true">/ <i class="bi bi-pen-fill"></i></span>
+                {{ trip.destination }}
+              </div>
+              <div class="meta-grid">
+                <div>
+                  <div class="meta-label">Airline</div>
+                  <div class="meta-value">{{ trip.airline }} &bull; {{ trip.flight_number }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Departure</div>
+                  <div class="meta-value meta-datetime">{{ trip.departure.strftime('%b %d, %Y') }} &bull; {{ trip.departure.strftime('%I:%M %p') }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Arrival</div>
+                  <div class="meta-value meta-datetime">{{ trip.arrival.strftime('%b %d, %Y') }} &bull; {{ trip.arrival.strftime('%I:%M %p') }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Booking Ref</div>
+                  <div class="meta-value" title="{{ trip.booking_ref }}">{{ trip.booking_ref }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Ticket</div>
+                  <div class="meta-value">{{ trip.ticket_type }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Total Paid</div>
+                  <div class="meta-value meta-money">${{ '%.2f' % trip.total_paid }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-1">
+              <span class="status-pill">{{ trip.status }}</span>
+            </div>
+          </div>
+
+          <div class="passenger-wrap mt-2">
+            <div class="row g-3 align-items-stretch">
+              <div class="col-lg-6">
+                <div class="panel h-100">
+                  <div class="panel-head">
+                    <h6 class="panel-title mb-0">Passenger preferences</h6>
+                    <span class="pill-muted pill-outline">{{ trip.pax|length }} pax</span>
+                  </div>
+                  <div>
+                    {% for pax in trip.pax %}
+                      <div class="pax-row">
+                        <span class="pax-chip">{{ pax.chip or pax.label }}</span>
+                        <div class="pax-body">
+                          <div class="pax-name">{{ pax.name }}</div>
+                          <p class="pax-meta mb-0">Class: {{ pax.class }} &bull; {{ pax.seat_pref }} &bull; Meal: {{ pax.meal }} &bull; Extra bags: {{ pax.extra_bags }}</p>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="panel h-100">
+                  <div class="panel-head">
+                    <h6 class="panel-title mb-0">Passenger details</h6>
+                    <span class="pill-muted pill-outline">Seats</span>
+                  </div>
+                  <div>
+                    {% for pax in trip.pax %}
+                      <div class="seat-row">
+                        <p class="seat-name mb-0">{{ pax.name }}</p>
+                        <span class="seat-pill">{{ pax.seat }}</span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  <p class="baggage-note mb-0">Baggage: {{ trip.baggage.total }} total &bull; Included: {{ trip.baggage.included }} &bull; Extras: {{ trip.baggage.extras }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+            <div class="fare-note">{{ trip.fare_terms }}</div>
+            <button
+              type="button"
+              class="btn btn-outline-danger cancel-btn"
+              data-origin="{{ trip.origin }}"
+              data-destination="{{ trip.destination }}"
+              data-airline="{{ trip.airline }}"
+              data-flight-number="{{ trip.flight_number }}"
+              data-departure="{{ trip.departure.isoformat() if trip.departure else '' }}"
+              data-arrival="{{ trip.arrival.isoformat() if trip.arrival else '' }}"
+              data-total-paid="{{ '%.2f' % trip.total_paid }}"
+              data-ticket-type="{{ trip.ticket_type }}"
+              data-booking-ref="{{ trip.booking_ref }}"
+              data-status="{{ trip.status }}"
+            >Cancel flight</button>
+          </div>
+        </article>
+      {% endfor %}
+    {% endif %}
+    </div>
+    <div class="empty-card {% if bookings.upcoming %}d-none{% endif %}" id="upcoming-empty">No upcoming flights yet.</div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-head d-flex align-items-center justify-content-between mb-2">
+      <h3>Past trips</h3>
+      <span class="count-pill pill-success">{{ bookings.past|length }} completed</span>
+    </div>
+    <div id="past-list">
+    {% if bookings.past %}
+      {% for trip in bookings.past %}
+        <article class="trip-card mb-3">
+          <div class="trip-head flex-wrap">
+            <div class="flex-grow-1">
+              <div class="route">
+                {{ trip.origin }}
+                <span class="route-divider" aria-hidden="true">/ <i class="bi bi-pen-fill"></i></span>
+                {{ trip.destination }}
+              </div>
+              <div class="meta-grid">
+                <div>
+                  <div class="meta-label">Airline</div>
+                  <div class="meta-value">{{ trip.airline }} &bull; {{ trip.flight_number }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Departure</div>
+                  <div class="meta-value meta-datetime">{{ trip.departure.strftime('%b %d, %Y') }} &bull; {{ trip.departure.strftime('%I:%M %p') }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Arrival</div>
+                  <div class="meta-value meta-datetime">{{ trip.arrival.strftime('%b %d, %Y') }} &bull; {{ trip.arrival.strftime('%I:%M %p') }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Booking Ref</div>
+                  <div class="meta-value" title="{{ trip.booking_ref }}">{{ trip.booking_ref }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Ticket</div>
+                  <div class="meta-value">{{ trip.ticket_type }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Total Paid</div>
+                  <div class="meta-value meta-money">${{ '%.2f' % trip.total_paid }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-1">
+              <span class="status-pill pill-muted">{{ trip.status }}</span>
+            </div>
+          </div>
+
+          <div class="passenger-wrap mt-2">
+            <div class="row g-3 align-items-stretch">
+              <div class="col-lg-6">
+                <div class="panel h-100">
+                  <div class="panel-head">
+                    <h6 class="panel-title mb-0">Passenger preferences</h6>
+                    <span class="pill-muted pill-outline">{{ trip.pax|length }} pax</span>
+                  </div>
+                  <div>
+                    {% for pax in trip.pax %}
+                      <div class="pax-row">
+                        <span class="pax-chip">{{ pax.chip or pax.label }}</span>
+                        <div class="pax-body">
+                          <div class="pax-name">{{ pax.name }}</div>
+                          <p class="pax-meta mb-0">Class: {{ pax.class }} &bull; {{ pax.seat_pref }} &bull; Meal: {{ pax.meal }} &bull; Extra bags: {{ pax.extra_bags }}</p>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="panel h-100">
+                  <div class="panel-head">
+                    <h6 class="panel-title mb-0">Passenger details</h6>
+                    <span class="pill-muted pill-outline">Seats</span>
+                  </div>
+                  <div>
+                    {% for pax in trip.pax %}
+                      <div class="seat-row">
+                        <p class="seat-name mb-0">{{ pax.name }}</p>
+                        <span class="seat-pill">{{ pax.seat }}</span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  <p class="baggage-note mb-0">Baggage: {{ trip.baggage.total }} total &bull; Included: {{ trip.baggage.included }} &bull; Extras: {{ trip.baggage.extras }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+            <div class="fare-note">{{ trip.fare_terms }}</div>
+          </div>
+        </article>
+      {% endfor %}
+    {% endif %}
+    </div>
+    <div class="empty-card {% if bookings.past %}d-none{% endif %}" id="past-empty">No completed trips recorded.</div>
+  </section>
+
+  <section class="section-block mb-4">
+    <div class="section-head d-flex align-items-center justify-content-between mb-2">
+      <h3>Cancelled flights</h3>
+      <span class="count-pill pill-danger">{{ bookings.cancelled|length }} cancelled</span>
+    </div>
+    <div id="cancelled-list">
+    {% if bookings.cancelled %}
+      {% for trip in bookings.cancelled %}
+        <article class="trip-card mb-3">
+          <div class="trip-head flex-wrap">
+            <div class="flex-grow-1">
+              <div class="route">
+                {{ trip.origin }}
+                <span class="route-divider" aria-hidden="true">/ <i class="bi bi-pen-fill"></i></span>
+                {{ trip.destination }}
+              </div>
+              <div class="meta-grid">
+                <div>
+                  <div class="meta-label">Airline</div>
+                  <div class="meta-value">{{ trip.airline }} &bull; {{ trip.flight_number }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Departure</div>
+                  <div class="meta-value meta-datetime">{{ trip.departure.strftime('%b %d, %Y') }} &bull; {{ trip.departure.strftime('%I:%M %p') }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Arrival</div>
+                  <div class="meta-value meta-datetime">{{ trip.arrival.strftime('%b %d, %Y') }} &bull; {{ trip.arrival.strftime('%I:%M %p') }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Booking Ref</div>
+                  <div class="meta-value" title="{{ trip.booking_ref }}">{{ trip.booking_ref }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Ticket</div>
+                  <div class="meta-value">{{ trip.ticket_type }}</div>
+                </div>
+                <div>
+                  <div class="meta-label">Total Paid</div>
+                  <div class="meta-value meta-money">${{ '%.2f' % trip.total_paid }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-1">
+              <span class="status-pill cancelled">Cancelled</span>
+            </div>
+          </div>
+
+          <div class="passenger-wrap mt-2">
+            <div class="row g-3 align-items-stretch">
+              <div class="col-lg-6">
+                <div class="panel h-100">
+                  <div class="panel-head">
+                    <h6 class="panel-title mb-0">Passenger preferences</h6>
+                    <span class="pill-muted pill-outline">{{ trip.pax|length }} pax</span>
+                  </div>
+                  <div>
+                    {% for pax in trip.pax %}
+                      <div class="pax-row">
+                        <span class="pax-chip">{{ pax.chip or pax.label }}</span>
+                        <div class="pax-body">
+                          <div class="pax-name">{{ pax.name }}</div>
+                          <p class="pax-meta mb-0">Class: {{ pax.class }} &bull; {{ pax.seat_pref }} &bull; Meal: {{ pax.meal }} &bull; Extra bags: {{ pax.extra_bags }}</p>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="panel h-100">
+                  <div class="panel-head">
+                    <h6 class="panel-title mb-0">Passenger details</h6>
+                    <span class="pill-muted pill-outline">Seats</span>
+                  </div>
+                  <div>
+                    {% for pax in trip.pax %}
+                      <div class="seat-row">
+                        <p class="seat-name mb-0">{{ pax.name }}</p>
+                        <span class="seat-pill">{{ pax.seat }}</span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  <p class="baggage-note mb-0">Baggage: {{ trip.baggage.total }} total &bull; Included: {{ trip.baggage.included }} &bull; Extras: {{ trip.baggage.extras }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+            <div class="fare-note">{{ trip.fare_terms }}</div>
+            {% if trip.available %}
+              <button
+                type="button"
+                class="btn btn-primary fw-semibold"
+                data-rebook-btn
+                data-origin="{{ trip.origin }}"
+                data-destination="{{ trip.destination }}"
+                data-airline="{{ trip.airline }}"
+                data-flight-number="{{ trip.flight_number }}"
+                data-departure="{{ trip.departure.isoformat() if trip.departure else '' }}"
+                data-arrival="{{ trip.arrival.isoformat() if trip.arrival else '' }}"
+                data-price="{{ '%.2f' % trip.price }}"
+                data-total-paid="{{ '%.2f' % trip.total_paid }}"
+                data-ticket-type="{{ trip.ticket_type }}"
+                data-booking-ref="{{ trip.booking_ref }}"
+              >Rebook flight</button>
+            {% else %}
+              <span class="text-muted fw-semibold small">Flight no longer available</span>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    {% endif %}
+    </div>
+    <div class="empty-card {% if bookings.cancelled %}d-none{% endif %}" id="cancelled-empty">No cancelled flights.</div>
+  </section>
+</div>
+
+<div id="cancel-modal" class="cancel-overlay d-none" role="dialog" aria-modal="true">
+  <div class="cancel-shell">
+    <div class="cancel-head">
+      <div>
+        <div class="eyebrow">Manage booking</div>
+        <h5 class="fw-bold mb-0">Cancel flight</h5>
+      </div>
+      <button type="button" class="cancel-close" aria-label="Close" data-cancel-close>
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="stepper" role="group" aria-label="Cancellation steps">
+      <div class="step-pill active" data-step-pill="confirm">
+        <span class="step-num">1</span>
+        <span class="step-label">Confirm</span>
+      </div>
+      <div class="step-pill" data-step-pill="policy">
+        <span class="step-num">2</span>
+        <span class="step-label">Policy</span>
+      </div>
+      <div class="step-pill" data-step-pill="refund">
+        <span class="step-num">3</span>
+        <span class="step-label">Refund</span>
+      </div>
+    </div>
+
+    <div class="step-pane" data-step-pane="confirm">
+      <div class="question-copy mb-1">Are you sure you want to cancel this flight?</div>
+      <p class="cancel-note">We'll show the policy and your refund before you commit.</p>
+      <div class="summary-card mb-3">
+        <div class="summary-grid">
+          <div class="summary-tile">
+            <div class="tile-label">Route</div>
+            <div class="tile-value" data-summary-target="route">–</div>
+            <div class="tile-sub" data-summary-target="flight">–</div>
+          </div>
+          <div class="summary-tile">
+            <div class="tile-label">Departure</div>
+            <div class="tile-value" data-summary-target="depart">–</div>
+          </div>
+          <div class="summary-tile">
+            <div class="tile-label">Arrival</div>
+            <div class="tile-value" data-summary-target="arrival">–</div>
+          </div>
+          <div class="summary-tile">
+            <div class="tile-label">Total paid</div>
+            <div class="tile-value" data-summary-target="paid">–</div>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-secondary" data-keep-booking>Keep flight</button>
+        <button type="button" class="btn btn-primary fw-semibold" data-go-policy>Review policy</button>
+      </div>
+    </div>
+
+    <div class="step-pane d-none" data-step-pane="policy">
+      <div class="policy-note">
+        <span class="policy-badge policy-chip">Policy</span>
+        <div>
+          <div class="fw-bold" data-refund-window-badge>75% refund window</div>
+          <div class="text-muted fw-semibold small" data-refund-window-note>Departing 8 hours from now. Refunds are determined by the policy below.</div>
+        </div>
+      </div>
+      <div class="policy-box mt-3">
+        <div class="policy-badge policy-chip mb-2">Policy</div>
+        <h6 class="mb-1">Flight cancellation policy</h6>
+        <ul class="mb-2 small">
+          <li>Cancel more than 24 hours before departure: full refund.</li>
+          <li>Cancel within 24 hours to 2 hours before departure: 75% of what you paid is refunded.</li>
+          <li>Cancel within 2 hours of departure: cancellation allowed but non-refundable (refund of $0).</li>
+        </ul>
+        <p class="mb-0 small text-muted fw-semibold">Refunds are returned to your original payment method in 5–10 business days.</p>
+      </div>
+      <div class="row g-3 align-items-start mt-3">
+        <div class="col-lg-7">
+          <label class="form-label fw-semibold small mb-1">Reason for cancellation (optional)</label>
+          <select class="form-select" data-cancel-reason>
+            <option value="" selected>Select a reason</option>
+            <option>Schedule change</option>
+            <option>Found a better deal</option>
+            <option>Health or personal reasons</option>
+            <option>Weather concerns</option>
+            <option>Other</option>
+          </select>
+          <input type="text" class="form-control mt-2 d-none" placeholder="Share a short note" data-cancel-reason-other />
+        </div>
+        <div class="col-lg-5">
+          <div class="terms-box d-flex align-items-start gap-2">
+            <input class="form-check-input mt-1" type="checkbox" id="cancel-terms" data-terms-checkbox />
+            <div>
+              <label for="cancel-terms" class="fw-semibold mb-1">I understand the cancellation terms</label>
+              <div class="text-muted small fw-semibold">We'll calculate your refund using this policy and release your seats.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between align-items-center gap-2 mt-4 flex-wrap">
+        <button type="button" class="btn btn-light border" data-step-back>&larr; Back</button>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary" data-keep-booking>Keep booking</button>
+          <button type="button" class="btn btn-primary fw-semibold" data-go-refund disabled>See refund details</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-pane d-none" data-step-pane="refund">
+      <div class="summary-card mb-3">
+        <div class="summary-grid">
+          <div class="summary-tile">
+            <div class="tile-label">Route</div>
+            <div class="tile-value" data-summary-target="route">–</div>
+            <div class="tile-sub" data-summary-target="flight">–</div>
+          </div>
+          <div class="summary-tile">
+            <div class="tile-label">Departure</div>
+            <div class="tile-value" data-summary-target="depart">–</div>
+          </div>
+          <div class="summary-tile">
+            <div class="tile-label">Arrival</div>
+            <div class="tile-value" data-summary-target="arrival">–</div>
+          </div>
+          <div class="summary-tile">
+            <div class="tile-label">Amount paid</div>
+            <div class="tile-value" data-summary-target="paid">–</div>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3 align-items-stretch">
+        <div class="col-lg-6">
+          <div class="refund-box">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="tile-label mb-0 text-uppercase">Refund estimate</div>
+              <span class="badge-soft" data-refund-window-badge-alt>75% refund window</span>
+            </div>
+            <div class="refund-amount" data-refund-amount>$0.00</div>
+            <div class="refund-desc mb-3" data-refund-window-desc>Between 24 hours and 2 hours before departure: 75% refunded, balance kept as fee.</div>
+            <div class="refund-breakdown">
+              <div class="refund-row">
+                <span>Amount paid</span>
+                <span data-amount-paid>$0.00</span>
+              </div>
+              <div class="refund-row fee-row">
+                <span>Fees withheld</span>
+                <span data-fees-withheld>$0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="next-box">
+            <div class="next-title mb-1">What happens next</div>
+            <ul class="mb-3">
+              <li>We'll send a cancellation email and release your seats.</li>
+              <li>Eligible refunds return to your original payment method.</li>
+            </ul>
+            <div class="info-hint">You can still back out below if you change your mind.</div>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between align-items-center gap-2 mt-4 flex-wrap">
+        <button type="button" class="btn btn-back-ghost" data-refund-back>&larr; Back to policy</button>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary" data-keep-booking>Keep booking</button>
+          <button type="button" class="btn btn-danger fw-semibold" data-confirm-cancel>Cancel flight</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="rebook-modal" class="cancel-overlay d-none" role="dialog" aria-modal="true">
+  <div class="cancel-shell rebook-shell">
+    <div class="cancel-head">
+      <div>
+        <div class="eyebrow">Rebook flight</div>
+        <h5 class="fw-bold mb-0" data-rebook-title>Confirm rebooking</h5>
+      </div>
+      <button type="button" class="cancel-close" aria-label="Close" data-rebook-close>
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="summary-card mb-3">
+      <div class="summary-grid">
+        <div class="summary-tile">
+          <div class="tile-label">Route</div>
+          <div class="tile-value" data-rebook-route>–</div>
+          <div class="tile-sub" data-rebook-flight>–</div>
+        </div>
+        <div class="summary-tile">
+          <div class="tile-label">Departure</div>
+          <div class="tile-value" data-rebook-depart>–</div>
+        </div>
+        <div class="summary-tile">
+          <div class="tile-label">Arrival</div>
+          <div class="tile-value" data-rebook-arrival>–</div>
+        </div>
+      </div>
+    </div>
+    <div class="refund-box mb-3">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="tile-label mb-0 text-uppercase">Price to rebook</div>
+        <span class="badge-soft">Pay on file</span>
+      </div>
+      <div class="refund-amount" data-rebook-price>$0.00</div>
+      <div class="refund-desc">We’ll reissue your tickets instantly.</div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center gap-2 mt-3 flex-wrap">
+      <button type="button" class="btn btn-outline-secondary" data-rebook-close>Back</button>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary fw-semibold" data-rebook-confirm>Confirm rebook</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const modal = document.getElementById("cancel-modal");
+    const rebookModal = document.getElementById("rebook-modal");
+    if (!modal) return;
+
+    let currentStep = "confirm";
+    let activeTrip = null;
+    let activeCard = null;
+
+    const stepPanes = modal.querySelectorAll("[data-step-pane]");
+    const stepPills = modal.querySelectorAll("[data-step-pill]");
+    const goPolicyBtn = modal.querySelector("[data-go-policy]");
+    const goRefundBtn = modal.querySelector("[data-go-refund]");
+    const stepBackBtn = modal.querySelector("[data-step-back]");
+    const refundBackBtn = modal.querySelector("[data-refund-back]");
+    const termsCheckbox = modal.querySelector("[data-terms-checkbox]");
+    const keepButtons = modal.querySelectorAll("[data-keep-booking]");
+    const closeButtons = modal.querySelectorAll("[data-cancel-close]");
+    const confirmCancelBtn = modal.querySelector("[data-confirm-cancel]");
+    const reasonSelect = modal.querySelector("[data-cancel-reason]");
+    const reasonOther = modal.querySelector("[data-cancel-reason-other]");
+    const upcomingList = document.getElementById("upcoming-list");
+    const cancelledList = document.getElementById("cancelled-list");
+    const upcomingEmpty = document.getElementById("upcoming-empty");
+    const cancelledEmpty = document.getElementById("cancelled-empty");
+    const upcomingCountPill = document.querySelector(".pill-sky");
+    const cancelledCountPill = document.querySelector(".pill-danger");
+
+    const summaryTargets = (field) => modal.querySelectorAll(`[data-summary-target="${field}"]`);
+    const setStep = (name) => {
+      currentStep = name;
+      stepPanes.forEach((pane) => pane.classList.toggle("d-none", pane.dataset.stepPane !== name));
+      stepPills.forEach((pill) => pill.classList.toggle("active", pill.dataset.stepPill === name));
+    };
+
+    const formatMoney = (val) => {
+      const num = Number(val) || 0;
+      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const formatDateTime = (value) => {
+      if (!value) return "—";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "—";
+      const opts = { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true };
+      return date.toLocaleString(undefined, opts).replace(",", " •");
+    };
+
+    const friendlyHours = (hoursRaw) => {
+      if (!Number.isFinite(hoursRaw)) return "soon";
+      const sign = hoursRaw >= 0 ? 1 : -1;
+      const abs = Math.abs(hoursRaw);
+      const rounded = Math.max(0, Math.round(abs));
+      if (rounded >= 24) {
+        const days = Math.floor(rounded / 24);
+        const rem = rounded % 24;
+        const dayPart = `${days} day${days === 1 ? "" : "s"}`;
+        const hourPart = rem ? ` ${rem} hour${rem === 1 ? "" : "s"}` : "";
+        return sign > 0 ? `${dayPart}${hourPart} from now` : `${dayPart}${hourPart} ago`;
+      }
+      return sign > 0 ? `${rounded} hour${rounded === 1 ? "" : "s"} from now` : `${rounded} hour${rounded === 1 ? "" : "s"} ago`;
+    };
+
+    const deriveWindow = (trip) => {
+      const depart = trip?.departure ? new Date(trip.departure) : null;
+      const now = new Date();
+      const diffHours = depart ? (depart.getTime() - now.getTime()) / 36e5 : null;
+      const hoursLabel = friendlyHours(diffHours ?? 0);
+      const timePhrase = diffHours !== null && diffHours < 0 ? `Departed ${hoursLabel}` : `Departing ${hoursLabel}`;
+
+      if (diffHours !== null && diffHours > 24) {
+        return {
+          badge: "Full refund window",
+          policyLine: "Cancel more than 24 hours before departure: full refund.",
+          percent: 1,
+          note: `${timePhrase}. Refunds are determined by the policy below.`,
+          reminder: `${timePhrase}. More than 24 hours before departure: full refund.`,
+        };
+      }
+      if (diffHours !== null && diffHours > 2) {
+        return {
+          badge: "75% refund window",
+          policyLine: "Cancel within 24 hours to 2 hours before departure: 75% of what you paid is refunded.",
+          percent: 0.75,
+          note: `${timePhrase}. Refunds are determined by the policy below.`,
+          reminder: `${timePhrase}. Between 24 hours and 2 hours before departure: 75% refunded, balance kept as fee.`,
+        };
+      }
+      if (diffHours !== null && diffHours >= 0) {
+        return {
+          badge: "Non-refundable window",
+          policyLine: "Cancel within 2 hours of departure: cancellation allowed but non-refundable (refund of $0).",
+          percent: 0,
+          note: `${timePhrase}. Cancellations are allowed but non-refundable within 2 hours of departure.`,
+          reminder: `${timePhrase}. Within 2 hours of departure: cancellation allowed but non-refundable (refund of $0).`,
+        };
+      }
+      return {
+        badge: "Departure passed",
+        policyLine: "Flight already departed; cancellations are non-refundable.",
+        percent: 0,
+        note: depart ? `${timePhrase}. Cancellations after departure are non-refundable.` : "Departure time passed. Cancellations after departure are non-refundable.",
+        reminder: depart ? `${timePhrase}. Cancellations are non-refundable.` : "Departure passed; cancellations are non-refundable.",
+      };
+    };
+
+    const updateSummary = (trip) => {
+      summaryTargets("route").forEach((node) => {
+        node.textContent = trip ? `${trip.origin || "—"} → ${trip.destination || "—"}` : "—";
+      });
+      summaryTargets("flight").forEach((node) => {
+        const parts = [trip?.airline, trip?.flightNumber].filter(Boolean);
+        node.textContent = parts.join(" • ") || "—";
+      });
+      summaryTargets("depart").forEach((node) => (node.textContent = formatDateTime(trip?.departure || trip?.depart)));
+      summaryTargets("arrival").forEach((node) => (node.textContent = formatDateTime(trip?.arrival || trip?.departure)));
+      summaryTargets("paid").forEach((node) => (node.textContent = formatMoney(trip?.totalPaid)));
+    };
+
+    const updatePolicyView = (trip) => {
+      const windowInfo = deriveWindow(trip);
+      const badge1 = modal.querySelector("[data-refund-window-badge]");
+      const badge2 = modal.querySelector("[data-refund-window-badge-alt]");
+      const note = modal.querySelector("[data-refund-window-note]");
+      const desc = modal.querySelector("[data-refund-window-desc]");
+
+      if (badge1) badge1.textContent = windowInfo.badge;
+      if (badge2) badge2.textContent = windowInfo.badge;
+      if (note) note.textContent = windowInfo.note;
+      if (desc) desc.textContent = windowInfo.reminder || windowInfo.policyLine;
+      if (reasonOther) {
+        reasonOther.classList.add("d-none");
+        reasonOther.value = "";
+      }
+
+      const amountPaid = Number(trip?.totalPaid || 0);
+      const refundAmount = Math.max(0, amountPaid * windowInfo.percent);
+      const withheld = Math.max(0, amountPaid - refundAmount);
+
+      const refundField = modal.querySelector("[data-refund-amount]");
+      const paidField = modal.querySelector("[data-amount-paid]");
+      const withheldField = modal.querySelector("[data-fees-withheld]");
+
+      if (refundField) refundField.textContent = formatMoney(refundAmount);
+      if (paidField) paidField.textContent = formatMoney(amountPaid);
+      if (withheldField) withheldField.textContent = formatMoney(withheld);
+    };
+
+    const openModal = (trip, card) => {
+      activeTrip = trip;
+      activeCard = card;
+      setStep("confirm");
+      if (termsCheckbox) termsCheckbox.checked = false;
+      if (reasonSelect) reasonSelect.value = "";
+      if (goRefundBtn) goRefundBtn.disabled = true;
+      updateSummary(trip);
+      updatePolicyView(trip);
+      modal.classList.remove("d-none");
+      document.body.style.overflow = "hidden";
+    };
+
+    const closeModal = () => {
+      modal.classList.add("d-none");
+      document.body.style.overflow = "";
+    };
+
+    goPolicyBtn?.addEventListener("click", () => setStep("policy"));
+    goRefundBtn?.addEventListener("click", () => setStep("refund"));
+    stepBackBtn?.addEventListener("click", () => setStep("confirm"));
+    refundBackBtn?.addEventListener("click", () => setStep("policy"));
+
+    termsCheckbox?.addEventListener("change", (e) => {
+      if (goRefundBtn) goRefundBtn.disabled = !e.target.checked;
+    });
+
+    keepButtons.forEach((btn) => btn.addEventListener("click", closeModal));
+    closeButtons.forEach((btn) => btn.addEventListener("click", closeModal));
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.classList.contains("d-none")) {
+        closeModal();
+      }
+    });
+
+    const showBanner = (message, type = "info") => {
+      const main = document.querySelector("main");
+      if (!main) return;
+      const alert = document.createElement("div");
+      alert.className = `alert alert-${type} alert-dismissible fade show mb-2 d-flex justify-content-between align-items-start`;
+      alert.role = "alert";
+      alert.innerHTML = `<div class="me-2">${message}</div><button type="button" class="btn-close" aria-label="Close" data-dismiss-static-alert></button>`;
+      main.prepend(alert);
+      setTimeout(() => alert.remove(), 6000);
+    };
+
+    const syncCounts = () => {
+      if (upcomingCountPill && upcomingList) {
+        const count = upcomingList.querySelectorAll(".trip-card").length;
+        upcomingCountPill.textContent = `${count} trips`;
+        if (upcomingEmpty) {
+          upcomingEmpty.classList.toggle("d-none", count > 0);
+        }
+      }
+      if (cancelledCountPill && cancelledList) {
+        const count = cancelledList.querySelectorAll(".trip-card").length;
+        cancelledCountPill.textContent = `${count} cancelled`;
+        if (cancelledEmpty) cancelledEmpty.classList.toggle("d-none", count > 0);
+      }
+    };
+
+    const moveToCancelled = () => {
+      if (!activeCard || !cancelledList) return;
+      const clone = activeCard.cloneNode(true);
+      const status = clone.querySelector(".status-pill");
+      if (status) {
+        status.textContent = "Cancelled";
+        status.classList.add("cancelled");
+      }
+      clone.querySelector(".cancel-btn")?.remove();
+      const fare = clone.querySelector(".fare-note");
+      if (fare) {
+        fare.textContent = "Cancellation confirmed. Refund will be issued per policy.";
+      }
+      clone.classList.add("mt-2");
+      cancelledList.appendChild(clone);
+      activeCard.remove();
+      if (upcomingList && upcomingList.childElementCount === 0 && upcomingEmpty) {
+        upcomingEmpty.classList.remove("d-none");
+      }
+      syncCounts();
+    };
+
+    confirmCancelBtn?.addEventListener("click", async () => {
+      const selected = reasonSelect?.value || "";
+      const reasonValue = selected === "Other" ? (reasonOther?.value || "").trim() : selected;
+      const payload = {
+        booking_ref: activeTrip?.bookingRef,
+        reason: reasonValue,
+      };
+      const headers = { "Content-Type": "application/json" };
+      try {
+        if (payload.booking_ref) {
+          await fetch("/bookings/cancel", {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+          });
+        }
+      } catch (err) {
+        console.warn("Cancellation request failed; continuing client-side only.", err);
+      }
+      moveToCancelled();
+      closeModal();
+      showBanner("Cancellation submitted. Refund details will be emailed to you.", "warning");
+    });
+
+    reasonSelect?.addEventListener("change", (e) => {
+      if (!reasonOther) return;
+      if (e.target.value === "Other") {
+        reasonOther.classList.remove("d-none");
+        reasonOther.focus();
+      } else {
+        reasonOther.classList.add("d-none");
+        reasonOther.value = "";
+      }
+    });
+
+    document.querySelectorAll(".cancel-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const trip = {
+          origin: btn.dataset.origin,
+          destination: btn.dataset.destination,
+          airline: btn.dataset.airline,
+          flightNumber: btn.dataset.flightNumber,
+          departure: btn.dataset.departure,
+          arrival: btn.dataset.arrival,
+          totalPaid: parseFloat(btn.dataset.totalPaid || "0"),
+          ticketType: btn.dataset.ticketType,
+          bookingRef: btn.dataset.bookingRef,
+          status: btn.dataset.status,
+        };
+        openModal(trip, btn.closest(".trip-card"));
+      });
+    });
+
+    // --- Rebook flow ---
+    const rebookTitle = rebookModal?.querySelector("[data-rebook-title]");
+    const rebookRoute = rebookModal?.querySelector("[data-rebook-route]");
+    const rebookFlight = rebookModal?.querySelector("[data-rebook-flight]");
+    const rebookDepart = rebookModal?.querySelector("[data-rebook-depart]");
+    const rebookArrival = rebookModal?.querySelector("[data-rebook-arrival]");
+    const rebookPrice = rebookModal?.querySelector("[data-rebook-price]");
+    const rebookCloseBtns = rebookModal?.querySelectorAll("[data-rebook-close]") || [];
+    const rebookConfirm = rebookModal?.querySelector("[data-rebook-confirm]");
+    let rebookActive = null;
+
+    const openRebook = (btn) => {
+      if (!rebookModal) return;
+      rebookActive = btn;
+      const route = `${btn.dataset.origin} → ${btn.dataset.destination}`;
+      rebookTitle && (rebookTitle.textContent = "Confirm rebooking");
+      rebookRoute && (rebookRoute.textContent = route);
+      rebookFlight && (rebookFlight.textContent = `${btn.dataset.airline || "SkyWings"} • ${btn.dataset.flightNumber || ""}`);
+      rebookDepart && (rebookDepart.textContent = formatDateTime(btn.dataset.departure));
+      rebookArrival && (rebookArrival.textContent = formatDateTime(btn.dataset.arrival || btn.dataset.departure));
+      rebookPrice && (rebookPrice.textContent = formatMoney(btn.dataset.price));
+      rebookModal.classList.remove("d-none");
+      document.body.style.overflow = "hidden";
+    };
+
+    const closeRebook = () => {
+      if (!rebookModal) return;
+      rebookModal.classList.add("d-none");
+      document.body.style.overflow = "";
+    };
+
+    rebookCloseBtns.forEach((btn) => btn.addEventListener("click", closeRebook));
+    rebookModal?.addEventListener("click", (e) => {
+      if (e.target === rebookModal) closeRebook();
+    });
+
+    rebookConfirm?.addEventListener("click", async () => {
+      if (!rebookActive) return;
+      const bookingRef = rebookActive.dataset.bookingRef;
+      const headers = { "Content-Type": "application/json" };
+      try {
+        await fetch("/bookings/rebook", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ booking_ref: bookingRef }),
+        });
+      } catch (err) {
+        console.warn("Rebook request failed; continuing client-side.", err);
+      }
+      const card = rebookActive.closest(".trip-card");
+      if (card && upcomingList) {
+        // reset status pill
+        const status = card.querySelector(".status-pill");
+        if (status) {
+          status.textContent = "On time";
+          status.classList.remove("cancelled");
+          status.classList.add("pill-muted");
+        }
+        // ensure cancel button exists
+        let cancelBtn = card.querySelector(".cancel-btn");
+        if (!cancelBtn) {
+          cancelBtn = document.createElement("button");
+          cancelBtn.type = "button";
+          cancelBtn.className = "btn btn-outline-danger cancel-btn";
+          cancelBtn.textContent = "Cancel flight";
+          cancelBtn.dataset.origin = rebookActive.dataset.origin;
+          cancelBtn.dataset.destination = rebookActive.dataset.destination;
+          cancelBtn.dataset.airline = rebookActive.dataset.airline;
+          cancelBtn.dataset.flightNumber = rebookActive.dataset.flightNumber;
+          cancelBtn.dataset.departure = rebookActive.dataset.departure;
+          cancelBtn.dataset.arrival = rebookActive.dataset.arrival;
+          cancelBtn.dataset.totalPaid = rebookActive.dataset.price || rebookActive.dataset.totalPaid;
+          cancelBtn.dataset.ticketType = rebookActive.dataset.ticketType || "Economy";
+          cancelBtn.dataset.bookingRef = bookingRef;
+          cancelBtn.dataset.status = "On time";
+          cancelBtn.addEventListener("click", () => {
+            const trip = {
+              origin: cancelBtn.dataset.origin,
+              destination: cancelBtn.dataset.destination,
+              airline: cancelBtn.dataset.airline,
+              flightNumber: cancelBtn.dataset.flightNumber,
+              departure: cancelBtn.dataset.departure,
+              arrival: cancelBtn.dataset.arrival,
+              totalPaid: parseFloat(cancelBtn.dataset.totalPaid || "0"),
+              ticketType: cancelBtn.dataset.ticketType,
+              bookingRef: cancelBtn.dataset.bookingRef,
+              status: cancelBtn.dataset.status,
+            };
+            openModal(trip, cancelBtn.closest(".trip-card"));
+          });
+        }
+        const btnRow = card.querySelector(".d-flex.align-items-center.justify-content-between.mt-3");
+        if (btnRow && !btnRow.querySelector(".cancel-btn")) {
+          btnRow.appendChild(cancelBtn);
+        }
+        // remove rebook button
+        rebookActive.remove();
+        const fare = card.querySelector(".fare-note");
+        if (fare) {
+          fare.textContent = "Rebooked successfully.";
+        }
+        cancelledList?.removeChild(card);
+        upcomingList.appendChild(card);
+        syncCounts();
+      }
+      closeRebook();
+      showBanner("Rebooked successfully. Your seats are confirmed.", "success");
+    });
+
+    document.querySelectorAll("[data-rebook-btn]").forEach((btn) => {
+      btn.addEventListener("click", () => openRebook(btn));
+    });
+
+    syncCounts();
+  })();
+</script>
+{% endblock %}

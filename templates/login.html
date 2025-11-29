@@ -384,6 +384,7 @@
     border: 1px solid #fecaca;
     background: #fef2f2;
     color: #991b1b;
+    padding-right: 2.75rem;
   }
 
   /* Motion accessibility */
@@ -437,8 +438,9 @@
   <div class="auth-card">
     {% with messages = get_flashed_messages(with_categories=true) %} {% if
     messages %} {% for category, msg in messages %}
-    <div class="alert alert-auth mb-3" role="alert">
-      <i class="bi bi-exclamation-triangle me-2"></i>{{ msg }}
+    <div class="alert alert-auth alert-dismissible fade show mb-3 d-flex align-items-start justify-content-between" role="alert">
+      <div><i class="bi bi-exclamation-triangle me-2"></i>{{ msg }}</div>
+      <button type="button" class="btn-close" aria-label="Close" data-dismiss-static-alert></button>
     </div>
     {% endfor %} {% endif %} {% endwith %}
 

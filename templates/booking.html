@@ -2,42 +2,111 @@
 {% set body_class = 'auth-bg' %}
 {% block content %}
 <style>
-  .booking-card {
-    max-width: 720px;
-    margin-inline: auto;
-    background: rgba(255,255,255,.78);
+  :root{
+    --ink:#0b2545;
+    --muted:#6b7280;
+    --brand:#0ea5e9;
+    --brand-deep:#0369a1;
+  }
+  body.auth-bg{
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(255,255,255,.45), transparent 60%),
+      linear-gradient(180deg, #eef6ff 0%, #f6fbff 60%, #ffffff 100%);
+    background-attachment: fixed;
+  }
+  .booking-shell{ max-width:1080px; margin-inline:auto; position:relative; z-index:1; }
+  .booking-card{
+    max-width: 980px;
+    margin-inline:auto;
+    background: rgba(255,255,255,.92);
     border:1px solid rgba(2,6,23,.08);
     border-radius:22px;
     box-shadow:0 24px 60px rgba(2,6,23,.10);
     backdrop-filter: blur(12px);
     padding: 28px;
   }
-  .booking-card h3 {
-    font-weight:800;
-    color:#0b2545;
+  .section-title{ font-weight:800; color:var(--ink); }
+  .flight-box{
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+    padding:18px;
   }
-  .form-label {
+  .flight-box p{ margin-bottom:.35rem; }
+  .form-label{
     font-weight:600;
     color:#1f2937;
   }
-  .form-control, .form-select {
+  .form-control, .form-select{
     border-color:#e5e7eb;
     border-radius:12px;
+    height:auto;
+    padding:12px;
   }
-  .form-control:focus, .form-select:focus {
-    border-color:#0ea5e9;
+  .form-control:focus, .form-select:focus{
+    border-color:var(--brand);
     box-shadow:0 0 0 .25rem rgba(14,165,233,.25);
   }
-  .btn-primary {
-    background: linear-gradient(135deg, #0369a1, #0ea5e9);
+  .helper-note{ color:#6b7280; font-size:13px; }
+  .pax-card{
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+    padding:16px;
+    background:#fff;
+    box-shadow:0 12px 28px rgba(2,6,23,.06);
+  }
+  .seat-pill{
+    border:1px solid #dbeafe;
+    background:#f8fbff;
+    color:#0f172a;
+    border-radius:9px;
+    font-weight:700;
+    padding:4px 8px;
+    font-size:13px;
+    line-height:1.1;
+  }
+  .seat-summary{
+    border:1px solid rgba(2,6,23,.08);
+    border-radius:16px;
+    background:linear-gradient(180deg,#f8fafc,#ffffff);
+    padding:16px;
+    box-shadow:0 12px 28px rgba(2,6,23,.08);
+  }
+  .seat-tile{
+    border:1px solid #e2e8f0;
+    border-radius:12px;
+    padding:10px 12px;
+    background:#fff;
+    box-shadow:0 8px 16px rgba(2,6,23,.06);
+    min-width:130px;
+  }
+  .seat-tile .label{
+    font-size:12px;
+    font-weight:800;
+    color:#475569;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    margin-bottom:2px;
+  }
+  .seat-tile .code{
+    font-weight:800;
+    font-size:18px;
+    color:var(--ink);
+    line-height:1.1;
+  }
+  .btn-primary{
+    background: linear-gradient(135deg, var(--brand-deep), var(--brand));
     border:none;
     border-radius:14px;
     font-weight:700;
     box-shadow:0 10px 24px rgba(2,6,23,.08);
+    padding:12px;
   }
-  .btn-outline-secondary {
+  .btn-outline-secondary{
     border-radius:14px;
     font-weight:700;
+    padding:12px;
   }
 </style>
 
@@ -55,10 +124,10 @@
   <p class="text-muted">Review your flight details and enter passenger info</p>
 </div>
 
-<div class="container mb-5">
+<div class="container booking-shell mb-5">
   <div class="booking-card">
-    <h3 class="mb-3">Flight Summary</h3>
-    <div class="mb-3 p-3 bg-light rounded-3 border">
+    <h3 class="section-title mb-3">Flight Summary</h3>
+    <div class="flight-box mb-4">
       <p class="mb-1 fs-5">
         <strong>{{ flight.origin }}</strong> → <strong>{{ flight.destination }}</strong>
       </p>
@@ -66,50 +135,361 @@
       <p class="fs-5 mb-0">Price: <strong>${{ '%.2f' % (flight.price_cents/100) }}</strong></p>
     </div>
 
-    <form method="POST" action="{{ url_for('notifications.subscribe') }}">
+    <form id="bookingForm" class="mt-3" method="POST" action="{{ url_for('notifications.subscribe') }}" data-pax="{{ passenger_count }}">
+      <input type="hidden" name="flight_id" value="{{ flight.id }}">
+      <input type="hidden" name="pax" value="{{ passenger_count }}">
+      <input type="hidden" name="seat_data" id="seatDataField" value="">
+
       <div class="row g-3">
         <div class="col-md-6">
-          <label for="fullname" class="form-label">Full Name</label>
-          <input type="text" class="form-control" id="fullname" name="fullname" placeholder="John Doe" required>
+          <label for="primaryFullName" class="form-label">Full Name</label>
+          <input type="text" class="form-control" id="primaryFullName" name="fullname" placeholder="John Doe" required>
         </div>
         <div class="col-md-6">
-          <label for="email" class="form-label">Email</label>
-          <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" required>
+          <label for="primaryEmail" class="form-label">Email</label>
+          <input type="email" class="form-control" id="primaryEmail" name="email" placeholder="you@example.com" required>
         </div>
         <div class="col-md-6">
-          <label for="phone" class="form-label">Phone Number</label>
-          <input type="tel" class="form-control" id="phone" name="phone" placeholder="+1 555 123 4567" required>
+          <label for="primaryPhone" class="form-label">Phone Number</label>
+          <input type="tel" class="form-control" id="primaryPhone" name="phone" placeholder="+1 555 123 4567" required>
         </div>
         <div class="col-md-6">
-          <label for="seat" class="form-label">Seat Preference</label>
-          <select class="form-select" id="seat" name="seat">
+          <label for="primarySeat" class="form-label">Seat Preference</label>
+          <select class="form-select" id="primarySeat" name="seat">
             <option value="Window">Window</option>
             <option value="Aisle">Aisle</option>
             <option value="Middle">Middle</option>
           </select>
         </div>
         <div class="col-md-6">
-          <label for="class" class="form-label">Class</label>
-          <select class="form-select" id="class" name="class">
+          <label for="primaryMeal" class="form-label">Meal Preference</label>
+          <select class="form-select" id="primaryMeal" name="meal">
+            <option value="Standard">Standard</option>
+            <option value="Vegetarian">Vegetarian</option>
+            <option value="Vegan">Vegan</option>
+            <option value="Gluten-Free">Gluten-Free</option>
+            <option value="Kosher">Kosher</option>
+            <option value="Halal">Halal</option>
+            <option value="Diabetic">Diabetic</option>
+            <option value="Kid's Meal">Kid's Meal</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="primaryClass" class="form-label">Class</label>
+          <select class="form-select" id="primaryClass" name="class">
             <option value="Economy">Economy</option>
+            <option value="Premium Economy">Premium Economy</option>
             <option value="Business">Business</option>
             <option value="First">First</option>
           </select>
         </div>
         <div class="col-md-6">
-          <label for="bags" class="form-label">Baggage</label>
-          <select class="form-select" id="bags" name="bags">
-            <option value="1">1 Bag</option>
-            <option value="2">2 Bags</option>
-            <option value="3">3+ Bags</option>
-          </select>
+          <label for="primaryBags" class="form-label">Extra Checked Bags</label>
+          <input type="number" min="0" step="1" class="form-control" id="primaryBags" name="bags" value="0">
+          <div class="helper-note mt-1">1 bag included for this passenger.</div>
         </div>
       </div>
-      <div class="d-flex gap-2 mt-4">
-        <a class="btn btn-primary w-100" href="{{ url_for('payments.payments_page', flight_id=flight.id) }}">Confirm Booking</a>
-        <a class="btn btn-outline-secondary w-100" href="/search">Back to Search</a>
+
+      <div id="additionalPassengersSection" class="mt-4 d-none">
+        <h4 class="h5 fw-bold mb-3">Additional passengers</h4>
+        <div id="additionalPassengerList" class="d-flex flex-column gap-3"></div>
+      </div>
+
+      <div id="seatSummary" class="seat-summary mt-4">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="fw-bold">Seat summary</div>
+          <span id="seatSummaryCount" class="badge bg-info-subtle text-primary-emphasis border rounded-pill px-3"></span>
+        </div>
+        <div id="seatSummaryList" class="d-flex flex-wrap gap-2"></div>
+        <div class="helper-note mt-2">Need to adjust seats? Go back and reassign before continuing.</div>
+      </div>
+
+      <div class="d-flex flex-column flex-md-row gap-3 mt-4">
+        <button type="button" class="btn btn-primary flex-fill" id="continueBtn" data-payment-url="{{ url_for('payments.payments_page', flight_id=flight.id) }}">Continue to Payment</button>
+        <a class="btn btn-outline-secondary flex-fill" href="{{ url_for('seats.seat_page', flight_id=flight.id, pax=passenger_count) }}">Back to Seat Selection</a>
       </div>
     </form>
   </div>
 </div>
+
+<script>
+  (() => {
+    const bookingForm = document.getElementById('bookingForm');
+    if (!bookingForm) return;
+
+    const STORAGE_KEY = `sw-seat-{{ flight.id }}`;
+    const FINGERPRINT = "{{ flight.id }}|{{ flight.depart_time.isoformat() }}|pax:{{ passenger_count }}";
+    const seatDataField = document.getElementById('seatDataField');
+    const additionalSection = document.getElementById('additionalPassengersSection');
+    const additionalList = document.getElementById('additionalPassengerList');
+    const seatSummaryList = document.getElementById('seatSummaryList');
+    const seatSummaryCount = document.getElementById('seatSummaryCount');
+    const continueBtn = document.getElementById('continueBtn');
+    const fallbackPax = parseInt(bookingForm.dataset.pax || '1', 10) || 1;
+    const mealOptions = ["Standard","Vegetarian","Vegan","Gluten-Free","Kosher","Halal","Diabetic","Kid's Meal"];
+    const classOptions = ["Economy","Premium Economy","Business","First"];
+    const seatOptions = ["Window","Aisle","Middle"];
+
+    const defaults = {
+      origin: "{{ flight.origin }}",
+      destination: "{{ flight.destination }}",
+      depart_time: "{{ flight.depart_time.isoformat() }}",
+      fingerprint: FINGERPRINT
+    };
+
+    const parseJSON = (raw) => {
+      try { return JSON.parse(raw); } catch (e) { return {}; }
+    };
+
+    function freshSeatData(){
+      const passengers = Array.from({ length: fallbackPax }, (_, idx) => normalizePassenger({}, idx));
+      return { ...defaults, pax: passengers.length, passengers };
+    }
+
+    function normalizePassenger(p, idx){
+      return {
+        label: p.label || `Passenger ${idx+1}`,
+        seatCode: p.seatCode || "",
+        cabin: p.cabin || "",
+        position: p.position || "",
+        row: p.row ?? null,
+        letter: p.letter || "",
+        fullName: p.fullName || "",
+        dob: p.dob || "",
+        email: p.email || "",
+        phone: p.phone || "",
+        seatPreference: p.seatPreference || p.position || "",
+        mealPreference: p.mealPreference || "Standard",
+        classPreference: p.classPreference || p.cabin || "",
+        extraBags: p.extraBags !== undefined ? String(p.extraBags) : "0"
+      };
+    }
+
+    function loadSeatData(){
+      const stored = parseJSON(localStorage.getItem(STORAGE_KEY) || "{}");
+      if (!stored.fingerprint || stored.fingerprint !== FINGERPRINT) {
+        try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+        return freshSeatData();
+      }
+      const storedPassengers = Array.isArray(stored.passengers) ? stored.passengers : [];
+      const pax = Math.max(storedPassengers.length || stored.pax || 0, fallbackPax);
+      const passengers = Array.from({ length: pax }, (_, idx) => normalizePassenger(storedPassengers[idx] || {}, idx));
+      return { ...defaults, ...stored, fingerprint: FINGERPRINT, pax, passengers };
+    }
+
+    let seatData = loadSeatData();
+    seatData.pax = seatData.passengers.length;
+    seatData.fingerprint = FINGERPRINT;
+
+    function persistSeatData(){
+      if (!seatData) return;
+      const payload = JSON.stringify(seatData);
+      seatDataField.value = payload;
+      try{ localStorage.setItem(STORAGE_KEY, payload); }catch(e){}
+    }
+
+    function setValue(id, val){
+      const el = document.getElementById(id);
+      if(el) el.value = val ?? "";
+    }
+
+    function syncPrimaryFromData(){
+      const p = seatData.passengers[0] || {};
+      setValue('primaryFullName', p.fullName);
+      setValue('primaryEmail', p.email);
+      setValue('primaryPhone', p.phone);
+      setValue('primarySeat', p.seatPreference || p.position || "Window");
+      setValue('primaryMeal', p.mealPreference || "Standard");
+      setValue('primaryClass', p.classPreference || p.cabin || "Economy");
+      setValue('primaryBags', p.extraBags || "0");
+    }
+
+    function syncPrimaryToData(){
+      const primary = seatData.passengers[0];
+      const nameEl = document.getElementById('primaryFullName');
+      const emailEl = document.getElementById('primaryEmail');
+      const phoneEl = document.getElementById('primaryPhone');
+      const seatEl = document.getElementById('primarySeat');
+      const mealEl = document.getElementById('primaryMeal');
+      const classEl = document.getElementById('primaryClass');
+      const bagEl = document.getElementById('primaryBags');
+
+      if(nameEl) primary.fullName = nameEl.value;
+      if(emailEl) primary.email = emailEl.value;
+      if(phoneEl) primary.phone = phoneEl.value;
+      if(seatEl) primary.seatPreference = seatEl.value;
+      if(mealEl) primary.mealPreference = mealEl.value;
+      if(classEl) primary.classPreference = classEl.value;
+      if(bagEl) primary.extraBags = bagEl.value || "0";
+    }
+
+    function wirePrimaryInputs(){
+      const ids = ['primaryFullName','primaryEmail','primaryPhone','primarySeat','primaryMeal','primaryClass','primaryBags'];
+      ids.forEach(id=>{
+        const el = document.getElementById(id);
+        if(!el) return;
+        const handler = ()=>{ syncPrimaryToData(); persistSeatData(); };
+        el.addEventListener('input', handler);
+        el.addEventListener('change', handler);
+      });
+    }
+
+    function buildSelect(options, current){
+      const sel = document.createElement('select');
+      sel.className = 'form-select';
+      options.forEach(opt=>{
+        const o = document.createElement('option');
+        o.value = opt; o.textContent = opt;
+        if(opt === current){ o.selected = true; }
+        sel.appendChild(o);
+      });
+      return sel;
+    }
+
+    function renderAdditionalPassengers(){
+      if (seatData.passengers.length <= 1){
+        additionalSection.classList.add('d-none');
+        additionalList.innerHTML = '';
+        return;
+      }
+      additionalSection.classList.remove('d-none');
+      additionalList.innerHTML = '';
+
+      seatData.passengers.slice(1).forEach((p, idx)=>{
+        const displayIndex = idx + 2;
+        const card = document.createElement('div');
+        card.className = 'pax-card';
+        const seatLabel = p.seatCode ? `Seat ${p.seatCode}` : 'Seat pending';
+
+        const seatPrefSelect = buildSelect(seatOptions, p.seatPreference || p.position || seatOptions[0]);
+        seatPrefSelect.name = `passenger_${displayIndex}_seat_pref`;
+        const mealSelect = buildSelect(mealOptions, p.mealPreference || mealOptions[0]);
+        mealSelect.name = `passenger_${displayIndex}_meal`;
+        const classSelect = buildSelect(classOptions, p.classPreference || p.cabin || classOptions[0]);
+        classSelect.name = `passenger_${displayIndex}_class`;
+
+        card.innerHTML = `
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="fw-bold">Passenger ${displayIndex}</div>
+            <span class="seat-pill">${seatLabel}</span>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="p${displayIndex}Name">Full Name</label>
+              <input type="text" class="form-control" id="p${displayIndex}Name" name="passenger_${displayIndex}_name" placeholder="Full name" value="" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="p${displayIndex}Dob">Date of Birth</label>
+              <input type="date" class="form-control" id="p${displayIndex}Dob" name="passenger_${displayIndex}_dob" placeholder="mm/dd/yyyy" value="" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="p${displayIndex}Email">Email</label>
+              <input type="email" class="form-control" id="p${displayIndex}Email" name="passenger_${displayIndex}_email" placeholder="name@email.com" value="" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="p${displayIndex}Phone">Phone</label>
+              <input type="tel" class="form-control" id="p${displayIndex}Phone" name="passenger_${displayIndex}_phone" placeholder="+1 555 123 4567" value="" required>
+            </div>
+            <div class="col-md-6" data-slot="seatPref">
+              <label class="form-label" for="p${displayIndex}SeatPref">Seat Preference</label>
+            </div>
+            <div class="col-md-6" data-slot="mealPref">
+              <label class="form-label" for="p${displayIndex}Meal">Meal Preference</label>
+            </div>
+            <div class="col-md-6" data-slot="classPref">
+              <label class="form-label" for="p${displayIndex}Class">Class</label>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="p${displayIndex}Bags">Extra checked bags</label>
+              <input type="number" min="0" step="1" class="form-control" id="p${displayIndex}Bags" name="passenger_${displayIndex}_bags" value="0">
+              <div class="helper-note mt-1">1 bag included for this passenger.</div>
+            </div>
+          </div>
+        `;
+
+        additionalList.appendChild(card);
+
+        const seatPrefWrap = card.querySelector('[data-slot="seatPref"]');
+        if(seatPrefWrap){
+          seatPrefSelect.id = `p${displayIndex}SeatPref`;
+          seatPrefSelect.required = true;
+          seatPrefWrap.appendChild(seatPrefSelect);
+        }
+        const mealWrap = card.querySelector('[data-slot="mealPref"]');
+        if(mealWrap){
+          mealSelect.id = `p${displayIndex}Meal`;
+          mealSelect.required = true;
+          mealWrap.appendChild(mealSelect);
+        }
+        const classWrap = card.querySelector('[data-slot="classPref"]');
+        if(classWrap){
+          classSelect.id = `p${displayIndex}Class`;
+          classSelect.required = true;
+          classWrap.appendChild(classSelect);
+        }
+
+        const refs = {
+          fullName: card.querySelector(`#p${displayIndex}Name`),
+          dob: card.querySelector(`#p${displayIndex}Dob`),
+          email: card.querySelector(`#p${displayIndex}Email`),
+          phone: card.querySelector(`#p${displayIndex}Phone`),
+          seatPreference: seatPrefSelect,
+          mealPreference: mealSelect,
+          classPreference: classSelect,
+          extraBags: card.querySelector(`#p${displayIndex}Bags`)
+        };
+
+        if(refs.fullName) refs.fullName.value = p.fullName || "";
+        if(refs.dob) refs.dob.value = p.dob || "";
+        if(refs.email) refs.email.value = p.email || "";
+        if(refs.phone) refs.phone.value = p.phone || "";
+        if(refs.seatPreference) refs.seatPreference.value = p.seatPreference || p.position || seatOptions[0];
+        if(refs.mealPreference) refs.mealPreference.value = p.mealPreference || mealOptions[0];
+        if(refs.classPreference) refs.classPreference.value = p.classPreference || p.cabin || classOptions[0];
+        if(refs.extraBags) refs.extraBags.value = p.extraBags || "0";
+
+        Object.entries(refs).forEach(([key, el])=>{
+          if(!el) return;
+          const handler = () => {
+            p[key] = el.value;
+            persistSeatData();
+          };
+          el.addEventListener('input', handler);
+          el.addEventListener('change', handler);
+        });
+      });
+    }
+
+    function renderSeatSummary(){
+      seatSummaryList.innerHTML = '';
+      seatData.passengers.forEach((p, idx)=>{
+        const tile = document.createElement('div');
+        tile.className = 'seat-tile';
+        tile.innerHTML = `
+          <div class="label">Passenger ${idx+1}</div>
+          <div class="code">${p.seatCode || 'Pending'}</div>
+        `;
+        seatSummaryList.appendChild(tile);
+      });
+      const count = seatData.passengers.length;
+      seatSummaryCount.textContent = `${count} ${count === 1 ? 'passenger' : 'passengers'}`;
+    }
+
+    bookingForm.addEventListener('submit', (e)=> e.preventDefault());
+
+    continueBtn?.addEventListener('click', ()=>{
+      syncPrimaryToData();
+      if (!bookingForm.reportValidity()) return;
+      persistSeatData();
+      renderSeatSummary();
+      window.location.href = continueBtn.dataset.paymentUrl;
+    });
+
+    syncPrimaryFromData();
+    wirePrimaryInputs();
+    renderAdditionalPassengers();
+    renderSeatSummary();
+    persistSeatData();
+  })();
+</script>
 {% endblock %}

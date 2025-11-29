@@ -1,206 +1,725 @@
 {% extends "base.html" %}
+{% set body_class = 'bg-body-tertiary' %}
 {% block content %}
-<div class="container my-5">
-  <div class="row">
-    <!-- Payment Form -->
-    <div class="col-lg-8">
-      <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body p-4">
-          <h2 class="h4 mb-4">Payment Information</h2>
+<style>
+  :root {
+    --pay-border: #e5e7eb;
+    --pay-muted: #6b7280;
+    --pay-heading: #111827;
+    --pay-surface: #ffffff;
+  }
+  .payment-shell {
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+  .payment-card, .summary-card {
+    border: 1px solid var(--pay-border);
+    border-radius: 18px;
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+    background: var(--pay-surface);
+  }
+  .payment-card .form-control,
+  .payment-card .form-select {
+    height: 50px;
+    border-radius: 12px;
+    border-color: var(--pay-border);
+  }
+  .payment-card .input-group-text {
+    border-radius: 12px;
+    border-color: var(--pay-border);
+    background: #f8fafc;
+  }
+  .payment-card label { font-weight: 600; color: var(--pay-heading); }
+  .payment-card h2 { color: var(--pay-heading); }
+  .passenger-pill {
+    background: #e0f2fe;
+    color: #075985;
+    border: 1px solid #bae6fd;
+    border-radius: 999px;
+    font-weight: 700;
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+  .pay-tabs .pay-tab {
+    border: 1px solid var(--pay-border);
+    background: #f8fafc;
+    color: #0f172a;
+    border-radius: 10px;
+    font-weight: 700;
+    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pay-tabs .pay-tab.active {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+    box-shadow: 0 10px 22px rgba(13, 110, 253, 0.2);
+  }
+  .pay-tabs .pay-tab.ghost {
+    background: transparent;
+    color: #0d6efd;
+    border-color: transparent;
+  }
+  .pay-tabs .pay-tab.ghost.active {
+    background: #e7f1ff;
+    border-color: #bfdbfe;
+    box-shadow: none;
+  }
+  .section-label { font-weight: 700; color: #111827; }
+  .traveller-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: #f8fafc;
+  }
+  .traveller-badge {
+    background: #e5e7eb;
+    color: #111827;
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+  .traveller-name { font-weight: 700; color: var(--pay-heading); font-size: 0.98rem; }
+  .traveller-card .text-muted { color: #6b7280 !important; font-size: 0.93rem; }
+  .seat-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seat-pill {
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-weight: 700;
+    background: #f8fafc;
+    color: #111827;
+    font-size: 0.92rem;
+  }
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .price-row .label { color: #6b7280; font-size: 0.95rem; white-space: nowrap; }
+  .price-row .sub { color: #9ca3af; font-weight: 500; font-size: 0.9rem; }
+  .price-row strong { white-space: nowrap; font-weight: 700; font-size: 1rem; color: #111827; }
+  .divider { border-top: 1px solid #e5e7eb; margin: 14px 0; }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    font-size: 1.15rem;
+  }
+  .confirm-btn { height: 52px; border-radius: 12px; font-weight: 700; }
+  .summary-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .summary-title { margin: 0; font-weight: 700; font-size: 0.98rem; color: var(--pay-heading); }
+  .summary-route { font-weight: 800; font-size: 1.1rem; color: var(--pay-heading); margin-bottom: 14px; letter-spacing: 0.01em; text-transform: uppercase; }
+  .summary-section-title { font-weight: 700; font-size: 0.9rem; color: #4b5563; margin-bottom: 8px; }
+  .summary-back-btn {
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-color: #dbeafe;
+    color: #0d6efd;
+    font-size: 0.95rem;
+  }
+  .summary-back-btn:hover { background: #e7f1ff; color: #0b5ed7; }
+  @media (max-width: 768px) {
+    .price-row .label { white-space: normal; }
+  }
+</style>
 
-          <ul class="nav nav-pills gap-2 mb-3" id="payTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="card-tab" data-bs-toggle="pill"
-                data-bs-target="#card-pane" type="button" role="tab"
-                aria-controls="card-pane" aria-selected="true">
-                <i class="bi bi-credit-card-2-front me-1"></i> Credit/Debit Card
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="paypal-tab" data-bs-toggle="pill"
-                data-bs-target="#paypal-pane" type="button" role="tab"
-                aria-controls="paypal-pane" aria-selected="false">
-                <i class="bi bi-paypal me-1"></i> PayPal
-              </button>
-            </li>
-          </ul>
-
-          <div class="tab-content" id="payTabsContent">
-            <!-- Card Pane -->
-            <div class="tab-pane fade show active" id="card-pane" role="tabpanel" aria-labelledby="card-tab">
-              <form method="post" action="{{ url_for('payments.submit_card') }}" class="row g-3">
-                <input type="hidden" name="flight_id" value="{{ flight_id }}" />
-
-                <div class="col-12">
-                  <label class="form-label">Name on Card</label>
-                  <input name="card_name" class="form-control" placeholder="Full name as shown on card" required />
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label d-flex align-items-center justify-content-between">
-                    <span>Card Number</span>
-                    <span id="brandBadge" class="badge bg-secondary-subtle text-dark border rounded-pill px-3">
-                      <i class="bi bi-credit-card"></i> Card
-                    </span>
-                  </label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
-                    <input id="ccNumber" name="card_number" inputmode="numeric" autocomplete="cc-number"
-                           class="form-control" placeholder="1234 5678 9012 3456" required />
-                  </div>
-                  <div id="ccFeedback" class="form-text"></div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Expiry</label>
-                  <input id="ccExp" name="exp" class="form-control" placeholder="MM/YY" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">CVV</label>
-                  <input name="cvv" inputmode="numeric" class="form-control" placeholder="123" required />
-                </div>
-
-                <div class="col-12"><h6 class="mt-2">Billing Address</h6></div>
-                <div class="col-12">
-                  <label class="form-label">Street Address</label>
-                  <input name="street" class="form-control" placeholder="123 Main Street" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">City</label>
-                  <input name="city" class="form-control" placeholder="City" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Country</label>
-                  <select name="country" class="form-select" required>
-                    <option value="">Select a country</option>
-                    <option>Canada</option><option>United States</option><option>United Kingdom</option>
-                    <option>Australia</option><option>India</option><option>France</option><option>Germany</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Postal Code</label>
-                  <input name="postal" class="form-control" placeholder="Postal / ZIP" required />
-                </div>
-
-                <div class="col-12 d-grid">
-                  <button id="payCardBtn" class="btn btn-primary py-2" type="submit">
-                    <i class="bi bi-lock-fill me-1"></i> Confirm & Pay
-                  </button>
-                </div>
-              </form>
+<div class="payment-shell">
+  <div class="row g-3 g-lg-4 align-items-start">
+    <div class="col-lg-7">
+      <div class="card payment-card border-0">
+        <div class="card-body p-4 p-md-5">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h2 class="h4 mb-1">Payment Information</h2>
+              <p class="text-muted mb-0">Complete billing to finalize your booking.</p>
             </div>
+            <span class="passenger-pill" id="passengerBadge">Passengers {{ passenger_count }}</span>
+          </div>
 
-            <!-- PayPal Pane -->
-            <div class="tab-pane fade" id="paypal-pane" role="tabpanel" aria-labelledby="paypal-tab">
-              <div class="alert alert-info d-flex align-items-center" role="alert">
-                <i class="bi bi-info-circle me-2"></i>
-                PayPal is running in demo mode for this project.
+          <div class="pay-tabs d-flex gap-2 mb-4">
+            <button class="pay-tab active" type="button" id="cardTab">
+              <i class="bi bi-credit-card-2-front me-1"></i> Credit/Debit Card
+            </button>
+            <button class="pay-tab ghost" type="button" id="paypalTab">
+              <i class="bi bi-paypal me-1 text-primary"></i> PayPal
+            </button>
+          </div>
+
+          <div id="cardPane">
+            <form method="post" action="{{ url_for('payments.submit_card') }}" class="row g-3">
+              <input type="hidden" name="flight_id" value="{{ flight_id }}" />
+              <input type="hidden" name="seat_data" id="seatDataField" />
+
+              <div class="col-12">
+                <label class="form-label">Name on Card</label>
+                <input name="card_name" class="form-control" placeholder="Full name as shown on card" />
               </div>
-              <button id="paypalDemoBtn" class="btn btn-outline-primary">
-                <i class="bi bi-paypal me-1"></i> Pay with PayPal (demo)
-              </button>
+
+              <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                  <label class="form-label mb-1">Card Number (optional)</label>
+                  <span id="brandBadge" class="badge bg-light text-dark border rounded-pill px-3">
+                    <i class="bi bi-credit-card"></i> Card
+                  </span>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
+                  <input
+                    id="ccNumber"
+                    name="card_number"
+                    inputmode="numeric"
+                    autocomplete="cc-number"
+                    class="form-control"
+                    placeholder="1234 5678 9012 3456"
+                  />
+                </div>
+                <div id="ccFeedback" class="form-text"></div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Expiry (optional)</label>
+                <input id="ccExp" name="exp" class="form-control" placeholder="MM/YY" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">CVV (optional)</label>
+                <input name="cvv" inputmode="numeric" class="form-control" placeholder="123" />
+              </div>
+
+              <div class="col-12 pt-2">
+                <div class="section-label mb-1">Billing Address</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Street Address</label>
+                <input name="street" class="form-control" placeholder="123 Main Street" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">City</label>
+                <input name="city" class="form-control" placeholder="City" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Country</label>
+                <select name="country" class="form-select" id="billingCountry" required>
+                  <option>Canada</option>
+                  <option>United States</option>
+                  <option>Mexico</option>
+                  <option>Bahamas</option>
+                  <option>Bermuda</option>
+                  <option>Jamaica</option>
+                  <option>Dominican Republic</option>
+                  <option>Cuba</option>
+                  <option>Puerto Rico</option>
+                  <option>Belize</option>
+                  <option>Costa Rica</option>
+                  <option>Panama</option>
+                  <option>Guatemala</option>
+                  <option>Honduras</option>
+                  <option>El Salvador</option>
+                  <option>Nicaragua</option>
+                  <option>Trinidad and Tobago</option>
+                  <option>Barbados</option>
+                  <option>Aruba</option>
+                  <option>Cayman Islands</option>
+                  <option>Brazil</option>
+                  <option>Argentina</option>
+                  <option>Chile</option>
+                  <option>Peru</option>
+                  <option>Colombia</option>
+                  <option>Ecuador</option>
+                  <option>Uruguay</option>
+                  <option>Paraguay</option>
+                  <option>Bolivia</option>
+                  <option>Venezuela</option>
+                  <option>United Kingdom</option>
+                  <option>Ireland</option>
+                  <option>France</option>
+                  <option>Germany</option>
+                  <option>Spain</option>
+                  <option>Italy</option>
+                  <option>Portugal</option>
+                  <option>Netherlands</option>
+                  <option>Switzerland</option>
+                  <option>Greece</option>
+                  <option>Turkey</option>
+                  <option>United Arab Emirates</option>
+                  <option>Qatar</option>
+                  <option>Saudi Arabia</option>
+                  <option>Israel</option>
+                  <option>Egypt</option>
+                  <option>South Africa</option>
+                  <option>Kenya</option>
+                  <option>Morocco</option>
+                  <option>India</option>
+                  <option>China</option>
+                  <option>Japan</option>
+                  <option>South Korea</option>
+                  <option>Singapore</option>
+                  <option>Thailand</option>
+                  <option>Vietnam</option>
+                  <option>Malaysia</option>
+                  <option>Indonesia</option>
+                  <option>Philippines</option>
+                  <option>Australia</option>
+                  <option>New Zealand</option>
+                  <option>Fiji</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Postal Code</label>
+                <input name="postal" class="form-control" placeholder="Postal / ZIP" required />
+              </div>
+
+              <div class="col-12">
+                <button id="payCardBtn" class="btn btn-primary w-100 confirm-btn" type="submit">
+                  <i class="bi bi-lock-fill me-1"></i> Confirm & Pay
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div id="paypalPane" class="d-none">
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+              <i class="bi bi-info-circle me-2"></i> PayPal is available in demo mode for this project.
             </div>
+            <button id="paypalDemoBtn" class="btn btn-outline-primary">
+              <i class="bi bi-paypal me-1"></i> Pay with PayPal (demo)
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Order Summary -->
-    <div class="col-lg-4 mt-4 mt-lg-0">
-      <div class="card shadow-sm border-0 rounded-4">
+    <div class="col-lg-5">
+      <div class="card summary-card">
         <div class="card-body p-4">
-          <h3 class="h6 mb-3"><i class="bi bi-receipt-cutoff me-2"></i>Order Summary</h3>
-          <div class="d-flex justify-content-between"><span>Fare</span><strong id="fareTotal">$220.00</strong></div>
-          <div class="d-flex justify-content-between"><span>Taxes & Fees</span><span>$0.00</span></div>
-          <hr />
-          <div class="d-flex justify-content-between"><span class="fw-semibold">Total</span><span class="fw-semibold" id="grandTotal">$220.00</span></div>
-          <a href="{{ url_for('search.search') }}" class="btn btn-link mt-3"><i class="bi bi-arrow-left"></i> Back</a>
+          <div class="summary-header">
+            <i class="bi bi-journal-text"></i>
+            <h3 class="summary-title">Booking Summary</h3>
+          </div>
+          <div class="summary-route" id="routeLabel">{{ flight.origin }} → {{ flight.destination }}</div>
+
+          <div class="summary-section-title">Passengers</div>
+          <div id="passengerCards" class="vstack gap-2 mb-3"></div>
+
+          <div class="summary-section-title">Seats</div>
+          <div id="seatPills" class="seat-pills mb-4"></div>
+
+          <div class="divider mb-3"></div>
+
+          <div class="price-row">
+            <div class="label">Base fare (<span id="baseFareLabel">--</span>)</div>
+            <strong id="baseFareValue">$0.00</strong>
+          </div>
+          <div class="price-row">
+            <div class="label">Class upgrade (<span id="upgradeLabel">None</span>)</div>
+            <strong id="upgradeValue">$0.00</strong>
+          </div>
+          <div class="price-row">
+            <div class="label">Additional baggage (<span id="bagLabel">0 × $50</span>)</div>
+            <strong id="bagValue">$0.00</strong>
+          </div>
+          <div class="price-row">
+            <div class="label">Tax (<span id="taxLabel">13.0%</span>)</div>
+            <strong id="taxValue">$0.00</strong>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="total-row mb-3">
+            <div>Total</div>
+            <div id="totalValue">$0.00</div>
+          </div>
+
+          <a class="btn btn-outline-primary summary-back-btn mt-2" href="{{ url_for('booking.new_booking') }}?flight_id={{ flight.id }}&pax={{ passenger_count }}">
+            ← Back to details
+          </a>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Scripts -->
+<script type="application/json" id="paymentCtx">
+  {{ {
+    "flightId": flight.id,
+    "basePrice": (flight.price_cents/100)|round(2),
+    "origin": flight.origin,
+    "destination": flight.destination,
+    "currency": currency_code,
+    "fallbackPax": passenger_count
+  }|tojson }}
+</script>
+
 <script>
-  // Tabs: clicking "PayPal" in the pills switches pane (Bootstrap handles); also support a “Switch to PayPal” programmatically if needed.
-  document.getElementById('paypal-tab')?.addEventListener('click', () => {});
+  (() => {
 
-  // PayPal Demo: show message then redirect to mock route.
-  const paypalBtn = document.getElementById('paypalDemoBtn');
-  if (paypalBtn) {
-    paypalBtn.addEventListener('click', () => {
-      alert('Payment completed (PayPal – mock).');
-      window.location.href = "{{ url_for('payments.mock_paypal', flight_id=flight_id) }}";
+    const ctxNode = document.getElementById('paymentCtx');
+    const ctx = ctxNode ? JSON.parse(ctxNode.textContent) : {};
+    const STORAGE_KEY = `sw-seat-${ctx.flightId}`;
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: ctx.currency || 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
-  }
 
-  // Card: brand detection + Luhn validation + formatting
-  const ccInput = document.getElementById('ccNumber');
-  const badge = document.getElementById('brandBadge');
-  const feedback = document.getElementById('ccFeedback');
+    const TAX_TABLE = {
+      "Canada": 0.13,
+      "United States": 0.08,
+      "Mexico": 0.16,
+      "Bahamas": 0.12,
+      "Bermuda": 0.075,
+      "Jamaica": 0.15,
+      "Dominican Republic": 0.18,
+      "Cuba": 0.14,
+      "Puerto Rico": 0.115,
+      "Belize": 0.12,
+      "Costa Rica": 0.13,
+      "Panama": 0.07,
+      "Guatemala": 0.12,
+      "Honduras": 0.15,
+      "El Salvador": 0.13,
+      "Nicaragua": 0.15,
+      "Trinidad and Tobago": 0.12,
+      "Barbados": 0.175,
+      "Aruba": 0.18,
+      "Cayman Islands": 0.0,
+      "Brazil": 0.17,
+      "Argentina": 0.21,
+      "Chile": 0.19,
+      "Peru": 0.18,
+      "Colombia": 0.19,
+      "Ecuador": 0.12,
+      "Uruguay": 0.22,
+      "Paraguay": 0.1,
+      "Bolivia": 0.13,
+      "Venezuela": 0.16,
+      "United Kingdom": 0.2,
+      "Ireland": 0.23,
+      "France": 0.2,
+      "Germany": 0.19,
+      "Spain": 0.21,
+      "Italy": 0.22,
+      "Portugal": 0.23,
+      "Netherlands": 0.21,
+      "Switzerland": 0.081,
+      "Greece": 0.24,
+      "Turkey": 0.18,
+      "United Arab Emirates": 0.05,
+      "Qatar": 0.05,
+      "Saudi Arabia": 0.15,
+      "Israel": 0.17,
+      "Egypt": 0.14,
+      "South Africa": 0.15,
+      "Kenya": 0.16,
+      "Morocco": 0.2,
+      "India": 0.18,
+      "China": 0.13,
+      "Japan": 0.1,
+      "South Korea": 0.1,
+      "Singapore": 0.09,
+      "Thailand": 0.07,
+      "Vietnam": 0.1,
+      "Malaysia": 0.08,
+      "Indonesia": 0.11,
+      "Philippines": 0.12,
+      "Australia": 0.1,
+      "New Zealand": 0.15,
+      "Fiji": 0.15
+    };
 
-  function digitsOnly(v){ return v.replace(/\D+/g,''); }
+    const countrySelect = document.getElementById('billingCountry');
+    const passengerBadge = document.getElementById('passengerBadge');
+    const routeLabel = document.getElementById('routeLabel');
+    const passengerCards = document.getElementById('passengerCards');
+    const seatPills = document.getElementById('seatPills');
+    const baseFareLabel = document.getElementById('baseFareLabel');
+    const baseFareValue = document.getElementById('baseFareValue');
+    const upgradeLabel = document.getElementById('upgradeLabel');
+    const upgradeValue = document.getElementById('upgradeValue');
+    const bagLabel = document.getElementById('bagLabel');
+    const bagValue = document.getElementById('bagValue');
+    const taxLabel = document.getElementById('taxLabel');
+    const taxValue = document.getElementById('taxValue');
+    const totalValue = document.getElementById('totalValue');
 
-  function detectBrand(num){
-    if (/^4\d{0,15}$/.test(num)) return 'VISA';
-    if (/^(5[1-5]\d{0,14}|2(2[2-9]\d|[3-6]\d{2}|7[01]\d|720)\d{0,12})$/.test(num)) return 'MASTERCARD';
-    if (/^3[47]\d{0,13}$/.test(num)) return 'AMEX';
-    if (/^(6011|65|64[4-9]|6221(2[6-9]|[3-9]\d)|622[2-8]\d{2}|6229([01]\d|2[0-5]))\d*$/.test(num)) return 'DISCOVER';
-    if (/^3(0[0-5]|[68]\d)\d*$/.test(num)) return 'DINERS';
-    if (/^(35\d{0,14})$/.test(num)) return 'JCB';
-    return 'CARD';
-  }
-
-  function luhnCheck(num){
-    let sum = 0, dbl = false;
-    for (let i = num.length - 1; i >= 0; i--) {
-      let d = parseInt(num[i],10);
-      if (dbl) { d*=2; if (d>9) d-=9; }
-      sum += d; dbl = !dbl;
+    function parseJSON(raw) {
+      try { return JSON.parse(raw); } catch (err) { return null; }
     }
-    return (sum % 10) === 0;
-  }
 
-  function groupFormat(num, brand){
-    if (brand === 'AMEX') return num.replace(/(\d{1,4})(\d{1,6})?(\d{1,5})?/, (_,a,b,c)=>[a,b,c].filter(Boolean).join(' '));
-    if (brand === 'DINERS') return num.replace(/(\d{1,4})(\d{1,6})?(\d{1,4})?/, (_,a,b,c)=>[a,b,c].filter(Boolean).join(' '));
-    return num.replace(/(\d{1,4})(\d{1,4})?(\d{1,4})?(\d{1,4})?/, (_,a,b,c,d)=>[a,b,c,d].filter(Boolean).join(' '));
-  }
-
-  function brandBadgeText(b){
-    if (b==='CARD') return '<i class="bi bi-credit-card"></i> Card';
-    if (b==='VISA') return '<i class="bi bi-credit-card-2-front"></i> Visa';
-    if (b==='MASTERCARD') return '<i class="bi bi-credit-card-2-front"></i> Mastercard';
-    if (b==='AMEX') return '<i class="bi bi-credit-card-2-front"></i> Amex';
-    if (b==='DISCOVER') return '<i class="bi bi-credit-card-2-front"></i> Discover';
-    if (b==='DINERS') return '<i class="bi bi-credit-card-2-front"></i> Diners';
-    if (b==='JCB') return '<i class="bi bi-credit-card-2-front"></i> JCB';
-    return '<i class="bi bi-credit-card"></i> Card';
-  }
-
-  ccInput.addEventListener('input', () => {
-    const raw = digitsOnly(ccInput.value).slice(0,19);
-    const brand = detectBrand(raw);
-    ccInput.value = groupFormat(raw, brand);
-    badge.innerHTML = brandBadgeText(brand);
-
-    if (raw.length >= 12) {
-      const valid = luhnCheck(raw);
-      feedback.textContent = valid ? 'Card number looks valid.' : 'Invalid card number.';
-      feedback.className = valid ? 'form-text text-success' : 'form-text text-danger';
-    } else {
-      feedback.textContent = '';
-      feedback.className = 'form-text';
+    function loadSeatData() {
+      return parseJSON(localStorage.getItem(STORAGE_KEY) || "") || {};
     }
-  });
 
-  // Expiry mask MM/YY
-  const exp = document.getElementById('ccExp');
-  exp.addEventListener('input', () => {
-    let v = exp.value.replace(/\D+/g,'').slice(0,4);
-    if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
-    exp.value = v;
-  });
+    function normalizePassengers(data) {
+      const seatPassengers = Array.isArray(data.passengers) ? data.passengers : [];
+      const count = seatPassengers.length || data.pax || ctx.fallbackPax || 1;
+      return Array.from({ length: count }, (_, idx) => {
+        const existing = seatPassengers[idx] || {};
+        return {
+          label: existing.label || `Passenger ${idx + 1}`,
+          fullName: existing.fullName || "",
+          seatCode: existing.seatCode || "",
+          cabin: existing.cabin || "",
+          position: existing.position || "",
+          seatPreference: existing.seatPreference || existing.position || "",
+          classPreference: existing.classPreference || existing.cabin || "",
+          mealPreference: existing.mealPreference || "Standard",
+          extraBags: existing.extraBags || "0"
+        };
+      });
+    }
+
+    function getTaxRate(country) {
+      if (country && Object.prototype.hasOwnProperty.call(TAX_TABLE, country)) {
+        return TAX_TABLE[country];
+      }
+      return 0.13;
+    }
+
+    function formatMoney(val) {
+      return formatter.format(Number(val) || 0);
+    }
+
+    function renderPassengers(passengers) {
+      passengerCards.innerHTML = '';
+      passengers.forEach((p, idx) => {
+        const card = document.createElement('div');
+        card.className = 'traveller-card';
+
+        const top = document.createElement('div');
+        top.className = 'd-flex align-items-center gap-2 mb-1';
+        const badge = document.createElement('span');
+        badge.className = 'traveller-badge';
+        badge.textContent = `Traveller ${idx + 1}`;
+        const name = document.createElement('div');
+        name.className = 'traveller-name';
+        name.textContent = p.fullName || p.label || `Passenger ${idx + 1}`;
+        top.append(badge, name);
+
+        const meta = document.createElement('div');
+        meta.className = 'text-muted small';
+        const classLabel = p.classPreference || p.cabin || 'Economy';
+        const meal = p.mealPreference || 'Standard';
+        const seatPref = (p.seatPreference || p.position || '').trim();
+        const seatLabel = seatPref ? seatPref.charAt(0).toUpperCase() + seatPref.slice(1) : 'Any';
+        const bags = parseInt(p.extraBags, 10) || 0;
+        meta.textContent = `Class: ${classLabel} · ${seatLabel} · Meal: ${meal} · Extra bags: ${bags}`;
+
+        card.append(top, meta);
+        passengerCards.appendChild(card);
+      });
+    }
+
+    function renderSeats(passengers) {
+      seatPills.innerHTML = '';
+      passengers.forEach((p, idx) => {
+        const pill = document.createElement('span');
+        pill.className = 'seat-pill';
+        pill.textContent = `Passenger ${idx + 1}: ${p.seatCode || 'Pending'}`;
+        seatPills.appendChild(pill);
+      });
+    }
+
+    function computeTotals(passengers, taxRate) {
+      const pax = passengers.length || 1;
+      const basePrice = Number(ctx.basePrice) || 0;
+      const baseFare = pax * basePrice;
+
+      let classUpgrade = 0;
+      const upgradeCounts = { First: 0, Business: 0 };
+      passengers.forEach((p) => {
+        const cls = (p.classPreference || p.cabin || '').toLowerCase();
+        if (cls.includes('first')) {
+          classUpgrade += 900;
+          upgradeCounts.First += 1;
+        } else if (cls.includes('business')) {
+          classUpgrade += 450;
+          upgradeCounts.Business += 1;
+        }
+      });
+
+      const extraBags = passengers.reduce((sum, p) => sum + (parseInt(p.extraBags, 10) || 0), 0);
+      const baggageFees = extraBags * 50;
+      const subtotal = baseFare + classUpgrade + baggageFees;
+      const taxAmount = subtotal * taxRate;
+      const total = subtotal + taxAmount;
+
+      return { pax, baseFare, classUpgrade, baggageFees, taxAmount, total, basePrice, extraBags, upgradeCounts };
+    }
+
+    function renderPricing(passengers, taxRate) {
+      const totals = computeTotals(passengers, taxRate);
+      baseFareLabel.textContent = `${totals.pax} × ${formatMoney(totals.basePrice)}`;
+      baseFareValue.textContent = formatMoney(totals.baseFare);
+
+      const parts = [];
+      if (totals.upgradeCounts.First) parts.push(`${totals.upgradeCounts.First} First`);
+      if (totals.upgradeCounts.Business) parts.push(`${totals.upgradeCounts.Business} Business`);
+      upgradeLabel.textContent = parts.length ? parts.join(', ') : 'None';
+      upgradeValue.textContent = formatMoney(totals.classUpgrade);
+
+      bagLabel.textContent = `${totals.extraBags} × $50`;
+      bagValue.textContent = formatMoney(totals.baggageFees);
+
+      taxLabel.textContent = `${(taxRate * 100).toFixed(1)}%`;
+      taxValue.textContent = formatMoney(totals.taxAmount);
+
+      totalValue.textContent = formatMoney(totals.total);
+    }
+
+    const seatDataField = document.getElementById('seatDataField');
+
+    function syncSeatHidden(data){
+      if(!seatDataField) return;
+      try{
+        seatDataField.value = JSON.stringify(data || {});
+      }catch(e){
+        seatDataField.value = "";
+      }
+    }
+
+    function updateSummary() {
+      const seatData = loadSeatData();
+      const passengers = normalizePassengers(seatData);
+      const pax = passengers.length || 1;
+      if (passengerBadge) {
+        passengerBadge.textContent = `Passengers ${pax}`;
+      }
+      if (routeLabel) {
+        const origin = (seatData.origin || ctx.origin || '').toUpperCase();
+        const destination = (seatData.destination || ctx.destination || '').toUpperCase();
+        routeLabel.textContent = `${origin} → ${destination}`;
+      }
+      renderPassengers(passengers);
+      renderSeats(passengers);
+      syncSeatHidden(seatData);
+
+      const selectedCountry = countrySelect?.value;
+      const taxRate = getTaxRate(selectedCountry);
+      renderPricing(passengers, taxRate);
+    }
+
+    countrySelect?.addEventListener('change', updateSummary);
+    updateSummary();
+  })();
+</script>
+
+<script>
+  // PayPal demo toggle + card validation/formatting
+  (() => {
+    const cardTab = document.getElementById('cardTab');
+    const paypalTab = document.getElementById('paypalTab');
+    const cardPane = document.getElementById('cardPane');
+    const paypalPane = document.getElementById('paypalPane');
+    const paypalBtn = document.getElementById('paypalDemoBtn');
+    const seatDataField = document.getElementById('seatDataField');
+
+    function togglePane(target) {
+      if (target === 'paypal') {
+        paypalPane?.classList.remove('d-none');
+        cardPane?.classList.add('d-none');
+        paypalTab?.classList.add('active');
+        cardTab?.classList.remove('active');
+      } else {
+        cardPane?.classList.remove('d-none');
+        paypalPane?.classList.add('d-none');
+        cardTab?.classList.add('active');
+        paypalTab?.classList.remove('active');
+      }
+    }
+
+    cardTab?.addEventListener('click', () => togglePane('card'));
+    paypalTab?.addEventListener('click', () => togglePane('paypal'));
+
+    paypalBtn?.addEventListener('click', () => {
+      // Submit a lightweight form with seat data so booking is saved.
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = "{{ url_for('payments.mock_paypal', flight_id=flight_id) }}";
+      const seat = document.createElement('input');
+      seat.type = 'hidden'; seat.name = 'seat_data';
+      seat.value = seatDataField?.value || '';
+      form.appendChild(seat);
+      document.body.appendChild(form);
+      form.submit();
+    });
+
+    const ccInput = document.getElementById('ccNumber');
+    const badge = document.getElementById('brandBadge');
+    const feedback = document.getElementById('ccFeedback');
+    const exp = document.getElementById('ccExp');
+
+    const digitsOnly = (v) => v.replace(/\D+/g, '');
+
+    function detectBrand(num) {
+      if (/^4\d{0,15}$/.test(num)) return 'VISA';
+      if (/^(5[1-5]\d{0,14}|2(2[2-9]\d|[3-6]\d{2}|7[01]\d|720)\d{0,12})$/.test(num)) return 'MASTERCARD';
+      if (/^3[47]\d{0,13}$/.test(num)) return 'AMEX';
+      if (/^(6011|65|64[4-9]|6221(2[6-9]|[3-9]\d)|622[2-8]\d{2}|6229([01]\d|2[0-5]))\d*$/.test(num)) return 'DISCOVER';
+      if (/^3(0[0-5]|[68]\d)\d*$/.test(num)) return 'DINERS';
+      if (/^(35\d{0,14})$/.test(num)) return 'JCB';
+      return 'CARD';
+    }
+
+    function luhnCheck(num) {
+      let sum = 0, dbl = false;
+      for (let i = num.length - 1; i >= 0; i--) {
+        let d = parseInt(num[i], 10);
+        if (dbl) { d *= 2; if (d > 9) d -= 9; }
+        sum += d; dbl = !dbl;
+      }
+      return (sum % 10) === 0;
+    }
+
+    function groupFormat(num, brand) {
+      if (brand === 'AMEX') return num.replace(/(\d{1,4})(\d{1,6})?(\d{1,5})?/, (_, a, b, c) => [a, b, c].filter(Boolean).join(' '));
+      if (brand === 'DINERS') return num.replace(/(\d{1,4})(\d{1,6})?(\d{1,4})?/, (_, a, b, c) => [a, b, c].filter(Boolean).join(' '));
+      return num.replace(/(\d{1,4})(\d{1,4})?(\d{1,4})?(\d{1,4})?/, (_, a, b, c, d) => [a, b, c, d].filter(Boolean).join(' '));
+    }
+
+    function brandBadgeText(b) {
+      if (b === 'CARD') return '<i class="bi bi-credit-card"></i> Card';
+      if (b === 'VISA') return '<i class="bi bi-credit-card-2-front"></i> Visa';
+      if (b === 'MASTERCARD') return '<i class="bi bi-credit-card-2-front"></i> Mastercard';
+      if (b === 'AMEX') return '<i class="bi bi-credit-card-2-front"></i> Amex';
+      if (b === 'DISCOVER') return '<i class="bi bi-credit-card-2-front"></i> Discover';
+      if (b === 'DINERS') return '<i class="bi bi-credit-card-2-front"></i> Diners';
+      if (b === 'JCB') return '<i class="bi bi-credit-card-2-front"></i> JCB';
+      return '<i class="bi bi-credit-card"></i> Card';
+    }
+
+    ccInput?.addEventListener('input', () => {
+      const raw = digitsOnly(ccInput.value).slice(0, 19);
+      const brand = detectBrand(raw);
+      ccInput.value = groupFormat(raw, brand);
+      badge.innerHTML = brandBadgeText(brand);
+
+      if (raw.length >= 12) {
+        const valid = luhnCheck(raw);
+        feedback.textContent = valid ? 'Card number looks valid.' : 'Invalid card number.';
+        feedback.className = valid ? 'form-text text-success' : 'form-text text-danger';
+      } else {
+        feedback.textContent = '';
+        feedback.className = 'form-text';
+      }
+    });
+
+    exp?.addEventListener('input', () => {
+      let v = exp.value.replace(/\D+/g, '').slice(0, 4);
+      if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
+      exp.value = v;
+    });
+  })();
 </script>
 {% endblock %}

@@ -19,7 +19,7 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);
     color:#111; min-height:100svh; display:flex; flex-direction:column;
-    position:relative; overflow-x:hidden;
+    position:relative; overflow-x:hidden; padding-bottom:140px;
   }
   body::before{
     content:""; position:fixed; inset:0;
@@ -148,13 +148,64 @@
   .exitRow::after{content:"EXIT ROW"; position:absolute; right:8px; top:-10px; font-size:11px; font-weight:800; color:#dc2626; background:#fff; padding:2px 6px; border-radius:6px; border:2px solid #fca5a5}
 
   .actions{
-    display:flex; justify-content:space-between; align-items:center; width:100%; max-width:860px; margin-top:10px;
-    background:rgba(255,255,255,.95); backdrop-filter:blur(12px); padding:20px 24px; border-radius:16px;
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    width:min(1180px, calc(100% - 16px));
+    background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);
+    backdrop-filter:blur(10px); padding:10px 12px; border-radius:17px;
+    border:1px solid rgba(2,6,23,.06); box-shadow:0 14px 32px rgba(2,6,23,.16);
+    z-index:50;
   }
-  .total{font-weight:800;font-size:18px;background:linear-gradient(135deg,#0ea5e9,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .btn{background:linear-gradient(135deg,#0ea5e9,#06b6d4); color:#fff; border:0; border-radius:12px; padding:14px 28px; font-weight:700; font-size:15px; cursor:pointer}
+  .seat-summary-card{
+    flex:1; min-width:300px;
+    background:transparent;
+    border-radius:0; border:0; padding:0;
+    box-shadow:none;
+  }
+  .summary-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+  .summary-title{font-weight:900; color:#334155; letter-spacing:.03em;}
+  .summary-sub{display:none;}
+  .passenger-list{
+    display:grid;
+    grid-auto-flow:row;
+    grid-template-columns:repeat(4, 190px);
+    grid-auto-rows:auto;
+    justify-content:flex-start;
+    gap:6px;
+    margin-bottom:2px;
+  }
+  .pax-chip{
+    flex:0 1 180px; display:flex; flex-direction:column; gap:2px; align-items:flex-start;
+    border:1.25px solid #c7e3ff; border-radius:12px; padding:8px 11px;
+    background:linear-gradient(180deg,#eaf4ff,#f8fbff); color:#0284c7;
+    box-shadow:0 6px 18px rgba(2,6,23,.06); transition:.15s ease; cursor:pointer; text-align:left;
+  }
+  .pax-chip:hover{transform:translateY(-2px);}
+  .pax-chip.active{border-color:#0ea5e9; box-shadow:0 0 0 2px rgba(14,165,233,.18), 0 10px 22px rgba(2,6,23,.10);}
+  .pax-label{font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:800; color:#0284c7;}
+  .pax-seat{font-weight:800; font-size:16px; color:#0b0f19;}
+  .pax-meta{color:#64748b; font-size:11px;}
+  .pax-chip.empty .pax-seat{color:#94a3b8;}
+
+  .cta{display:flex; align-items:center; gap:10px; min-width:260px; justify-content:flex-end; flex:1 0 auto;}
+  .cta-info{display:flex; flex-direction:column; align-items:flex-start; gap:2px;}
+  .total{font-weight:900;font-size:18px;color:#1d9ee5; display:flex; align-items:center; gap:8px;}
+  .seat-dot{display:inline-block;width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,#0ea5e9,#06b6d4);box-shadow:0 0 0 2px rgba(14,165,233,.12);}
+  .active-tag{color:#7b8794; font-weight:700; font-size:12px;}
+  .btn{background:linear-gradient(135deg,#0ea5e9,#06b6d4); color:#fff; border:0; border-radius:14px; padding:12px 22px; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 10px 20px rgba(2,6,23,.14); height:54px; display:flex; align-items:center; justify-content:center;}
   .btn:disabled{opacity:.5; cursor:not-allowed}
-  .note{color:var(--muted); font-size:13px; margin-top:6px; text-align:right; font-weight:500}
+  .seat.active-seat{box-shadow:0 0 0 4px rgba(14,165,233,.28),0 8px 18px rgba(14,165,233,.20)}
+  @media(max-width: 900px){
+    .seat-summary-card{min-width:100%;}
+    .passenger-list{
+      grid-auto-flow:row;
+      grid-template-rows:none;
+      grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+      grid-auto-columns: unset;
+    }
+    .cta{align-items:flex-start;}
+    .actions{width:calc(100% - 16px); padding:14px;}
+  }
 </style>
 </head>
 <body>
@@ -196,10 +247,19 @@
   </div>
 
   <div class="actions">
-    <div class="total">🎫 Selected: <span id="total">0 seats</span></div>
-    <div>
-      <button id="continue" class="btn" disabled   data-booking-url="{{ url_for('booking.new_booking') }}">Continue to Checkout</button>
-      <div class="note">💳 Seat price shown at checkout</div>
+    <div class="seat-summary-card">
+      <div class="summary-head">
+        <div class="summary-title">Seat Summary</div>
+        <div class="summary-sub" id="seatSummaryHint"></div>
+      </div>
+      <div id="passengerList" class="passenger-list"></div>
+    </div>
+    <div class="cta">
+      <div class="cta-info">
+        <div class="total"><span class="seat-dot" aria-hidden="true"></span><span id="total">0/1 seats</span></div>
+        <div class="active-tag">Active: <span id="active-passenger">Passenger 1</span></div>
+      </div>
+      <button id="continue" class="btn" disabled   data-booking-url="{{ url_for('booking.new_booking') }}">Continue to Details</button>
     </div>
   </div>
 </div>
@@ -207,18 +267,31 @@
 <script>
   const path = location.pathname.split('/').filter(Boolean);
   const flightId = path[path.indexOf('flights') + 1];
+  const params = new URLSearchParams(location.search);
+  const paxParam = parseInt(params.get('pax') || '1', 10);
+  const resetParam = params.has('reset');
+  const passengerCount = Number.isFinite(paxParam) ? Math.min(Math.max(paxParam, 1), 9) : 1;
+  const STORAGE_KEY = `sw-seat-${flightId}`;
 
   const grid = document.getElementById('grid');
   const wTop = document.getElementById('w-top');
   const wBtm = document.getElementById('w-btm');
+  const passengerListEl = document.getElementById('passengerList');
+  const seatSummaryHint = document.getElementById('seatSummaryHint');
+  const activeLabel = document.getElementById('active-passenger');
   grid.dataset.flightId = flightId;
 
   const state = {
     origin:"", destination:"", depart_time:"",
     layout:"", rows:0, classes:[],
     occupied:new Set(), held:new Set(), blocked:new Set(),
-    prices:{}, selected:new Set(),
-    exit_rows:[]
+    prices:{},
+    exit_rows:[],
+    pax: passengerCount,
+    passengers: [],
+    seatToPassenger: Object.create(null),
+    activePassenger: 0,
+    fingerprint: ""
   };
 
   const totalEl = document.getElementById('total');
@@ -288,7 +361,14 @@
           else if(state.occupied.has(code)){ btn.classList.add('busy'); btn.disabled=true; }
           else if(state.held.has(code)){ btn.classList.add('held'); btn.disabled=true; }
 
-          btn.addEventListener('click', ()=>toggleSeat(code, btn));
+          if(state.seatToPassenger[code] !== undefined){
+            btn.classList.add('selected');
+            if(state.seatToPassenger[code] === state.activePassenger){
+              btn.classList.add('active-seat');
+            }
+          }
+
+          btn.addEventListener('click', ()=>onSeatClick(code, btn));
           gEl.appendChild(btn);
         }
         rowEl.appendChild(gEl);
@@ -309,37 +389,176 @@
     buildWindows(Math.max(20, Math.min(36, Math.round(state.rows*0.55))));
   }
 
-  // single selection
-  function toggleSeat(code, btn){
-    for(const c of state.selected){
-      if(c!==code){
-        const el=document.querySelector(`.seat.selected[data-code="${c}"]`);
-        if(el) el.classList.remove('selected');
-      }
+  const seatPosition = (letter) => {
+    const groups = state.layout.split(' ').filter(Boolean);
+    for(let i=0;i<groups.length;i++){
+      const g = groups[i]; const idx = g.indexOf(letter);
+      if(idx === -1) continue;
+      const isFirst = i === 0; const isLast = i === groups.length-1;
+      if(idx === 0) return isFirst ? "Window" : "Aisle";
+      if(idx === g.length-1) return isLast ? "Window" : "Aisle";
+      return "Middle";
     }
-    state.selected.clear();
-    if(!btn.classList.contains('selected')){
-      state.selected.add(code);
-      btn.classList.add('selected');
-    }else{
-      btn.classList.remove('selected');
-    }
-    updateTotal();
+    return "Seat";
+  };
+
+  function parseSeat(code){
+    const m = /^(\d+)([A-Z])$/.exec(code || "");
+    if(!m) return null;
+    return { row: parseInt(m[1], 10), letter: m[2] };
   }
 
-  function updateTotal(){
-    const count = state.selected.size;
-    totalEl.textContent = `${count} seat${count!==1?'s':''}`;
-    continueBtn.disabled = count === 0;
+  function seatDetails(code){
+    const parsed = parseSeat(code);
+    if(!parsed) return { code, cabin:"", position:"" };
+    const cabin = cabinForRow(parsed.row);
+    const position = seatPosition(parsed.letter);
+    return { code, cabin, position, row: parsed.row, letter: parsed.letter };
+  }
+
+  function createPassenger(idx){
+    return { label: `Passenger ${idx+1}`, seatCode:"", cabin:"", position:"", row:null, letter:"" };
+  }
+
+  function selectedCount(){
+    return state.passengers.filter(p=>p.seatCode).length;
+  }
+
+  function refreshSeatClasses(){
+    document.querySelectorAll('.seat').forEach(el=>{
+      const owner = state.seatToPassenger[el.dataset.code];
+      el.classList.toggle('selected', owner !== undefined);
+      el.classList.toggle('active-seat', owner === state.activePassenger);
+    });
+  }
+
+  function updateTotals(){
+    const count = selectedCount();
+    totalEl.textContent = `${count}/${state.passengers.length} seats`;
+    activeLabel.textContent = `Passenger ${state.activePassenger+1}`;
+    continueBtn.disabled = count !== state.passengers.length;
+  }
+
+  function renderPassengers(){
+    passengerListEl.innerHTML = '';
+    state.passengers.forEach((p, idx)=>{
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `pax-chip ${p.seatCode ? '' : 'empty'} ${idx===state.activePassenger ? 'active' : ''}`;
+      const seatLabel = p.seatCode || 'Choose seat';
+      const meta = p.seatCode ? `${p.cabin || 'Class'} • ${p.position || 'Seat type'}` : 'Awaiting selection';
+      chip.innerHTML = `
+        <div class="pax-label">${p.label}</div>
+        <div class="pax-seat">${seatLabel}</div>
+        <div class="pax-meta">${meta}</div>
+      `;
+      chip.addEventListener('click', ()=>{
+        state.activePassenger = idx;
+        refreshSeatClasses();
+        updateTotals();
+        renderPassengers();
+        persistSelection();
+      });
+      passengerListEl.appendChild(chip);
+    });
+  }
+
+  function persistSelection(){
+    const payload = {
+      flightId,
+      pax: state.passengers.length,
+      passengers: state.passengers,
+      layout: state.layout,
+      origin: state.origin,
+      destination: state.destination,
+      depart_time: state.depart_time,
+      activePassenger: state.activePassenger,
+      fingerprint: state.fingerprint
+    };
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); }catch(e){}
+  }
+
+  function isSeatValid(code){
+    const parsed = parseSeat(code);
+    if(!parsed) return false;
+    if(parsed.row < 1 || parsed.row > state.rows) return false;
+    const inRow = groupsForRow(parsed.row).some(g=>g.includes(parsed.letter));
+    if(!inRow) return false;
+    return !(state.blocked.has(code) || state.occupied.has(code) || state.held.has(code));
+  }
+
+  function clearSaved(){
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  }
+
+  function loadSavedSelections(fingerprint){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    try{
+      const saved = JSON.parse(raw);
+      if(saved.fingerprint && fingerprint && saved.fingerprint !== fingerprint){
+        clearSaved();
+        return;
+      }
+      const savedPassengers = Array.isArray(saved.passengers) ? saved.passengers : [];
+      const seenSeats = new Set();
+      state.seatToPassenger = Object.create(null);
+      savedPassengers.slice(0, state.passengers.length).forEach((p, idx)=>{
+        if(!p.seatCode) return;
+        if(!isSeatValid(p.seatCode)) return;
+        if(seenSeats.has(p.seatCode)) return;
+        state.passengers[idx] = { ...state.passengers[idx], ...p };
+        state.seatToPassenger[p.seatCode] = idx;
+        seenSeats.add(p.seatCode);
+      });
+      if(saved.activePassenger !== undefined){
+        state.activePassenger = Math.min(state.passengers.length-1, saved.activePassenger || 0);
+      }
+    }catch(err){
+      console.warn('Unable to read saved seats', err);
+    }
+  }
+
+  function advancePassenger(){
+    const next = state.passengers.findIndex((p, idx)=>!p.seatCode && idx!==state.activePassenger);
+    if(next !== -1) state.activePassenger = next;
+  }
+
+  function onSeatClick(code, btn){
+    const owner = state.seatToPassenger[code];
+    if(owner !== undefined && owner !== state.activePassenger){
+      state.activePassenger = owner;
+      refreshSeatClasses(); renderPassengers(); updateTotals(); persistSelection();
+      return;
+    }
+    const p = state.passengers[state.activePassenger];
+    if(p.seatCode === code){
+      delete state.seatToPassenger[code];
+      p.seatCode=""; p.cabin=""; p.position=""; p.row=null; p.letter="";
+      refreshSeatClasses(); renderPassengers(); updateTotals(); persistSelection();
+      return;
+    }
+
+    if(p.seatCode){
+      delete state.seatToPassenger[p.seatCode];
+    }
+    const details = seatDetails(code);
+    p.seatCode = code; p.cabin = details.cabin; p.position = details.position; p.row = details.row; p.letter = details.letter;
+    state.seatToPassenger[code] = state.activePassenger;
+
+    refreshSeatClasses();
+    advancePassenger();
+    renderPassengers();
+    updateTotals();
+    persistSelection();
   }
 
   continueBtn.addEventListener('click', ()=>{
-  const seat = Array.from(state.selected)[0] || "";
-  const base = continueBtn.dataset.bookingUrl;  
-  window.location.href = `${base}?flight_id=${encodeURIComponent(flightId)}`;
-});
-
-
+    persistSelection();
+    const base = continueBtn.dataset.bookingUrl;
+    const qs = new URLSearchParams({flight_id: flightId, pax: state.passengers.length});
+    window.location.href = `${base}?${qs.toString()}`;
+  });
 
   (async function init(){
     const res = await fetch(`/api/flights/${flightId}/seats`);
@@ -352,11 +571,30 @@
     state.held = new Set(data.held || []);
     state.blocked = new Set(data.blocked || []);
     state.exit_rows = data.exit_rows || [];
-    renderGrid(); updateTotal();
+    state.fingerprint = `${flightId}|${state.depart_time}|pax:${state.pax}`;
+
+    // reset storage if requested or if flight context/pax count changed
+    const savedRaw = localStorage.getItem(STORAGE_KEY);
+    if(resetParam){
+      clearSaved();
+    } else if(savedRaw){
+      try{
+        const saved = JSON.parse(savedRaw);
+        const mismatch = !saved.fingerprint || saved.fingerprint !== state.fingerprint || saved.pax !== state.pax;
+        if(mismatch){ clearSaved(); }
+      }catch(e){ clearSaved(); }
+    }
+
+    state.seatToPassenger = Object.create(null);
+    state.passengers = Array.from({length: state.pax}, (_,i)=>createPassenger(i));
+    if(!resetParam){
+      loadSavedSelections(state.fingerprint);
+    }
+    renderGrid();
+    renderPassengers();
+    refreshSeatClasses();
+    updateTotals();
   })();
 </script>
 </body>
 </html>
-
-
-
