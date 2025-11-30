@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% set body_class = 'auth-bg' %}
 {% block content %}
+
+<!-- Flight search page -->
 <style>
   :root{
     --ink:#0b2545;
@@ -12,7 +14,7 @@
     --muted:#64748b;
   }
 
-  /* ===== Sky background ===== */
+  /* Sky background */
   body.auth-bg{
     min-height:100vh; overflow-x:hidden; color:var(--ink);
     background:
@@ -36,7 +38,7 @@
   .auth-cloud.c2{ top:46%; left:-300px; animation-delay:10s; }
   @keyframes drift{0%{transform:translateX(0)}100%{transform:translateX(130vw)}}
 
-  /* ===== Header ===== */
+  /* Header */
   .page-head .brand-badge{
     display:inline-flex; align-items:center; gap:.5rem;
     padding:.35rem .7rem; border-radius:999px; font-weight:700;
@@ -45,7 +47,7 @@
   }
   .page-head h2{ font-weight:800; }
 
-  /* ===== Search Card ===== */
+  /* Search Card */
   .search-card{
     max-width: 1160px; margin-inline:auto;
     background: rgba(255,255,255,.78);
@@ -74,13 +76,13 @@
   }
   .quick-chips .chip i{ color:var(--brand-deep); }
 
-  /* ===== Advanced filters ===== */
+  /* Advanced filters */
   .adv-toggle{ cursor:pointer; user-select:none; }
   .adv-panel{ display:none; }
   .range-wrap{ display:flex; align-items:center; gap:.5rem; }
   .range-wrap input[type="range"]{ width:100%; }
 
-  /* ===== Sticky summary ===== */
+  /* Sticky summary */
   .summary-bar{
     position: sticky; top: 72px; z-index: 5;
     background: rgba(255,255,255,.85); backdrop-filter: blur(8px);
@@ -88,7 +90,7 @@
   }
   .tag{ display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .6rem; border-radius:999px; font-weight:600; background:#f8fafc; border:1px solid #e5e7eb; color:#0f172a; }
 
-  /* ===== Results ===== */
+  /* Results */
   .results-wrap{ max-width:1160px; margin-inline:auto; }
   .result-card{
     border:1px solid #eef2f7; border-radius:16px; background:#fff;
@@ -115,7 +117,7 @@
   .skeleton::after{ content:""; position:absolute; inset:0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent); animation: shimmer 1.2s infinite; }
   @keyframes shimmer{ 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
 
-  /* ===== Bottom sections ===== */
+  /* Bottom sections */
   .section-wrap{ max-width:1160px; margin-inline:auto; }
   .section-title{ font-weight:800; }
   .inspire-card{
@@ -165,7 +167,7 @@
 <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cloud_icon.svg" class="auth-cloud c1" alt="" aria-hidden="true">
 <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cloud_icon.svg" class="auth-cloud c2" alt="" aria-hidden="true">
 
-<!-- ===== Page Header ===== -->
+<!-- Page Header -->
 <div class="py-4 text-center page-head">
   <div class="brand-badge mb-2">
     <i class="bi bi-airplane-fill text-primary"></i>
@@ -175,7 +177,7 @@
   <p class="text-muted">Search and book flights to destinations around the world</p>
 </div>
 
-<!-- ===== Search Card ===== -->
+<!-- Search Card -->
 <div class="container mb-4">
   <div class="search-card">
     <form id="flightSearch" class="row g-3 align-items-end" method="get" action="/search" novalidate>
@@ -388,7 +390,7 @@
   </div>
 {% endif %}
 
-<!-- ===== Inspiration grid ===== -->
+<!-- Inspiration grid -->
 <section class="section-wrap my-5">
   <div class="d-flex align-items-end justify-content-between mb-3">
     <div>
@@ -436,7 +438,7 @@
   </div>
 </section>
 
-<!-- ===== Partners / Trust strip ===== -->
+<!-- Partners / Trust strip -->
 <section class="section-wrap my-5">
   <div class="trust-strip p-3 p-md-4">
     <div class="row g-3 align-items-center">
@@ -458,7 +460,7 @@
   </div>
 </section>
 
-<!-- ===== Price alerts / newsletter ===== -->
+<!-- Price alerts / newsletter -->
 <section class="section-wrap my-5">
   <div class="alert-card">
     <div class="row g-3 align-items-center">
@@ -482,8 +484,7 @@
   </div>
 </section>
 
-<!-- ===== FAQ ===== -->
-<!-- ===== FAQ (drops open) ===== -->
+<!-- FAQ -->
 <section class="section-wrap my-5 faq">
   <h3 class="section-title mb-3">Frequently asked questions</h3>
   <div class="accordion" id="faqAcc">
@@ -538,7 +539,7 @@
 </section>
 
 
-<!-- ===== Support CTA ===== -->
+<!-- Support CTA -->
 <section class="section-wrap my-5">
   <div class="support-cta p-4 p-md-5 d-flex flex-column flex-md-row align-items-center justify-content-between">
     <div class="mb-3 mb-md-0">

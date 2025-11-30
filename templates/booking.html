@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% set body_class = 'auth-bg' %}
 {% block content %}
+
+<!-- Confirm booking page: shows flight summary, passenger details, seat summary, and then sends the user to payment -->
 <style>
   :root{
     --ink:#0b2545;
@@ -110,11 +112,12 @@
   }
 </style>
 
-<!-- background layers for consistency -->
+<!-- decorative sky background -->
 <div class="sky-anim" aria-hidden="true"></div>
 <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cloud_icon.svg" class="auth-cloud c1" alt="" aria-hidden="true">
 <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cloud_icon.svg" class="auth-cloud c2" alt="" aria-hidden="true">
 
+<!-- Page header -->
 <div class="py-4 text-center page-head">
   <div class="brand-badge mb-2">
     <i class="bi bi-airplane-fill text-primary"></i>
@@ -126,6 +129,7 @@
 
 <div class="container booking-shell mb-5">
   <div class="booking-card">
+    <!-- summary of the flight -->
     <h3 class="section-title mb-3">Flight Summary</h3>
     <div class="flight-box mb-4">
       <p class="mb-1 fs-5">
@@ -135,6 +139,7 @@
       <p class="fs-5 mb-0">Price: <strong>${{ '%.2f' % (flight.price_cents/100) }}</strong></p>
     </div>
 
+    <!-- Booking form: primary passenger + additional passengers + seat summary -->
     <form id="bookingForm" class="mt-3" method="POST" action="{{ url_for('notifications.subscribe') }}" data-pax="{{ passenger_count }}">
       <input type="hidden" name="flight_id" value="{{ flight.id }}">
       <input type="hidden" name="pax" value="{{ passenger_count }}">
@@ -190,11 +195,13 @@
         </div>
       </div>
 
+      <!-- Additional passenger details blocks for extra passengers (only shown when pax > 1) -->
       <div id="additionalPassengersSection" class="mt-4 d-none">
         <h4 class="h5 fw-bold mb-3">Additional passengers</h4>
         <div id="additionalPassengerList" class="d-flex flex-column gap-3"></div>
       </div>
 
+      <!-- Seat summary: shows each passenger and seat code before payment -->
       <div id="seatSummary" class="seat-summary mt-4">
         <div class="d-flex align-items-center justify-content-between mb-2">
           <div class="fw-bold">Seat summary</div>
@@ -211,6 +218,17 @@
     </form>
   </div>
 </div>
+
+
+<!-- booking page logic:
+     - load seat selection (seat num, cabin, and window, middle, or aisle) + passenger data (keyed by flight + pax) for each passenger
+     - Puts it into a seatData object
+     - syncs primary passenger inputs with stored data
+     - displays additional passenger cards based on pax count
+     - displays the seat summary tiles
+     - keeps seat_data saved so we can reuse it on payment calculation
+     - on "Continue to Payment" it validates the form, saves everything, refreshes seat summary, then redirects to payments
+-->
 
 <script>
   (() => {

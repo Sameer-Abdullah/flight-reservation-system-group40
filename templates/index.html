@@ -1,6 +1,6 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %} {% set force_login_nav = true %} {% block content %}
 <style>
-  /* ===== Base ===== */
+  /* Base */
   :root {
     --ink: #0b2545;
     --brand: #0ea5e9;
@@ -26,7 +26,7 @@
     overflow-x: hidden;
   }
 
-  /* ===== Floating Navbar===== */
+  /* Floating Navbar */
   nav.navbar {
     background: rgba(255, 255, 255, 0.12) !important;
     -webkit-backdrop-filter: blur(10px);
@@ -66,7 +66,7 @@
     }
   }
 
-  /* ===== Hero ===== */
+  /* Hero */
   .hero {
     position: relative;
     color: #fff;
@@ -173,7 +173,7 @@
     pointer-events: none;
   }
 
-  /* ===== Utility chips & badges ===== */
+  /* Utility chips & badges */
   .chip {
     display: inline-flex;
     align-items: center;
@@ -187,12 +187,13 @@
     font-size: 0.9rem;
   }
 
-  /* ===== Stat strip ===== */
+  /* Stat strip */
   .stats {
     background: #ffffff;
     border-radius: 18px;
     padding: 18px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    color: var(--ink);
   }
   .stat {
     display: flex;
@@ -207,7 +208,7 @@
     font-size: 1.05rem;
   }
 
-  /* ===== Feature cards ===== */
+  /* Feature cards */
   .feature-card {
     border: none;
     border-radius: 18px;
@@ -231,7 +232,7 @@
     color: var(--brand-deep);
   }
 
-  /* ===== Destination cards ===== */
+  /*  Destination cards */
   .destination-card {
     border: none;
     border-radius: 18px;
@@ -239,6 +240,7 @@
     background: #fff;
     box-shadow: 0 8px 24px rgba(2, 6, 23, 0.05);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
+    cursor: pointer;
   }
   .destination-card:hover {
     transform: translateY(-6px);
@@ -248,6 +250,16 @@
     width: 100%;
     height: 200px;
     object-fit: cover;
+  }
+  .toronto-img {
+    object-position: left center;
+  }
+  .destination-card .card-body {
+    padding: 0.95rem 1.15rem 1.1rem;
+  }
+  .price-text {
+    padding-left: 0;
+    margin-left: 0;
   }
   .price-badge {
     position: absolute;
@@ -262,7 +274,7 @@
     backdrop-filter: blur(4px);
   }
 
-  /* ===== Reviews ===== */
+  /*  Reviews */
   .review-card {
     border: none;
     border-radius: 18px;
@@ -278,7 +290,7 @@
     letter-spacing: 0.04em;
   }
 
-  /* ===== Trust bar ===== */
+  /* Trust bar */
   .trust {
     background: linear-gradient(180deg, var(--soft), #ffffff);
     border: 1px solid rgba(2, 6, 23, 0.06);
@@ -322,7 +334,36 @@
     pointer-events: none;
   }
 
-  /* ===== Footer ===== */
+  /* Flight toast */
+  .flight-toast {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: linear-gradient(135deg, var(--brand-deep), #0ea5e9);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(2, 6, 23, 0.16);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1200;
+  }
+  .flight-toast i {
+    font-size: 1.25rem;
+  }
+  .flight-toast.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Footer */
   footer {
     background: #f8fafc;
     border-top: 1px solid #eaeaea;
@@ -351,15 +392,40 @@
 </style>
 
 <script>
-  // Navbar scroll effect
-  document.addEventListener("scroll", () => {
+  // Navbar scroll effect + card toast handler
+  document.addEventListener("DOMContentLoaded", () => {
     const nav = document.querySelector("nav.navbar");
-    if (window.scrollY > 50) nav.classList.add("scrolled");
-    else nav.classList.remove("scrolled");
+    document.addEventListener("scroll", () => {
+      if (window.scrollY > 50) nav.classList.add("scrolled");
+      else nav.classList.remove("scrolled");
+    });
+
+    const toast = document.getElementById("flight-toast");
+    if (!toast) return;
+
+    let toastTimer;
+    const showToast = () => {
+      toast.classList.add("is-visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("is-visible");
+      }, 5000);
+    };
+
+    document.querySelectorAll(".destination-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        showToast();
+      });
+    });
   });
 </script>
 
-<!-- ===== Hero ===== -->
+<div id="flight-toast" class="flight-toast" role="status" aria-live="polite">
+  <i class="bi bi-rocket-takeoff-fill" aria-hidden="true"></i>
+  <span>Login to find your next journey.</span>
+</div>
+
+<!-- Hero -->
 <section class="hero container shadow-sm mb-5">
   <span class="contrail" aria-hidden="true"></span>
   <img
@@ -399,8 +465,7 @@
       ></i>
       <h1 class="display-5 mb-3">Fly smarter. Travel farther.</h1>
       <p class="lead mb-4">
-        Book and manage flights in minutes — clean UX, transparent pricing, and
-        support that actually helps.
+        Book and manage flights in minutes — built on trust and real support.
       </p>
       <div class="d-flex justify-content-center gap-3">
         <a
@@ -462,7 +527,7 @@
   </div>
 </section>
 
-<!-- ===== Why Us ===== -->
+<!-- Why Us -->
 <section class="container my-5">
   <div class="text-center mb-5">
     <h2 class="fw-bold">Why Fly With Us?</h2>
@@ -503,7 +568,7 @@
   </div>
 </section>
 
-<!-- ===== Trending Deals ===== -->
+<!-- Trending Deals -->
 <section class="container my-5">
   <div class="d-flex align-items-end justify-content-between mb-4">
     <div>
@@ -523,15 +588,13 @@
       <div class="destination-card position-relative">
         <span class="price-badge">From $499 CAD</span>
         <img
-          src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80"
+          src="https://www.moonpalace.com/cancun-destination-moon-palace_220104d389.webp"
           class="destination-img"
-          alt="Paris skyline at dusk"
+          alt="Cancun beach resort view"
         />
         <div class="p-3">
-          <h6 class="fw-bold mb-1">🇫🇷 Paris, France</h6>
-          <p class="text-muted small mb-2">
-            Direct & 1-stop options • Spring & Summer
-          </p>
+          <h6 class="fw-bold mb-1">🇲🇽 Cancun, Mexico</h6>
+          <p class="text-muted small mb-2">Resorts • Beaches • Sunshine</p>
           <div class="d-flex gap-2">
             <span class="badge text-bg-light border"
               ><i class="bi bi-wifi"></i> Wi-Fi</span
@@ -548,9 +611,9 @@
       <div class="destination-card position-relative">
         <span class="price-badge">From $299 CAD</span>
         <img
-          src="https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=1600&q=80"
+          src="https://www.exp1.com/wp-content/uploads/sites/7/2020/06/Times-Square-1-1.jpg"
           class="destination-img"
-          alt="New York skyline"
+          alt="Times Square in New York City"
         />
         <div class="p-3">
           <h6 class="fw-bold mb-1">🇺🇸 New York, USA</h6>
@@ -569,21 +632,21 @@
     <!-- Card 3 -->
     <div class="col-md-4">
       <div class="destination-card position-relative">
-        <span class="price-badge">From $199 CAD</span>
+        <span class="price-badge">From $799 CAD</span>
         <img
-          src="https://images.unsplash.com/photo-1569982615761-66697da68502?auto=format&fit=crop&w=1600&q=80"
+          src="https://www.visitdubai.com/-/media/gathercontent/poi/b/burj-khalifa/fallback-image/poi-burj-khalifa-3-dtcm-jun-2023.jpg"
           class="destination-img"
-          alt="Toronto skyline at sunset"
+          alt="Dubai skyline with Burj Khalifa"
         />
         <div class="p-3">
-          <h6 class="fw-bold mb-1">🇨🇦 Toronto, Canada</h6>
-          <p class="text-muted small mb-2">Best for quick weekend trips</p>
+          <h6 class="fw-bold mb-1">🇦🇪 Dubai, UAE</h6>
+          <p class="text-muted small mb-2">Iconic skyline & desert escapes</p>
           <div class="d-flex gap-2">
             <span class="badge text-bg-light border"
-              ><i class="bi bi-luggage"></i> Carry-on</span
+              ><i class="bi bi-wifi"></i> Wi-Fi</span
             >
             <span class="badge text-bg-light border"
-              ><i class="bi bi-clock"></i> Flex fares</span
+              ><i class="bi bi-cup-hot"></i> Meals</span
             >
           </div>
         </div>
@@ -592,7 +655,7 @@
   </div>
 </section>
 
-<!-- ===== Popular Destinations ===== -->
+<!-- Popular Destinations -->
 <section id="destinations" class="container my-5">
   <div class="text-center mb-5">
     <h2 class="fw-bold text-dark">Popular Destinations</h2>
@@ -602,59 +665,59 @@
     <div class="col-md-3 col-sm-6">
       <div class="destination-card shadow-sm">
         <img
-          src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80"
+          src="https://res.klook.com/image/upload/fl_lossy.progressive,q_60/Mobile/City/swox6wjsl5ndvkv5jvum.jpg"
           class="destination-img"
           alt="Paris"
         />
         <div class="card-body">
           <h6 class="fw-bold mb-1">🇫🇷 Paris, France</h6>
-          <p class="text-muted small mb-0">From $499 CAD</p>
+          <p class="text-muted small mb-0 price-text">From $499 CAD</p>
         </div>
       </div>
     </div>
     <div class="col-md-3 col-sm-6">
       <div class="destination-card shadow-sm">
         <img
-          src="https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=1200&q=80"
+          src="https://www.theodysseyonline.com/media-library/image.jpg?id=56160776&width=980&quality=50"
           class="destination-img"
-          alt="New York"
+          alt="London skyline"
         />
         <div class="card-body">
-          <h6 class="fw-bold mb-1">🇺🇸 New York, USA</h6>
-          <p class="text-muted small mb-0">From $299 CAD</p>
+          <h6 class="fw-bold mb-1">🇬🇧 London, UK</h6>
+          <p class="text-muted small mb-0 price-text">From $299 CAD</p>
         </div>
       </div>
     </div>
     <div class="col-md-3 col-sm-6">
       <div class="destination-card shadow-sm">
         <img
-          src="https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=1200&q=80"
+          src="https://assets.ace.aaa.com/is/image/aceaaa/GettyImages-1688989832-coastline-paradise-island-bahamas:hero-full-width-1200x800"
           class="destination-img"
-          alt="Tokyo"
+          alt="Nassau shoreline"
         />
         <div class="card-body">
-          <h6 class="fw-bold mb-1">🇯🇵 Tokyo, Japan</h6>
-          <p class="text-muted small mb-0">From $699 CAD</p>
+          <h6 class="fw-bold mb-1">🇧🇸 Nassau, The Bahamas</h6>
+          <p class="text-muted small mb-0 price-text">From $699 CAD</p>
         </div>
       </div>
     </div>
     <div class="col-md-3 col-sm-6">
       <div class="destination-card shadow-sm">
         <img
-          src="https://images.unsplash.com/photo-1569982615761-66697da68502?auto=format&fit=crop&w=1200&q=80"
-          class="destination-img"
+          src="https://thecreativeforum.com/wp-content/uploads/2019/08/Toronto-City-Nighttime-Skylines.jpg"
+          class="destination-img toronto-img"
           alt="Toronto"
         />
         <div class="card-body">
           <h6 class="fw-bold mb-1">🇨🇦 Toronto, Canada</h6>
-          <p class="text-muted small mb-0">From $199 CAD</p>
+          <p class="text-muted small mb-0 price-text">From $199 CAD</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== Customer Reviews ===== -->
+<!-- Customer Reviews -->
 <section class="container my-5">
   <div class="text-center mb-5">
     <h2 class="fw-bold text-dark">What Our Travelers Say</h2>
@@ -752,7 +815,6 @@
   </div>
 </section>
 
-<!-- ===== Footer ===== -->
 <footer class="text-center py-4 text-muted small mt-5">
   <p class="mb-0">
     &copy; {% set year = 2025 %}{{ year }} Airline Reservation Group 40. All

@@ -13,7 +13,9 @@ def my_bookings():
     """
     Serve the My Bookings page using stored booking records; falls back to showcase data if none exist.
     """
-    now = datetime.now()
+    # Datetimes in the DB are stored as naive UTC; compare using utcnow so past/future buckets are accurate.
+    now = datetime.utcnow()
+    touched = False
     records = (
         db.session.query(BookingRecord, Flight)
         .join(Flight, BookingRecord.flight_id == Flight.id)
@@ -46,6 +48,14 @@ def my_bookings():
         included_bags = len(pax_list) * 1
         total_bags = included_bags + extra_bags
 
+        status_text = rec.status or flight.status or "On time"
+        if flight.depart_time and flight.depart_time <= now and "cancel" not in status_text.lower():
+            status_text = "Departed"
+            if rec.status != status_text:
+                rec.status = status_text
+                db.session.add(rec)
+                touched = True
+
         is_future = bool(flight.depart_time and flight.depart_time > now)
         flight_available = is_future and not ((flight.status or "").lower().startswith("cancel"))
 
@@ -62,19 +72,24 @@ def my_bookings():
             "ticket_type": pax_list[0]["class"] if pax_list else "Economy",
             "total_paid": (rec.total_paid_cents or 0) / 100,
             "price": (flight.price_cents or 0) / 100,
-            "status": rec.status or flight.status or "On time",
+            "status": status_text,
             "pax": pax_list,
             "baggage": {"total": total_bags, "included": included_bags, "extras": extra_bags},
             "fare_terms": "Free online cancellation up to 2 hours before departure.",
             "available": flight_available,
         })
 
+    if touched:
+        db.session.commit()
+
     upcoming, past, cancelled = [], [], []
     for t in trips:
         status_text = (t["status"] or "").lower()
         if "cancel" in status_text:
             cancelled.append(t)
-        elif t["departure"] and t["departure"] < now:
+        elif t["departure"] and t["departure"] <= now:
+            past.append(t)
+        elif "depart" in status_text:
             past.append(t)
         else:
             upcoming.append(t)
@@ -172,7 +187,7 @@ def rebook_booking():
         return jsonify({"ok": False, "error": "Booking not found"}), 404
 
     flight = Flight.query.get(rec.flight_id)
-    now = datetime.now()
+    now = datetime.utcnow()
     if not flight or not flight.depart_time or flight.depart_time <= now:
         return jsonify({"ok": False, "error": "Flight no longer available"}), 400
     if flight.status and "cancel" in flight.status.lower():

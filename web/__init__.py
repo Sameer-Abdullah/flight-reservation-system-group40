@@ -117,8 +117,8 @@ def create_app():
                 flash("Traveler added.", "success")
                 return redirect(url_for("account"))
 
-        # Use local time to classify trips; stored datetimes are naive (assumed local)
-        now = datetime.now()
+        # Stored datetimes are naive UTC; use utcnow for consistent categorization.
+        now = datetime.utcnow()
         records = (
             db.session.query(BookingRecord, Flight)
             .join(Flight, BookingRecord.flight_id == Flight.id)
@@ -129,9 +129,16 @@ def create_app():
         trips = []
         upcoming = completed = cancelled = 0
         total_paid = 0.0
+        touched = False
         for rec, flight in records:
             depart = flight.depart_time
             status_text = rec.status or flight.status or "On time"
+            if flight.depart_time and flight.depart_time <= now and "cancel" not in status_text.lower():
+                status_text = "Departed"
+                if rec.status != status_text:
+                    rec.status = status_text
+                    db.session.add(rec)
+                    touched = True
             ticket_type = "Economy"
             if rec.passengers:
                 p0 = rec.passengers[0]
@@ -169,6 +176,9 @@ def create_app():
                 }
             )
             total_paid += (rec.total_paid_cents or 0) / 100
+
+        if touched:
+            db.session.commit()
 
         if not trips:
             fallback_date = datetime(2025, 11, 29, 7, 30)
@@ -216,7 +226,7 @@ def create_app():
             "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon",
             "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea",
             "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India",
-            "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan",
+            "Indonesia", "Iran", "Iraq", "Ireland", "Italy", "Jamaica", "Japan",
             "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kosovo", "Kuwait", "Kyrgyzstan", "Laos",
             "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania",
             "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta",

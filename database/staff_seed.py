@@ -6,6 +6,7 @@ from web.models import User, Customer, Booking, Flight
 
 app = create_app()
 
+# creates a single staff user
 def seed_staff_user():
     email = "sameer-abdullah@skywing.com"
     password = "c"
@@ -21,7 +22,7 @@ def seed_staff_user():
         db.session.commit()
         print("[OK] Created staff user:", email)
 
-
+# adds random customers to the database for testing usability
 def seed_customers():
     first_names = [
         "Amina","Layla","Omar","Yusuf","Fatima","Maryam","Noor","Daniyal","Ibrahim","Zain","Ayaan",
@@ -60,6 +61,9 @@ def seed_customers():
 from datetime import datetime, timedelta
 import random
 
+# creates random bookings for flights happening "today"
+# if there are no flights today, it falls back to the first 50 flights in the DB
+# each booking links a random customer to a random seat, making sure not to double-book a seat
 def seed_bookings():
     customers = Customer.query.all()
     if not customers:
@@ -111,7 +115,7 @@ def seed_bookings():
     print(f"[OK] Seeded {created} bookings for today's (or fallback) flights.")
 
 
-
+# runs inside the app so we can use the DB, then seeds staff user, customers, and  bookings
 with app.app_context():
     print("---- Seeding staff + customers + bookings ----")
     seed_staff_user()

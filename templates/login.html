@@ -9,7 +9,7 @@
     --card: #ffffff;
   }
 
-  /* ===== SKY BACKGROUND ===== */
+  /* SKY BACKGROUND */
   body.auth-bg {
     min-height: 100vh;
     color: var(--ink);
@@ -126,7 +126,7 @@
     }
   }
 
-  /* parallax clouds  */
+  /* parallax clouds */
   .auth-cloud {
     position: fixed;
     width: 160px;
@@ -241,7 +241,7 @@
     }
   }
 
-  /* ===== Layout & Card ===== */
+  /*  Layout & Card  */
   .auth-wrap {
     position: relative;
     z-index: 1;
@@ -404,7 +404,7 @@
   }
 </style>
 
-<!-- ===== Background stack ===== -->
+<!-- Background stack -->
 <div class="sky-anim" aria-hidden="true">
   <div class="aurora"></div>
   <div class="bokeh"></div>
@@ -433,7 +433,7 @@
   <div class="plane-icon path2 move-fast">🛫</div>
 </div>
 
-<!-- ===== Auth Card ===== -->
+<!-- Auth Card -->
 <div class="auth-wrap">
   <div class="auth-card">
     {% with messages = get_flashed_messages(with_categories=true) %} {% if

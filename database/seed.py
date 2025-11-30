@@ -6,6 +6,9 @@ from web.models import Flight, AircraftType, Seat
 
 app = create_app()
 
+# Tthis makes sure the required tables and columns actually exist.
+# - creates AircraftType and Seat tables if they're missing.
+# - checks the flight table and adds aircraft_type_id if it isn't there.
 def ensure_schema():
     AircraftType.__table__.create(bind=db.engine, checkfirst=True)
     Seat.__table__.create(bind=db.engine, checkfirst=True)
@@ -16,7 +19,7 @@ def ensure_schema():
         db.session.execute(text("ALTER TABLE flight ADD COLUMN aircraft_type_id INTEGER"))
         db.session.commit()
 
-
+# dollars to cents
 def cents(n: float) -> int:
     return int(round(n * 100))
 
@@ -26,7 +29,9 @@ def stable_noise(key: str, low=-0.03, high=0.03) -> float:
     rnd = int(h[:8], 16) / 0xFFFFFFFF
     return low + (high - low) * rnd
 
-
+# makes sure the preset aircraft types exist (A320, B747, A380).
+# if they already exist, update their info. If not, create them.
+# these presets define layout, row count, and which cabin each row belongs to.
 def ensure_aircraft_types():
     presets = [
         dict(
@@ -62,7 +67,8 @@ def ensure_aircraft_types():
     if changed:
         db.session.commit()
 
-
+# chooses which aircraft type to use based on ticket price.
+# higher priced flights use larger/more premium planes.
 def pick_aircraft_code(price_cents: int) -> str:
     p = (price_cents or 0) / 100.0
     if p >= 600:
@@ -71,21 +77,23 @@ def pick_aircraft_code(price_cents: int) -> str:
         return "B747"
     return "A320"
 
-
+# helps generate seat order for each row.
 def letters_from_layout(layout_str: str):
     letters = []
     for group in layout_str.split():
         letters.extend(list(group))
     return letters
 
-
+# figures out which cabin/class a given row belongs to based on the aircraft's class_map.
 def cabin_for_row(row: int, class_map):
     for block in class_map:
         if block["from"] <= row <= block["to"]:
             return block["class"]
     return "Economy"
 
-
+# Assigns aircraft types to flights that don't have one.
+# Then generates seats for every flight that doesn’t already have seats.
+# Seats are created using the aircraft’s row count, seat letters, and cabin class map.
 def attach_aircraft_to_flights_and_seed_seats():
     atypes = {a.code: a for a in AircraftType.query.all()}
     flights = Flight.query.all()
@@ -186,7 +194,7 @@ with app.app_context():
         ("YVR","YUL",360), ("YUL","YVR",360),
         ("YUL","YOW",110), ("YOW","YUL",110),
     ]
-
+# how long into the future the database seeds flights for (22)
     day_offsets = list(range(0, 22))
     time_offsets = [
         timedelta(hours=6, minutes=30),
@@ -198,6 +206,7 @@ with app.app_context():
 
     slot_mult = {0: -0.06, 1: -0.02, 2: +0.00, 3: +0.07, 4: +0.03}
 
+# weekend price bump
     def weekend_bump(dt):
         return 0.08 if dt.weekday() in (4, 5) else 0.0
 
@@ -213,6 +222,9 @@ with app.app_context():
     )
 
     to_insert = []
+
+    # Generate new flights for every route × day × time slot combination.
+    # Price is base_price × (slot multiplier + weekend bump + small random noise).
     for origin, dest, base in routes:
         for d in day_offsets:
             for idx, t_off in enumerate(time_offsets):
@@ -233,6 +245,7 @@ with app.app_context():
                     price_cents=cents(price),
                 ))
 
+# slows down the insertion of flights to avoid large transactions.
     if to_insert:
         CHUNK = 1000
         for i in range(0, len(to_insert), CHUNK):
@@ -242,5 +255,6 @@ with app.app_context():
     else:
         print("No new flights to seed.")
 
+# last checks
     ensure_aircraft_types()
     attach_aircraft_to_flights_and_seed_seats()

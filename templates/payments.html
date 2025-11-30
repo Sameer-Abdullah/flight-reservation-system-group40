@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% set body_class = 'bg-body-tertiary' %}
 {% block content %}
+
+<!-- Payment page styles -->
 <style>
   :root {
     --pay-border: #e5e7eb;
@@ -134,8 +136,11 @@
   }
 </style>
 
+<!-- Payment layout shell -->
 <div class="payment-shell">
   <div class="row g-3 g-lg-4 align-items-start">
+
+    <!-- Left column: payment form -->
     <div class="col-lg-7">
       <div class="card payment-card border-0">
         <div class="card-body p-4 p-md-5">
@@ -147,6 +152,7 @@
             <span class="passenger-pill" id="passengerBadge">Passengers {{ passenger_count }}</span>
           </div>
 
+          <!-- Tabs: card vs PayPal -->
           <div class="pay-tabs d-flex gap-2 mb-4">
             <button class="pay-tab active" type="button" id="cardTab">
               <i class="bi bi-credit-card-2-front me-1"></i> Credit/Debit Card
@@ -156,6 +162,7 @@
             </button>
           </div>
 
+          <!-- Card payment pane -->
           <div id="cardPane">
             <form method="post" action="{{ url_for('payments.submit_card') }}" class="row g-3">
               <input type="hidden" name="flight_id" value="{{ flight_id }}" />
@@ -196,6 +203,7 @@
                 <input name="cvv" inputmode="numeric" class="form-control" placeholder="123" />
               </div>
 
+              <!-- Billing address section -->
               <div class="col-12 pt-2">
                 <div class="section-label mb-1">Billing Address</div>
               </div>
@@ -254,7 +262,6 @@
                   <option>United Arab Emirates</option>
                   <option>Qatar</option>
                   <option>Saudi Arabia</option>
-                  <option>Israel</option>
                   <option>Egypt</option>
                   <option>South Africa</option>
                   <option>Kenya</option>
@@ -287,6 +294,7 @@
             </form>
           </div>
 
+          <!-- PayPal demo pane -->
           <div id="paypalPane" class="d-none">
             <div class="alert alert-info d-flex align-items-center" role="alert">
               <i class="bi bi-info-circle me-2"></i> PayPal is available in demo mode for this project.
@@ -299,6 +307,7 @@
       </div>
     </div>
 
+    <!-- Right column: booking summary -->
     <div class="col-lg-5">
       <div class="card summary-card">
         <div class="card-body p-4">
@@ -308,14 +317,17 @@
           </div>
           <div class="summary-route" id="routeLabel">{{ flight.origin }} → {{ flight.destination }}</div>
 
+          <!-- Passenger list -->
           <div class="summary-section-title">Passengers</div>
           <div id="passengerCards" class="vstack gap-2 mb-3"></div>
 
+          <!-- Seat -->
           <div class="summary-section-title">Seats</div>
           <div id="seatPills" class="seat-pills mb-4"></div>
 
           <div class="divider mb-3"></div>
 
+          <!-- Pricing breakdown -->
           <div class="price-row">
             <div class="label">Base fare (<span id="baseFareLabel">--</span>)</div>
             <strong id="baseFareValue">$0.00</strong>
@@ -335,6 +347,7 @@
 
           <div class="divider"></div>
 
+          <!-- Total row -->
           <div class="total-row mb-3">
             <div>Total</div>
             <div id="totalValue">$0.00</div>
@@ -346,9 +359,11 @@
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
+<!-- JSON context for JS pricing logic -->
 <script type="application/json" id="paymentCtx">
   {{ {
     "flightId": flight.id,
@@ -360,6 +375,7 @@
   }|tojson }}
 </script>
 
+<!-- Pricing + summary logic -->
 <script>
   (() => {
 
@@ -418,7 +434,6 @@
       "United Arab Emirates": 0.05,
       "Qatar": 0.05,
       "Saudi Arabia": 0.15,
-      "Israel": 0.17,
       "Egypt": 0.14,
       "South Africa": 0.15,
       "Kenya": 0.16,
@@ -615,8 +630,8 @@
   })();
 </script>
 
+<!-- PayPal toggle + card validation / formatting -->
 <script>
-  // PayPal demo toggle + card validation/formatting
   (() => {
     const cardTab = document.getElementById('cardTab');
     const paypalTab = document.getElementById('paypalTab');
@@ -643,7 +658,6 @@
     paypalTab?.addEventListener('click', () => togglePane('paypal'));
 
     paypalBtn?.addEventListener('click', () => {
-      // Submit a lightweight form with seat data so booking is saved.
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = "{{ url_for('payments.mock_paypal', flight_id=flight_id) }}";
@@ -666,7 +680,7 @@
       if (/^4\d{0,15}$/.test(num)) return 'VISA';
       if (/^(5[1-5]\d{0,14}|2(2[2-9]\d|[3-6]\d{2}|7[01]\d|720)\d{0,12})$/.test(num)) return 'MASTERCARD';
       if (/^3[47]\d{0,13}$/.test(num)) return 'AMEX';
-      if (/^(6011|65|64[4-9]|6221(2[6-9]|[3-9]\d)|622[2-8]\d{2}|6229([01]\d|2[0-5]))\d*$/.test(num)) return 'DISCOVER';
+      if (/^(6011|65|64[4-9]|6221(2[6-9]\d|[3-9]\d)|622[2-8]\d{2}|6229([01]\d|2[0-5]))\d*$/.test(num)) return 'DISCOVER';
       if (/^3(0[0-5]|[68]\d)\d*$/.test(num)) return 'DINERS';
       if (/^(35\d{0,14})$/.test(num)) return 'JCB';
       return 'CARD';

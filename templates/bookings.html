@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% set body_class = 'bg-body-tertiary' %}
 {% block content %}
+
+<!-- My Bookings page: lists upcoming, past, and cancelled flights + has cancel/rebook support-->
+
+
+<!-- Page styling for the bookings page -->
 <style>
   :root {
     --ink: #0f172a;
@@ -702,6 +707,7 @@
     </div>
   </div>
 
+  <!-- Upcoming flights section: can still manage/cancel active flights -->
   <section class="section-block">
     <div class="section-head d-flex align-items-center justify-content-between mb-3">
       <h3>Upcoming flights</h3>
@@ -816,6 +822,7 @@
     <div class="empty-card {% if bookings.upcoming %}d-none{% endif %}" id="upcoming-empty">No upcoming flights yet.</div>
   </section>
 
+  <!-- past flights section: can only view the flights and flight details -->
   <section class="section-block">
     <div class="section-head d-flex align-items-center justify-content-between mb-2">
       <h3>Past trips</h3>
@@ -915,6 +922,7 @@
     <div class="empty-card {% if bookings.past %}d-none{% endif %}" id="past-empty">No completed trips recorded.</div>
   </section>
 
+  <!-- Cancelled flights section: displays cancelled flights and allows rebook for certain flights that are availale -->
   <section class="section-block mb-4">
     <div class="section-head d-flex align-items-center justify-content-between mb-2">
       <h3>Cancelled flights</h3>
@@ -1034,6 +1042,7 @@
   </section>
 </div>
 
+<!-- Cancellation process: 3-step flow, confirm -> policy -> refund -->
 <div id="cancel-modal" class="cancel-overlay d-none" role="dialog" aria-modal="true">
   <div class="cancel-shell">
     <div class="cancel-head">
@@ -1206,6 +1215,7 @@
   </div>
 </div>
 
+<!-- Rebook process: rebook option for certain flights -->
 <div id="rebook-modal" class="cancel-overlay d-none" role="dialog" aria-modal="true">
   <div class="cancel-shell rebook-shell">
     <div class="cancel-head">
@@ -1250,6 +1260,12 @@
     </div>
   </div>
 </div>
+
+
+<!-- Backend behaviour for bookings:
+     - calculates refund windows and amounts from departure time
+     - moves trips between upcoming/cancelled/completed lists in the UI
+-->
 
 <script>
   (() => {

@@ -4,6 +4,14 @@
 
 {% set member_since_text = member_since.strftime('%b %Y') if member_since else '2025' %}
 
+<!--
+  My account page:
+  - shows account header with stats
+  - displays a clear profile user view and supports user info edits
+  - lists some of recent bookings with a "view detail" modal
+  - my bookings anf search flights shortcuts
+  - lists saved travelers and lets you add additional traveler
+-->
 <style>
   :root {
     --ink: #0f2745;
@@ -25,6 +33,8 @@
     color: var(--muted) !important;
   }
 
+
+  /* hero card with user name and stats */
   .hero-card {
     position: relative;
     border-radius: 22px;
@@ -35,7 +45,7 @@
       linear-gradient(135deg, #0d6fb8 0%, #0f87c4 55%, #0bb1e8 100%);
     box-shadow: var(--shadow);
   }
-
+  
   .hero-card::after {
     content: "";
     position: absolute;
