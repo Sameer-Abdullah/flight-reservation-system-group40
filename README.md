@@ -8,7 +8,7 @@ A flask based flight booking web app with support for user accounts, flight sear
 - SQLite
 
 ## Setup
-- setup of source code:
+-- setup of source code:
 - git clone https://github.com/Sameer-Abdullah/flight-reservation-system-group40.git
 - cd flight-reservation-system-group40
 
@@ -24,21 +24,21 @@ A flask based flight booking web app with support for user accounts, flight sear
 2.  python -m database.staff_seed or PYTHONPATH=. python3 database/staff_seed.py
 
 
-- To run:
-python run.py
-or from run.py hit run program
+-- To run:
+- python run.py
+- or from run.py hit run program
 
-Follow this link to the website (You will see it in output):
+- Follow this link to the website (You will see it in output):
  * Running on http://127.0.0.1:5000
 
 
-- To login as user:
-Register with any email and enter a password and confirm it.
+-- To login as user:
+- Register with any email and enter a password and confirm it.
 
-- To login as a staff member, either:
+-- To login as a staff member, either:
 1. login with the seeded login credentials:
-  email: sameer-abdullah@skywing.com
-  password: c
+  -email: sameer-abdullah@skywing.com
+  -password: c
 2. or register an account with any email ending with @skywing.com as the address.
 
 
