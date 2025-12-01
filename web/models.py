@@ -3,7 +3,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db, login_manager
 
-# ---- User model ----
+# User model 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -55,7 +55,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-# ---- User profile (account details) ----
+# User profile (account details)
 class UserProfile(db.Model):
     __tablename__ = "user_profile"
 
@@ -102,7 +102,7 @@ class Traveler(db.Model):
         return f"<Traveler {self.full_name}>"
 
 
-# ---- Aircraft catalog (NEW) ----
+# Aircraft catalog
 class AircraftType(db.Model):
     __tablename__ = "aircraft_type"
 
@@ -117,7 +117,7 @@ class AircraftType(db.Model):
         return f"<AircraftType {self.code} rows={self.total_rows} layout={self.layout}>"
 
 
-# ---- Flight model ----
+# Flight model
 class Flight(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     origin = db.Column(db.String(3), nullable=False)
@@ -192,7 +192,7 @@ class Booking(db.Model):
     flight = db.relationship("Flight", backref="bookings")
 
 
-# ---- Rich booking record for My Bookings ----
+# booking record for My Bookings
 class BookingRecord(db.Model):
     __tablename__ = "booking_record"
 

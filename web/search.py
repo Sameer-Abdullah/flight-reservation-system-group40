@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request
 from datetime import datetime
 from .models import Flight
 
+# handles the flight search form and returns matching flights
+
 search_bp = Blueprint("search", __name__)
 
 @search_bp.route("/search", methods=["GET"])

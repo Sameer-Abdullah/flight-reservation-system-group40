@@ -5,6 +5,7 @@ from web import db
 
 staff_update_bp = Blueprint("staff_update", __name__, url_prefix="/staff/update")
 
+# allows staff to update the status and optional note for any flight
 
 @staff_update_bp.route("/", methods=["GET", "POST"])
 @login_required
@@ -24,7 +25,7 @@ def update_status():
                 message="Flight not found."
             )
 
-        # Save the update
+        # save the update
         f.status = status
         f.status_note = note
         db.session.commit()

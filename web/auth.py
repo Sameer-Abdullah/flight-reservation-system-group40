@@ -7,6 +7,7 @@ from . import db
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
+# guard helper for redirect targets so we only follow local urls
 def is_safe_url(target: str) -> bool:
     """Only allow local redirects."""
     host_url = urlparse(request.host_url)
@@ -14,6 +15,7 @@ def is_safe_url(target: str) -> bool:
     return redirect_url.scheme in ("http", "https") and host_url.netloc == redirect_url.netloc
 
 
+# login view: validate credentials, log user in, and redirect based on role / next param
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -43,6 +45,7 @@ def login():
     return render_template("login.html")
 
 
+# registration view: basic signup flow with duplicate / staff-domain checks
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -71,6 +74,7 @@ def register():
     return render_template("register.html")
 
 
+# logout view: end the current session and send user back to home
 @auth_bp.route("/logout")
 @login_required
 def logout():

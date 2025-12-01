@@ -297,22 +297,31 @@
   const totalEl = document.getElementById('total');
   const continueBtn = document.getElementById('continue');
 
+  /* figure out which cabin (first/business/economy) a row belongs to using the class ranges from the api */
   const cabinForRow = r => {
     for(const b of state.classes){ if(r>=b.from && r<=b.to) return b.class; }
     return "Economy";
   };
+
+  /* return the badge class for the cabin label on the right side of each row */
   const badgeCls  = c => c==="First" ? "badgeFirst" : c==="Business" ? "badgeBusiness" : "badgeEconomy";
+
+  /* return the wrapper class that controls background/styling for that cabin row */
   const cabinWrap = c => c==="First" ? "cabinFirst" : c==="Business" ? "cabinBusiness" : "cabinEconomy";
 
+  /* decide how seat letters are grouped in a row based on cabin rules (handles the business gap) */
   function groupsForRow(r){
     const cabin = cabinForRow(r);
     if (cabin === "Business") return ["AB","CD"];
     return state.layout.split(' ');
   }
+
+  /* identify seats that should exist in layout but be rendered as invisible placeholders (for the business gap) */
   function isGhostSeat(cabin, ch){
     return (cabin === "Business" && (ch === "E" || ch === "F"));
   }
 
+  /* build the decorative window dots along the top and bottom of the plane body */
   function buildWindows(count=28){
     wTop.innerHTML=""; wBtm.innerHTML="";
     for(let i=0;i<count;i++){
@@ -322,6 +331,7 @@
     }
   }
 
+  /* if the api doesn't give explicit exit rows, infer two reasonable exit row positions from the cabin layout */
   function inferExitRows(){
     if(state.exit_rows && state.exit_rows.length) return;
     let boundary=null;
@@ -334,6 +344,7 @@
     state.exit_rows = Array.from(new Set([g1,g2])).filter(n=>n>=2 && n<=state.rows-1);
   }
 
+  /* render the full seat grid from state: rows, cabins, seat buttons, blocked/held/occupied states, and labels */
   function renderGrid(){
     grid.innerHTML = '';
     inferExitRows();
@@ -389,6 +400,7 @@
     buildWindows(Math.max(20, Math.min(36, Math.round(state.rows*0.55))));
   }
 
+  /* figure out if a seat letter is window / aisle / middle based on the layout groups */
   const seatPosition = (letter) => {
     const groups = state.layout.split(' ').filter(Boolean);
     for(let i=0;i<groups.length;i++){
@@ -402,12 +414,14 @@
     return "Seat";
   };
 
+  /* parse a seat code like `12C` into row + letter pieces; return null if it's not valid format */
   function parseSeat(code){
     const m = /^(\d+)([A-Z])$/.exec(code || "");
     if(!m) return null;
     return { row: parseInt(m[1], 10), letter: m[2] };
   }
 
+  /* take a seat code and return all the metadata we care about (cabin, position, row, letter) */
   function seatDetails(code){
     const parsed = parseSeat(code);
     if(!parsed) return { code, cabin:"", position:"" };
@@ -416,14 +430,17 @@
     return { code, cabin, position, row: parsed.row, letter: parsed.letter };
   }
 
+  /* build the initial passenger object for a given index with no seat selected yet */
   function createPassenger(idx){
     return { label: `Passenger ${idx+1}`, seatCode:"", cabin:"", position:"", row:null, letter:"" };
   }
 
+  /* how many passengers currently have a seat assigned */
   function selectedCount(){
     return state.passengers.filter(p=>p.seatCode).length;
   }
 
+  /* sync css classes on all seat buttons based on who owns each seat and who is active */
   function refreshSeatClasses(){
     document.querySelectorAll('.seat').forEach(el=>{
       const owner = state.seatToPassenger[el.dataset.code];
@@ -432,6 +449,7 @@
     });
   }
 
+  /* update the footer totals (x/y seats) and enable/disable continue button */
   function updateTotals(){
     const count = selectedCount();
     totalEl.textContent = `${count}/${state.passengers.length} seats`;
@@ -439,6 +457,7 @@
     continueBtn.disabled = count !== state.passengers.length;
   }
 
+  /* re-render the passenger chips and wire up switching the active passenger */
   function renderPassengers(){
     passengerListEl.innerHTML = '';
     state.passengers.forEach((p, idx)=>{
@@ -463,6 +482,7 @@
     });
   }
 
+  /* save current selection state into localStorage so we can restore later for this flight */
   function persistSelection(){
     const payload = {
       flightId,
@@ -478,6 +498,7 @@
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); }catch(e){}
   }
 
+  /* make sure a seat code is inside the plane, exists in the layout, and is not blocked/held/occupied */
   function isSeatValid(code){
     const parsed = parseSeat(code);
     if(!parsed) return false;
@@ -487,10 +508,12 @@
     return !(state.blocked.has(code) || state.occupied.has(code) || state.held.has(code));
   }
 
+  /* wipe any saved selection for this flight from localStorage */
   function clearSaved(){
     try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
   }
 
+  /* read any saved seat selection from localStorage and merge it into the current state if still valid */
   function loadSavedSelections(fingerprint){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return;
@@ -519,11 +542,13 @@
     }
   }
 
+  /* after assigning a seat, automatically jump to the next passenger that still needs a seat */
   function advancePassenger(){
     const next = state.passengers.findIndex((p, idx)=>!p.seatCode && idx!==state.activePassenger);
     if(next !== -1) state.activePassenger = next;
   }
 
+  /* main click handler for a seat: handles assigning, unassigning, and switching active passenger when needed */
   function onSeatClick(code, btn){
     const owner = state.seatToPassenger[code];
     if(owner !== undefined && owner !== state.activePassenger){
@@ -553,6 +578,7 @@
     persistSelection();
   }
 
+  /* when continue is clicked, persist current state and send user to booking flow with flight + pax info */
   continueBtn.addEventListener('click', ()=>{
     persistSelection();
     const base = continueBtn.dataset.bookingUrl;
@@ -560,6 +586,7 @@
     window.location.href = `${base}?${qs.toString()}`;
   });
 
+  /* bootstrap the page: fetch seat map, hydrate state, restore any saved selection, then render everything */
   (async function init(){
     const res = await fetch(`/api/flights/${flightId}/seats`);
     if(!res.ok){ alert('Failed to load seats'); return; }

@@ -60,7 +60,7 @@
       </li>
     </ul>
 
-    <!-- OVERVIEW -->
+    <!-- overview -->
     <div class="staff-section" id="section-overview">
       <div class="row">
         <div class="col-lg-6 mb-3">
@@ -110,7 +110,7 @@
       </div>
     </div>
 
-    <!-- CUSTOMERS -->
+    <!-- customers -->
     <div class="staff-section d-none" id="section-customers">
       <div class="section-title">Customer lookup</div>
       <p class="section-sub mb-3">
@@ -226,7 +226,7 @@
       {% endif %}
     </div>
 
-    <!-- FLIGHTS -->
+    <!-- flights -->
     <div class="staff-section d-none" id="section-flights">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <div>
@@ -275,7 +275,7 @@
       </div>
     </div>
 
-    <!-- REPORTS -->
+    <!-- revwiew -->
     <div class="staff-section d-none" id="section-reports">
       <div class="row">
         <div class="col-md-7 mb-3">
@@ -687,10 +687,12 @@
 </div>
 
 <script>
+  /* wire up tab switching, table filters, and the simple emissions widget once the staff dashboard dom is ready */
   document.addEventListener("DOMContentLoaded", () => {
     const tabs = document.querySelectorAll("#staffTabs .nav-link");
     const sections = document.querySelectorAll(".staff-section");
 
+    /* show a given dashboard section by name and mark its corresponding tab as active */
     function showSection(name) {
       sections.forEach((sec) => {
         sec.classList.toggle("d-none", sec.id !== `section-${name}`);
@@ -715,6 +717,7 @@
       if (found) showSection(initialTab);
     }
 
+    /* client filter for the customer lookup results table */
     const customerFilter = document.getElementById("customerFilter");
     const customerTable = document.getElementById("customerTable");
     if (customerFilter && customerTable) {
@@ -728,6 +731,7 @@
       });
     }
 
+    /* client filter for today's flights table */
     const flightFilter = document.getElementById("flightFilter");
     const flightTable = document.getElementById("flightTable");
     if (flightFilter && flightTable) {
@@ -741,6 +745,7 @@
       });
     }
 
+    /* compute a rough emissions estimate for today's flights and update the overview + breakdown bars */
     const emData = document.getElementById("emissions-data");
     if (emData) {
       const flightCount = parseInt(emData.dataset.flightCount || "0", 10);

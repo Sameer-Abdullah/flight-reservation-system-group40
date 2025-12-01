@@ -1,6 +1,8 @@
 from flask import Blueprint, request, render_template
 from .models import Flight
 
+# loads the selected flight and passenger count, then opens the booking page
+
 booking_bp = Blueprint("booking", __name__, url_prefix="/booking")
 
 @booking_bp.route("/new")

@@ -6,7 +6,7 @@ from web.models import Flight, AircraftType, Seat
 
 app = create_app()
 
-# Tthis makes sure the required tables and columns actually exist.
+# this makes sure the required tables and columns actually exist.
 # - creates AircraftType and Seat tables if they're missing.
 # - checks the flight table and adds aircraft_type_id if it isn't there.
 def ensure_schema():

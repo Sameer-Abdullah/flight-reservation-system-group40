@@ -4,9 +4,11 @@
 <div class="card p-4 mb-4">
   <h3 class="mb-3">Flight Status Update</h3>
   <p class="text-muted mb-4">Update delays, cancellations, or general status for active flights.</p>
-
+  
+  <!-- staff-facing form to update a flight's status and optional note -->
   <form method="POST" action="{{ url_for('staff_update.update_status') }}">
-    
+
+
     <div class="mb-3">
       <label class="form-label">Select Flight</label>
       <select name="flight_id" class="form-select" required>

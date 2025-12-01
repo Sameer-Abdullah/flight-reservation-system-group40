@@ -7,13 +7,10 @@ from . import db
 bookings_bp = Blueprint("bookings", __name__, url_prefix="/bookings")
 
 
+# builds the My Bookings page from stored records, with demo fallback if none exist
 @bookings_bp.route("/")
 @login_required
 def my_bookings():
-    """
-    Serve the My Bookings page using stored booking records; falls back to showcase data if none exist.
-    """
-    # Datetimes in the DB are stored as naive UTC; compare using utcnow so past/future buckets are accurate.
     now = datetime.utcnow()
     touched = False
     records = (
@@ -26,11 +23,9 @@ def my_bookings():
     trips = []
     for rec, flight in records:
         passengers = rec.passengers or []
-        # Normalize passenger entries
         pax_list = []
         for idx, p in enumerate(passengers):
             chip = p.get("label") or f"P{idx+1}"
-            # Compress verbose labels like "Passenger 1" down to "P1"
             if chip.lower().startswith("passenger"):
                 chip = f"P{idx+1}"
             pax_list.append({
@@ -94,7 +89,6 @@ def my_bookings():
         else:
             upcoming.append(t)
 
-    # fallback sample if nothing exists
     if not upcoming and not past and not cancelled:
         sample_trip = {
             "origin": "YYZ",
@@ -141,12 +135,10 @@ def my_bookings():
     return render_template("bookings.html", bookings=bookings)
 
 
+# marks a booking as cancelled and optionally records the reason
 @bookings_bp.route("/cancel", methods=["POST"])
 @login_required
 def cancel_booking():
-    """
-    Simple cancellation endpoint to mark a booking as cancelled.
-    """
     data = request.get_json(silent=True) or request.form or {}
     booking_ref = (data.get("booking_ref") or "").strip()
     reason = (data.get("reason") or "").strip()
@@ -171,12 +163,10 @@ def cancel_booking():
     return jsonify({"ok": True})
 
 
+# reactivates a cancelled booking if its flight is still available
 @bookings_bp.route("/rebook", methods=["POST"])
 @login_required
 def rebook_booking():
-    """
-    Mark a cancelled booking as active again if the flight is still available (future and not cancelled).
-    """
     data = request.get_json(silent=True) or request.form or {}
     booking_ref = (data.get("booking_ref") or "").strip()
     if not booking_ref:

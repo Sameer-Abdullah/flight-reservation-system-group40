@@ -1,10 +1,10 @@
-/* Light blue gradient background like the mock */
+/* background styling for login/register pages */
 body.auth-bg {
   min-height: 100vh;
   background: linear-gradient(180deg, #eef6ff 0%, #f6fbff 60%, #ffffff 100%);
 }
 
-/* Center the auth card and give it soft elevation */
+/* centers the auth card on the screen with vertical alignment */
 .auth-wrap {
   min-height: calc(100vh - 64px); /* minus navbar height */
   display: flex;
@@ -12,6 +12,7 @@ body.auth-bg {
   justify-content: center;
 }
 
+/* main authentication card */
 .auth-card {
   width: 100%;
   max-width: 440px;
@@ -22,25 +23,25 @@ body.auth-bg {
   box-shadow: 0 12px 30px rgba(22, 34, 51, 0.08);
 }
 
-/* Title */
+/* brand title at the top of the card */
 .brand {
   font-weight: 700;
   letter-spacing: .2px;
 }
 
-/* Inputs */
+/* rounded and evenly sized text fields */
 .form-control {
   height: 46px;
   border-radius: 12px;
 }
 
-/* Primary button */
+/* main action button (Login / Register) */
 .btn-auth {
   height: 46px;
   border-radius: 12px;
 }
 
-/* Subtle divider with “Or” */
+/* horizontal divider with “Or” text centered */
 .hr-text {
   position: relative;
   text-align: center;
@@ -62,20 +63,32 @@ body.auth-bg {
   font-size: .9rem;
 }
 
-/* Tiny legal text */
+/* small muted legal/disclaimer text */
 .legal {
   color: #8a97a8;
   font-size: .8rem;
 }
 
-/* Decorative airplanes (optional) */
+/* decorative airplane icons placed behind the page */
 .auth-bg::before,
 .auth-bg::after {
-  content: "\F1D7"; /* bi-airplane */
+  content: "\F1D7"; /* bi-airplane icon */
   font-family: "bootstrap-icons";
-  color: #99b8ff33; /* transparent blue */
+  color: #99b8ff33; /* faint transparent blue */
   position: fixed;
   z-index: 0;
 }
-.auth-bg::before { font-size: 56px; left: 2rem; top: 35%; transform: rotate(-25deg); }
-.auth-bg::after  { font-size: 84px; right: 2rem; bottom: 12%; transform: rotate(15deg); }
+
+.auth-bg::before {
+  font-size: 56px;
+  left: 2rem;
+  top: 35%;
+  transform: rotate(-25deg);
+}
+
+.auth-bg::after  {
+  font-size: 84px;
+  right: 2rem;
+  bottom: 12%;
+  transform: rotate(15deg);
+}

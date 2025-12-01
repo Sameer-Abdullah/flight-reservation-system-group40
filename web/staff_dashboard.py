@@ -13,7 +13,6 @@ staff_dashboard_bp = Blueprint("staff_dashboard", __name__, url_prefix="/staff")
 
 
 def _today_window():
-    """Return start and end (UTC) for 'today'."""
     now = datetime.now(UTC)
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end = start + timedelta(days=1)
@@ -21,7 +20,6 @@ def _today_window():
 
 
 def _to_utc(dt: datetime) -> datetime:
-    """Convert naive datetimes from SQLite to UTC-aware."""
     if dt is None:
         return None
     if dt.tzinfo is None:
@@ -30,7 +28,6 @@ def _to_utc(dt: datetime) -> datetime:
 
 
 def _compute_flight_status(now: datetime, depart_time: datetime) -> str:
-    """Simple derived status based on departure time (both UTC-aware)."""
     if depart_time < now - timedelta(minutes=30):
         return "Departed"
     if now - timedelta(minutes=30) <= depart_time <= now + timedelta(minutes=15):
@@ -48,7 +45,7 @@ def dashboard():
 
     now, today_start, today_end = _today_window()
 
-    # ---- Today’s flights ----
+    # today’s flights
     today_start_naive = today_start.replace(tzinfo=None)
     today_end_naive = today_end.replace(tzinfo=None)
 
@@ -92,7 +89,7 @@ def dashboard():
         "upcoming_flights": upcoming,
     }
 
-    # ---- Customer lookup ----
+    # Customer lookup
     first = (request.args.get("first_name") or "").strip()
     last = (request.args.get("last_name") or "").strip()
     email = (request.args.get("email") or "").strip()

@@ -40,7 +40,7 @@ def payments_page(flight_id: int):
         currency_code="CAD",
     )
 
-# Payment support for both card and PayPal (Not real payments)
+# payment support for both card and PayPal (Not real payments as we cant validate this assignment as a business with stripe/paypal)
 @payments.route("/submit-card", methods=["POST"])
 def submit_card():
     flight_id = request.form.get("flight_id", type=int)
@@ -61,7 +61,7 @@ def mock_paypal(flight_id: int):
 
 payments_bp = payments
 
-# Gets tax rate based on country selected in billing info
+# gets tax rate based on country selected in billing info
 def _tax_rate_for(country: str | None) -> float:
     if not country:
         return DEFAULT_TAX_RATE
@@ -128,7 +128,7 @@ def _compute_total_cents(base_price_cents: int, passengers: List[Dict[str, Any]]
         "tax_cents": tax_cents,
     }
 
-# Finalizes booking after payment and stores booking details for a booking reference 
+# finalizes booking after payment and stores booking details for a booking reference 
 def _complete_booking(flight_id: int | None, seat_payload: str, billing_country: str | None = None):
     if not flight_id:
         return
@@ -152,7 +152,7 @@ def _complete_booking(flight_id: int | None, seat_payload: str, billing_country:
         pax_requested = 1
     passengers = _parse_passenger_list(parsed.get("passengers"), pax_requested)
 
-    # Build a simple booking reference
+    # build a booking reference
     stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     booking_ref = f"BK-{flight_id}-{stamp}"
 
@@ -161,7 +161,7 @@ def _complete_booking(flight_id: int | None, seat_payload: str, billing_country:
     email = primary.get("email") or None
     phone = primary.get("phone") or None
 
-    # Finds or creates a customer for the primary passenger
+    # finds or creates a customer for the primary passenger
     cust = None
     if email:
         cust = Customer.query.filter_by(email=email).first()
@@ -172,7 +172,7 @@ def _complete_booking(flight_id: int | None, seat_payload: str, billing_country:
         db.session.add(cust)
         db.session.flush()
 
-    # Support for staff view
+    # support for staff view
     for p in passengers:
         seat_code = p.get("seatCode") or ""
         db.session.add(Booking(customer_id=cust.id, flight_id=flight_id, seat_code=seat_code))
@@ -183,7 +183,7 @@ def _complete_booking(flight_id: int | None, seat_payload: str, billing_country:
     if flight.depart_time and flight.depart_time <= datetime.utcnow() and "cancel" not in (status_text or "").lower():
         status_text = "Departed"
 
-    # Details for booking reference
+    # details for booking reference
     record = BookingRecord(
         booking_ref=booking_ref,
         flight_id=flight_id,

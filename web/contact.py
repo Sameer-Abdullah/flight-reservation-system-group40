@@ -2,6 +2,8 @@ from flask import Blueprint, request, render_template
 
 general_bp = Blueprint("general", __name__)
 
+# handles contact form submissions and shows the contact page
+
 @general_bp.route("/contact", methods=["GET", "POST"])
 def contact():
     if request.method == "POST":

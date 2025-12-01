@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 db = SQLAlchemy()
 login_manager = LoginManager()
 
+# load env config, wire up flask, db, login, routes, blueprints, and create tables
 def create_app():
     load_dotenv()
 
@@ -29,6 +30,7 @@ def create_app():
     def home():
         return render_template("index.html")
     
+    # account dashboard: manage profile + saved travelers and build trip stats / recent bookings for the current user
     @app.route("/account", methods=["GET", "POST"])
     @login_required
     def account():
@@ -117,7 +119,6 @@ def create_app():
                 flash("Traveler added.", "success")
                 return redirect(url_for("account"))
 
-        # Stored datetimes are naive UTC; use utcnow for consistent categorization.
         now = datetime.utcnow()
         records = (
             db.session.query(BookingRecord, Flight)
@@ -251,7 +252,7 @@ def create_app():
         initials = current_user.initials or (current_user.email.split("@")[0][:2].upper() if current_user.email else "YO")
 
         stats = {
-            # Total trips should reflect flown + scheduled, not cancellations
+            # total trips
             "trip_count": upcoming + completed if trips else upcoming,
             "upcoming": upcoming,
             "completed": completed,
@@ -261,7 +262,7 @@ def create_app():
             "status": status_overview,
         }
 
-        # Only show upcoming flights in the “Recent bookings” list
+        # only show upcoming flights in the “Recent bookings” list
         upcoming_trips = [t for t in trips if t.get("depart") and t["depart"] > now and "cancel" not in (t["status"] or "").lower()]
 
         return render_template(
@@ -300,7 +301,7 @@ def create_app():
     from .my_bookings import bookings_bp
     app.register_blueprint(bookings_bp)
 
-    # NEW: Staff dashboard blueprint
+    # staff dashboard blueprint
     from .staff_dashboard import staff_dashboard_bp
     app.register_blueprint(staff_dashboard_bp)
     

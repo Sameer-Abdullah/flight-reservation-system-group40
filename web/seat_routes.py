@@ -6,7 +6,6 @@ bp = Blueprint("seats", __name__)
 
 @bp.get("/flights/<int:flight_id>/seats")
 def seat_page(flight_id):
-    # Serve the HTML; the JS fetches the data via the API below.
     return render_template("seat_select.html")
 
 @bp.get("/api/flights/<int:flight_id>/seats")
@@ -19,7 +18,6 @@ def seats_api(flight_id):
     if not at:
         return jsonify({"error": "aircraft_not_found"}), 404
 
-    # Blocked seats from DB
     blocked = []
     rows = (
         db.session.query(Seat.row_num, Seat.seat_letter, Seat.is_blocked)
