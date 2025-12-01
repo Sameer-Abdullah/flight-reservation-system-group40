@@ -9,17 +9,17 @@ A flask based flight booking web app with support for user accounts, flight sear
 
 ## Setup
 - setup of source code:
-git clone https://github.com/Sameer-Abdullah/flight-reservation-system-group40.git
-cd flight-reservation-system-group40
+- git clone https://github.com/Sameer-Abdullah/flight-reservation-system-group40.git
+- cd flight-reservation-system-group40
 
 
-- Setup environment:
-python -m venv .venv
-macOS/Linux: source .venv/bin/activate
-Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+-- Setup environment:
+- python -m venv .venv
+-macOS/Linux: source .venv/bin/activate
+-Windows: .venv\Scripts\activate
+-pip install -r requirements.txt
 
-- To seed the user and staff side databases (Seeding the user database could take a couple minutes):
+-- To seed the user and staff side databases (Seeding the user database could take a couple minutes):
 1.  python -m database.seed or PYTHONPATH=. python3 database/seed.py
 2.  python -m database.staff_seed or PYTHONPATH=. python3 database/staff_seed.py
 
