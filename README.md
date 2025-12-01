@@ -15,8 +15,8 @@ cd flight-reservation-system-group40
 
 - Setup environment:
 python -m venv .venv
-# macOS/Linux: source .venv/bin/activate
-# Windows: .venv\Scripts\activate
+macOS/Linux: source .venv/bin/activate
+Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 - To seed the user and staff side databases (Seeding the user database could take a couple minutes):
