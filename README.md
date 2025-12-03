@@ -22,8 +22,8 @@ A flask based flight booking web app with support for user accounts, flight sear
 -- To seed the user and staff side databases :
 1.  python -m database.seed or PYTHONPATH=. python3 database/seed.py
      
-      Seeded 9240 flights.
-      Seeded seats: 3555630
+        Seeded 9240 flights.
+        Seeded seats: 3555630
 - Once you see "Seeded 9240 flights." you can hit CTRL + C as the seats will continue to be seeded and theres no need to wait for "Seeded seats: 3555630"
 2.  python -m database.staff_seed or PYTHONPATH=. python3 database/staff_seed.py
 
@@ -38,7 +38,8 @@ A flask based flight booking web app with support for user accounts, flight sear
 - python run.py
 - or from run.py hit run program
 - Follow this link to the website (You will see it in output):
-  Example: * Running on http://127.0.0.1:5000
+        
+        Example: * Running on http://127.0.0.1:5000
 
 
 -- To login as user:
