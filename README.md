@@ -15,21 +15,28 @@ A flask based flight booking web app with support for user accounts, flight sear
 
 -- Setup environment:
 - python -m venv .venv
--macOS/Linux: source .venv/bin/activate
--Windows: .venv\Scripts\activate
--pip install -r requirements.txt
+- macOS/Linux: source .venv/bin/activate
+- Windows: .venv\Scripts\activate
+- pip install -r requirements.txt
 
--- To seed the user and staff side databases (Seeding the user database could take a couple minutes):
+-- To seed the user and staff side databases :
 1.  python -m database.seed or PYTHONPATH=. python3 database/seed.py
+      Seeded 9240 flights.
+      Seeded seats: 3555630
+- Once you see "Seeded 9240 flights." you can hit CTRL + C as the seats will continue to be seeded and theres no need to wait for "Seeded seats: 3555630"
 2.  python -m database.staff_seed or PYTHONPATH=. python3 database/staff_seed.py
-
+---- Seeding staff + customers + bookings ----
+[OK] Created staff user: sameer-abdullah@skywing.com
+[OK] Seeded 200 customers.
+[WARN] No flights today found in DB. Falling back to first 50 flights.
+[OK] Seeded 594 bookings for today's (or fallback) flights.
+---- DONE ----
 
 -- To run:
 - python run.py
 - or from run.py hit run program
-
 - Follow this link to the website (You will see it in output):
- * Running on http://127.0.0.1:5000
+  Example: * Running on http://127.0.0.1:5000
 
 
 -- To login as user:
@@ -37,9 +44,9 @@ A flask based flight booking web app with support for user accounts, flight sear
 
 -- To login as a staff member, either:
 1. login with the seeded login credentials:
-  -email: sameer-abdullah@skywing.com
-  -password: c
+  - email: sameer-abdullah@skywing.com
+  - password: c
 2. or register an account with any email ending with @skywing.com as the address.
+  - Note: Because of the large number of flights being seeded, logging in with a staff credential takes some time to load.
 
-
-- To stop the program just hit control c in terminal
+- To stop the program just hit CTRL + C
