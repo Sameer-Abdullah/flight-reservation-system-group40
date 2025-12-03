@@ -3,6 +3,7 @@ from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required
+from sqlalchemy import text, and_, or_
 from dotenv import load_dotenv
 
 db = SQLAlchemy()
@@ -25,6 +26,42 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
+
+    def ensure_booking_record_user_column():
+        cols = db.session.execute(text("PRAGMA table_info('booking_record')")).fetchall()
+        colnames = {row[1] for row in cols}
+        if "user_id" not in colnames:
+            db.session.execute(text("ALTER TABLE booking_record ADD COLUMN user_id INTEGER"))
+            db.session.commit()
+
+    def ensure_traveler_columns():
+        if not db.engine.url.drivername.startswith("sqlite"):
+            return
+
+        cols = db.session.execute(text("PRAGMA table_info('traveler')")).fetchall()
+        if not cols:
+            return
+
+        colnames = {row[1] for row in cols}
+        required = {
+            "title": "VARCHAR(16)",
+            "first_name": "VARCHAR(64)",
+            "middle_name": "VARCHAR(64)",
+            "last_name": "VARCHAR(64)",
+            "relation": "VARCHAR(64)",
+            "email": "VARCHAR(120)",
+            "phone": "VARCHAR(32)",
+            "dob": "DATE",
+            "nationality": "VARCHAR(64)",
+        }
+
+        added = False
+        for col, coltype in required.items():
+            if col not in colnames:
+                db.session.execute(text(f"ALTER TABLE traveler ADD COLUMN {col} {coltype}"))
+                added = True
+        if added:
+            db.session.commit()
 
     @app.route("/")
     def home():
@@ -120,9 +157,15 @@ def create_app():
                 return redirect(url_for("account"))
 
         now = datetime.utcnow()
+        filters = [BookingRecord.user_id == current_user.id]
+        if current_user.email:
+            filters.append(and_(BookingRecord.user_id.is_(None), BookingRecord.primary_email == current_user.email))
+        criteria = or_(*filters) if len(filters) > 1 else filters[0]
+
         records = (
             db.session.query(BookingRecord, Flight)
             .join(Flight, BookingRecord.flight_id == Flight.id)
+            .filter(criteria)
             .order_by(BookingRecord.created_at.desc())
             .all()
         )
@@ -181,37 +224,8 @@ def create_app():
         if touched:
             db.session.commit()
 
-        if not trips:
-            fallback_date = datetime(2025, 11, 29, 7, 30)
-            trips = [
-                {
-                    "origin": "YYZ",
-                    "destination": "LAX",
-                    "ticket_type": "First",
-                    "depart": fallback_date,
-                    "arrival": fallback_date + timedelta(hours=3),
-                    "status": "On time",
-                    "booking_ref": "SW7481041540",
-                    "flight_number": "SW7481",
-                    "total_paid": 3672.12,
-                },
-                {
-                    "origin": "YYZ",
-                    "destination": "DXB",
-                    "ticket_type": "First",
-                    "depart": fallback_date,
-                    "arrival": fallback_date + timedelta(hours=3),
-                    "status": "On time",
-                    "booking_ref": "SW7481041541",
-                    "flight_number": "SW7482",
-                    "total_paid": 3672.12,
-                },
-            ]
-            upcoming = len(trips)
-            cancelled = completed = 0
-
-        saved_amount = total_paid if total_paid else 3102
-        status_overview = (trips[0]["status"] if trips else "") or "On time"
+        saved_amount = total_paid
+        status_overview = (trips[0]["status"] if trips else "") or "No trips yet"
 
         title_options = ["Mr", "Ms", "Mrs", "Mx", "Dr", "Prof"]
         nationality_options = [
@@ -320,5 +334,7 @@ def create_app():
     with app.app_context():
         from . import models
         db.create_all()
+        ensure_traveler_columns()
+        ensure_booking_record_user_column()
 
     return app

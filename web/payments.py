@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
+from flask_login import current_user
 from .models import Flight, Customer, Booking, BookingRecord
 from . import db
 
@@ -185,6 +186,7 @@ def _complete_booking(flight_id: int | None, seat_payload: str, billing_country:
 
     # details for booking reference
     record = BookingRecord(
+        user_id=current_user.id if current_user and current_user.is_authenticated else None,
         booking_ref=booking_ref,
         flight_id=flight_id,
         primary_name=full_name,

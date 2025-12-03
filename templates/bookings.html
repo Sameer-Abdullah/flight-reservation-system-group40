@@ -1025,7 +1025,7 @@
                 data-flight-number="{{ trip.flight_number }}"
                 data-departure="{{ trip.departure.isoformat() if trip.departure else '' }}"
                 data-arrival="{{ trip.arrival.isoformat() if trip.arrival else '' }}"
-                data-price="{{ '%.2f' % trip.price }}"
+                data-price="{{ '%.2f' % trip.total_paid }}"
                 data-total-paid="{{ '%.2f' % trip.total_paid }}"
                 data-ticket-type="{{ trip.ticket_type }}"
                 data-booking-ref="{{ trip.booking_ref }}"
@@ -1572,12 +1572,13 @@
       if (!rebookModal) return;
       rebookActive = btn;
       const route = `${btn.dataset.origin} → ${btn.dataset.destination}`;
+      const rebookAmount = btn.dataset.totalPaid || btn.dataset.price;
       rebookTitle && (rebookTitle.textContent = "Confirm rebooking");
       rebookRoute && (rebookRoute.textContent = route);
       rebookFlight && (rebookFlight.textContent = `${btn.dataset.airline || "SkyWings"} • ${btn.dataset.flightNumber || ""}`);
       rebookDepart && (rebookDepart.textContent = formatDateTime(btn.dataset.departure));
       rebookArrival && (rebookArrival.textContent = formatDateTime(btn.dataset.arrival || btn.dataset.departure));
-      rebookPrice && (rebookPrice.textContent = formatMoney(btn.dataset.price));
+      rebookPrice && (rebookPrice.textContent = formatMoney(rebookAmount));
       rebookModal.classList.remove("d-none");
       document.body.style.overflow = "hidden";
     };
@@ -1628,7 +1629,7 @@
           cancelBtn.dataset.flightNumber = rebookActive.dataset.flightNumber;
           cancelBtn.dataset.departure = rebookActive.dataset.departure;
           cancelBtn.dataset.arrival = rebookActive.dataset.arrival;
-          cancelBtn.dataset.totalPaid = rebookActive.dataset.price || rebookActive.dataset.totalPaid;
+          cancelBtn.dataset.totalPaid = rebookActive.dataset.totalPaid || rebookActive.dataset.price;
           cancelBtn.dataset.ticketType = rebookActive.dataset.ticketType || "Economy";
           cancelBtn.dataset.bookingRef = bookingRef;
           cancelBtn.dataset.status = "On time";

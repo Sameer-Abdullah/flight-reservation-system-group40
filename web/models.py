@@ -197,6 +197,7 @@ class BookingRecord(db.Model):
     __tablename__ = "booking_record"
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
     booking_ref = db.Column(db.String(32), unique=True, nullable=False, index=True)
     flight_id = db.Column(db.Integer, db.ForeignKey("flight.id"), nullable=False, index=True)
     primary_name = db.Column(db.String(120), nullable=False)
