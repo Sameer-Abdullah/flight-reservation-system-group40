@@ -25,6 +25,7 @@ A flask based flight booking web app with support for user accounts, flight sear
       Seeded seats: 3555630
 - Once you see "Seeded 9240 flights." you can hit CTRL + C as the seats will continue to be seeded and theres no need to wait for "Seeded seats: 3555630"
 2.  python -m database.staff_seed or PYTHONPATH=. python3 database/staff_seed.py
+
 ---- Seeding staff + customers + bookings ----
 [OK] Created staff user: sameer-abdullah@skywing.com
 [OK] Seeded 200 customers.
