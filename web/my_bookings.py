@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, jsonify
-from flask_login import login_required
+from flask_login import login_required, current_user
+from sqlalchemy import or_, and_
 from .models import BookingRecord, Flight
 from . import db
 
@@ -13,9 +14,15 @@ bookings_bp = Blueprint("bookings", __name__, url_prefix="/bookings")
 def my_bookings():
     now = datetime.utcnow()
     touched = False
+    filters = [BookingRecord.user_id == current_user.id]
+    if current_user.email:
+        filters.append(and_(BookingRecord.user_id.is_(None), BookingRecord.primary_email == current_user.email))
+    criteria = or_(*filters) if len(filters) > 1 else filters[0]
+
     records = (
         db.session.query(BookingRecord, Flight)
         .join(Flight, BookingRecord.flight_id == Flight.id)
+        .filter(criteria)
         .order_by(BookingRecord.created_at.desc())
         .all()
     )
@@ -39,34 +46,37 @@ def my_bookings():
                 "seat": p.get("seatCode") or "",
             })
 
+        depart = flight.depart_time
+        total_paid = (rec.total_paid_cents or 0) / 100
         extra_bags = sum(p.get("extra_bags", 0) for p in pax_list)
         included_bags = len(pax_list) * 1
         total_bags = included_bags + extra_bags
 
         status_text = rec.status or flight.status or "On time"
-        if flight.depart_time and flight.depart_time <= now and "cancel" not in status_text.lower():
+        if depart and depart <= now and "cancel" not in status_text.lower():
             status_text = "Departed"
             if rec.status != status_text:
                 rec.status = status_text
                 db.session.add(rec)
                 touched = True
 
-        is_future = bool(flight.depart_time and flight.depart_time > now)
-        flight_available = is_future and not ((flight.status or "").lower().startswith("cancel"))
+        is_future = bool(depart and depart > now)
+        is_rebook_window = bool(depart and (depart - now) >= timedelta(days=2))
+        flight_available = is_rebook_window and not ((flight.status or "").lower().startswith("cancel"))
 
-        arrival_time = flight.depart_time + timedelta(hours=3) if flight.depart_time else None
+        arrival_time = depart + timedelta(hours=3) if depart else None
 
         trips.append({
             "origin": flight.origin,
             "destination": flight.destination,
             "airline": "SkyWings",
             "flight_number": f"SW{flight.id:04d}",
-            "departure": flight.depart_time,
+            "departure": depart,
             "arrival": arrival_time,
             "booking_ref": rec.booking_ref,
             "ticket_type": pax_list[0]["class"] if pax_list else "Economy",
-            "total_paid": (rec.total_paid_cents or 0) / 100,
-            "price": (flight.price_cents or 0) / 100,
+            "total_paid": total_paid,
+            "price": total_paid,
             "status": status_text,
             "pax": pax_list,
             "baggage": {"total": total_bags, "included": included_bags, "extras": extra_bags},
@@ -89,43 +99,6 @@ def my_bookings():
         else:
             upcoming.append(t)
 
-    if not upcoming and not past and not cancelled:
-        sample_trip = {
-            "origin": "YYZ",
-            "destination": "DXB",
-            "airline": "SkyWings",
-            "flight_number": "SW7481",
-            "departure": datetime(2025, 11, 29, 7, 30),
-            "arrival": datetime(2025, 11, 29, 10, 30),
-            "booking_ref": "SW7481041540",
-            "ticket_type": "First",
-            "total_paid": 3672.12,
-            "status": "On time",
-            "pax": [
-                {
-                    "label": "P1",
-                    "name": "Yaman Al-Eryani",
-                    "class": "First",
-                    "seat_pref": "Window Seat",
-                    "meal": "Standard",
-                    "extra_bags": 0,
-                    "seat": "1A",
-                },
-                {
-                    "label": "P2",
-                    "name": "Yaman Al-Eryani",
-                    "class": "Business",
-                    "seat_pref": "Aisle Seat",
-                    "meal": "Standard",
-                    "extra_bags": 1,
-                    "seat": "6D",
-                },
-            ],
-            "baggage": {"total": 3, "included": 2, "extras": 1},
-            "fare_terms": "Free online cancellation up to 2 hours before departure.",
-        }
-        upcoming.append(sample_trip)
-
     bookings = {
         "upcoming": upcoming,
         "past": past,
@@ -145,7 +118,13 @@ def cancel_booking():
     if not booking_ref:
         return jsonify({"ok": False, "error": "Missing booking_ref"}), 400
 
-    rec = BookingRecord.query.filter_by(booking_ref=booking_ref).first()
+    rec = BookingRecord.query.filter_by(booking_ref=booking_ref, user_id=current_user.id).first()
+    if not rec and current_user.email:
+        rec = BookingRecord.query.filter_by(
+            booking_ref=booking_ref,
+            primary_email=current_user.email,
+            user_id=None,
+        ).first()
     if not rec:
         return jsonify({"ok": False, "error": "Booking not found"}), 404
 
@@ -172,7 +151,13 @@ def rebook_booking():
     if not booking_ref:
         return jsonify({"ok": False, "error": "Missing booking_ref"}), 400
 
-    rec = BookingRecord.query.filter_by(booking_ref=booking_ref).first()
+    rec = BookingRecord.query.filter_by(booking_ref=booking_ref, user_id=current_user.id).first()
+    if not rec and current_user.email:
+        rec = BookingRecord.query.filter_by(
+            booking_ref=booking_ref,
+            primary_email=current_user.email,
+            user_id=None,
+        ).first()
     if not rec:
         return jsonify({"ok": False, "error": "Booking not found"}), 404
 
@@ -180,6 +165,8 @@ def rebook_booking():
     now = datetime.utcnow()
     if not flight or not flight.depart_time or flight.depart_time <= now:
         return jsonify({"ok": False, "error": "Flight no longer available"}), 400
+    if (flight.depart_time - now) < timedelta(days=2):
+        return jsonify({"ok": False, "error": "Rebooking unavailable"}), 400
     if flight.status and "cancel" in flight.status.lower():
         return jsonify({"ok": False, "error": "Flight no longer available"}), 400
 
@@ -188,7 +175,7 @@ def rebook_booking():
     db.session.commit()
     return jsonify({
         "ok": True,
-        "price": (flight.price_cents or 0) / 100,
+        "price": (rec.total_paid_cents or 0) / 100,
         "depart": flight.depart_time.isoformat() if flight.depart_time else None,
         "origin": flight.origin,
         "destination": flight.destination,
